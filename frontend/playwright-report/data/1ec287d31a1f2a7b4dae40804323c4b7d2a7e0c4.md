@@ -6,12 +6,12 @@
     - generic [ref=e4]:
       - generic [ref=e5]:
         - generic [ref=e6]: Console
-        - generic [ref=e7]: "469"
+        - generic [ref=e7]: "462"
       - generic [ref=e8]:
-        - button "Console 469" [ref=e9] [cursor=pointer]:
+        - button "Console 462" [ref=e9] [cursor=pointer]:
           - img [ref=e10]
           - text: Console
-          - generic [ref=e12]: "469"
+          - generic [ref=e12]: "462"
         - button "Console" [ref=e13] [cursor=pointer]:
           - img [ref=e14]
           - text: Console
@@ -25,419 +25,412 @@
         - button "Refresh" [ref=e23] [cursor=pointer]:
           - img [ref=e24]
           - text: Refresh
-        - button "Con/Screen 469" [ref=e26] [cursor=pointer]:
+        - button "Open Console" [ref=e26] [cursor=pointer]:
+          - img [ref=e27]
+          - text: Open Console
+        - button "Con/Screen 462" [ref=e29] [cursor=pointer]:
           - text: Con/Screen
-          - generic [ref=e27]: "469"
-        - button "Con/Screen" [ref=e28] [cursor=pointer]:
-          - img [ref=e29]
-          - img [ref=e31]
+          - generic [ref=e30]: "462"
+        - button "Con/Screen" [ref=e31] [cursor=pointer]:
+          - img [ref=e32]
+          - img [ref=e34]
           - text: Con/Screen
-        - button "✓ Validate 469" [ref=e33] [cursor=pointer]:
+        - button "✓ Validate 462" [ref=e36] [cursor=pointer]:
           - text: ✓ Validate
-          - generic [ref=e34]: "469"
-      - button "Hide console tools" [ref=e35] [cursor=pointer]:
-        - img [ref=e36]
-    - generic [ref=e38]:
-      - generic [ref=e40]:
-        - generic [ref=e41]:
-          - img "Trapid" [ref=e42]
-          - button "Expand sidebar" [ref=e43] [cursor=pointer]:
-            - img [ref=e44]
-        - navigation [ref=e46]:
-          - list [ref=e47]:
-            - listitem [ref=e48]:
-              - list [ref=e49]:
-                - listitem [ref=e50]:
-                  - link "Dashboard" [ref=e51] [cursor=pointer]:
+          - generic [ref=e37]: "462"
+      - button "Hide console tools" [ref=e38] [cursor=pointer]:
+        - img [ref=e39]
+    - generic [ref=e41]:
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - img "Trapid" [ref=e45]
+          - button "Expand sidebar" [ref=e46] [cursor=pointer]:
+            - img [ref=e47]
+        - navigation [ref=e49]:
+          - list [ref=e50]:
+            - listitem [ref=e51]:
+              - list [ref=e52]:
+                - listitem [ref=e53]:
+                  - link "Dashboard" [ref=e54] [cursor=pointer]:
                     - /url: /dashboard
-                    - img [ref=e52]
-                - listitem [ref=e54]:
-                  - link "Active Jobs" [ref=e55] [cursor=pointer]:
+                    - img [ref=e55]
+                - listitem [ref=e57]:
+                  - link "Active Jobs" [ref=e58] [cursor=pointer]:
                     - /url: /active-jobs
-                    - img [ref=e56]
-                - listitem [ref=e58]:
-                  - link "Xest" [ref=e59] [cursor=pointer]:
+                    - img [ref=e59]
+                - listitem [ref=e61]:
+                  - link "Xest" [ref=e62] [cursor=pointer]:
                     - /url: /xest
-                    - img [ref=e60]
-                - listitem [ref=e62]:
-                  - link "Price Books" [ref=e63] [cursor=pointer]:
+                    - img [ref=e63]
+                - listitem [ref=e65]:
+                  - link "Price Books" [ref=e66] [cursor=pointer]:
                     - /url: /price-books
-                    - img [ref=e64]
-                - listitem [ref=e66]:
-                  - link "Contacts" [ref=e67] [cursor=pointer]:
+                    - img [ref=e67]
+                - listitem [ref=e69]:
+                  - link "Contacts" [ref=e70] [cursor=pointer]:
                     - /url: /contacts
-                    - img [ref=e68]
-                - listitem [ref=e70]:
-                  - link "Accounts" [ref=e71] [cursor=pointer]:
+                    - img [ref=e71]
+                - listitem [ref=e73]:
+                  - link "Accounts" [ref=e74] [cursor=pointer]:
                     - /url: /accounts
-                    - img [ref=e72]
-                - listitem [ref=e74]:
-                  - link "Documents" [ref=e75] [cursor=pointer]:
+                    - img [ref=e75]
+                - listitem [ref=e77]:
+                  - link "Documents" [ref=e78] [cursor=pointer]:
                     - /url: /documents
-                    - img [ref=e76]
-                - listitem [ref=e78]:
-                  - link "Training" [ref=e79] [cursor=pointer]:
+                    - img [ref=e79]
+                - listitem [ref=e81]:
+                  - link "Training" [ref=e82] [cursor=pointer]:
                     - /url: /training
-                    - img [ref=e80]
-                - listitem [ref=e82]:
-                  - link "Outlook" [ref=e83] [cursor=pointer]:
+                    - img [ref=e83]
+                - listitem [ref=e85]:
+                  - link "Outlook" [ref=e86] [cursor=pointer]:
                     - /url: /outlook
-                    - img [ref=e84]
-                - listitem [ref=e86]:
-                  - link "OneDrive" [ref=e87] [cursor=pointer]:
+                    - img [ref=e87]
+                - listitem [ref=e89]:
+                  - link "OneDrive" [ref=e90] [cursor=pointer]:
                     - /url: /onedrive
-                    - img [ref=e88]
-                - listitem [ref=e90]:
-                  - link "Health" [ref=e91] [cursor=pointer]:
+                    - img [ref=e91]
+                - listitem [ref=e93]:
+                  - link "Health" [ref=e94] [cursor=pointer]:
                     - /url: /health
-                    - img [ref=e92]
-                - listitem [ref=e94]:
-                  - link "Performance" [ref=e95] [cursor=pointer]:
+                    - img [ref=e95]
+                - listitem [ref=e97]:
+                  - link "Performance" [ref=e98] [cursor=pointer]:
                     - /url: /system/performance
-                    - img [ref=e96]
-                - listitem [ref=e98]:
-                  - link "Settings" [ref=e99] [cursor=pointer]:
+                    - img [ref=e99]
+                - listitem [ref=e101]:
+                  - link "Settings" [ref=e102] [cursor=pointer]:
                     - /url: /settings
-                    - img [ref=e100]
-                - listitem [ref=e103]:
-                  - link "Trinity" [ref=e104] [cursor=pointer]:
-                    - /url: /documentation
-                    - img [ref=e105]
-                - listitem [ref=e107]:
-                  - link "DHTMLX Gantt" [ref=e108] [cursor=pointer]:
+                    - img [ref=e103]
+                - listitem [ref=e106]:
+                  - link "Trinity" [ref=e107] [cursor=pointer]:
+                    - /url: /trinity
+                    - img [ref=e108]
+                - listitem [ref=e110]:
+                  - link "DHTMLX Gantt" [ref=e111] [cursor=pointer]:
                     - /url: /settings?tab=schedule-master&openGantt=dhtmlx
-                    - img [ref=e109]
-            - listitem [ref=e111]:
-              - list [ref=e112]:
-                - listitem [ref=e113]:
-                  - link "Import Data" [ref=e114] [cursor=pointer]:
+                    - img [ref=e112]
+            - listitem [ref=e114]:
+              - list [ref=e115]:
+                - listitem [ref=e116]:
+                  - link "Import Data" [ref=e117] [cursor=pointer]:
                     - /url: /import
-                    - img [ref=e115]
-      - generic [ref=e117]:
-        - generic [ref=e120]:
-          - button "Get help" [ref=e121] [cursor=pointer]:
-            - img [ref=e122]
-          - button "Open user menu" [ref=e125] [cursor=pointer]:
-            - generic [ref=e127]: Open user menu
+                    - img [ref=e118]
+      - generic [ref=e120]:
+        - generic [ref=e123]:
+          - generic [ref=e127]:
             - generic [ref=e128]:
-              - generic [ref=e129]: User
               - img [ref=e130]
-        - main [ref=e132]:
-          - generic [ref=e133]:
-            - button "Go back" [ref=e135] [cursor=pointer]:
+              - paragraph [ref=e133]: Real love takes its time, treats people fair dinkum, and doesn't show off like a galah!
+            - button "Dismiss" [ref=e134] [cursor=pointer]:
+              - generic [ref=e135]: Dismiss
               - img [ref=e136]
+          - button "Get help" [ref=e138] [cursor=pointer]:
+            - img [ref=e139]
+          - button "Open user menu" [ref=e142] [cursor=pointer]:
+            - generic [ref=e144]: Open user menu
+            - generic [ref=e145]:
+              - generic [ref=e146]: User
+              - img [ref=e147]
+        - main [ref=e149]:
+          - generic [ref=e150]:
+            - button "Go back" [ref=e152] [cursor=pointer]:
+              - img [ref=e153]
               - text: Back
-            - main [ref=e138]:
-              - heading "Account Settings" [level=1] [ref=e139]
-              - button "Go back" [ref=e141] [cursor=pointer]:
-                - img [ref=e142]
+            - main [ref=e155]:
+              - heading "Account Settings" [level=1] [ref=e156]
+              - button "Go back" [ref=e158] [cursor=pointer]:
+                - img [ref=e159]
                 - text: Back
-              - navigation [ref=e145]:
-                - list [ref=e146]:
-                  - listitem [ref=e147]:
-                    - link "Profile" [ref=e148] [cursor=pointer]:
+              - navigation [ref=e162]:
+                - list [ref=e163]:
+                  - listitem [ref=e164]:
+                    - link "Profile" [ref=e165] [cursor=pointer]:
                       - /url: /profile
-                  - listitem [ref=e149]:
-                    - link "Settings" [ref=e150] [cursor=pointer]:
+                  - listitem [ref=e166]:
+                    - link "Settings" [ref=e167] [cursor=pointer]:
                       - /url: /settings
-                  - listitem [ref=e151]:
-                    - link "Integrations" [ref=e152] [cursor=pointer]:
+                  - listitem [ref=e168]:
+                    - link "Integrations" [ref=e169] [cursor=pointer]:
                       - /url: /settings/integrations
-              - generic [ref=e154]:
-                - tablist [ref=e156]:
-                  - tab "Company" [ref=e157] [cursor=pointer]
-                  - tab "Integrations" [ref=e158] [cursor=pointer]
-                  - tab "Users" [ref=e159] [cursor=pointer]
-                  - tab "Contact Roles" [ref=e160] [cursor=pointer]
-                  - tab "Workflows" [ref=e161] [cursor=pointer]
-                  - tab "Folder Templates" [ref=e162] [cursor=pointer]
-                  - tab "Schedule Master" [selected] [ref=e163] [cursor=pointer]
-                  - tab "Documentation" [ref=e164] [cursor=pointer]
-                  - tab "Supervisor Checklist" [ref=e165] [cursor=pointer]
-                  - tab "Public Holidays" [ref=e166] [cursor=pointer]
-                  - tab "Xero" [ref=e167] [cursor=pointer]
-                  - tab "Tables" [ref=e168] [cursor=pointer]
-                  - tab "Schema" [ref=e169] [cursor=pointer]
-                  - tab "Git Branches" [ref=e170] [cursor=pointer]
-                  - tab "Agents" [ref=e171] [cursor=pointer]
-                  - tab "Claude Shortcuts" [ref=e172] [cursor=pointer]
-                  - tab "User Manual" [ref=e173] [cursor=pointer]
-                  - tab "Deployment" [ref=e174] [cursor=pointer]
-                - tabpanel "Schedule Master" [ref=e176]:
-                  - generic [ref=e178]:
-                    - tablist [ref=e181]:
-                      - tab "Schedule Master Setup" [selected] [ref=e182] [cursor=pointer]
-                      - tab "Bug Hunter Tests" [ref=e183] [cursor=pointer]
-                      - tab "New Features" [ref=e184] [cursor=pointer]
-                    - tabpanel "Schedule Master Setup" [ref=e186]:
-                      - generic [ref=e187]:
-                        - generic [ref=e188]:
-                          - generic [ref=e189]:
-                            - heading "Schedule Templates" [level=2] [ref=e190]
-                            - paragraph [ref=e191]: Create reusable schedule templates with full task dependencies and automation
-                            - generic [ref=e193]:
-                              - img [ref=e194]
-                              - generic [ref=e196]: "Terminology:"
-                              - generic [ref=e197]:
-                                - generic [ref=e198]:
-                                  - strong [ref=e199]: SM
+              - generic [ref=e171]:
+                - tablist [ref=e173]:
+                  - tab "Company" [ref=e174] [cursor=pointer]
+                  - tab "Integrations" [ref=e175] [cursor=pointer]
+                  - tab "Users" [ref=e176] [cursor=pointer]
+                  - tab "Contact Roles" [ref=e177] [cursor=pointer]
+                  - tab "Workflows" [ref=e178] [cursor=pointer]
+                  - tab "Folder Templates" [ref=e179] [cursor=pointer]
+                  - tab "Schedule Master" [selected] [ref=e180] [cursor=pointer]
+                  - tab "Documentation" [ref=e181] [cursor=pointer]
+                  - tab "Supervisor Checklist" [ref=e182] [cursor=pointer]
+                  - tab "Public Holidays" [ref=e183] [cursor=pointer]
+                  - tab "Xero" [ref=e184] [cursor=pointer]
+                  - tab "Tables" [ref=e185] [cursor=pointer]
+                  - tab "Trapid Table View" [ref=e186] [cursor=pointer]
+                  - tab "Schema" [ref=e187] [cursor=pointer]
+                  - tab "Git Branches" [ref=e188] [cursor=pointer]
+                  - tab "Agents" [ref=e189] [cursor=pointer]
+                  - tab "Claude Shortcuts" [ref=e190] [cursor=pointer]
+                  - tab "User Manual" [ref=e191] [cursor=pointer]
+                  - tab "Inspiring Quotes" [ref=e192] [cursor=pointer]
+                  - tab "Deployment" [ref=e193] [cursor=pointer]
+                - tabpanel "Schedule Master" [ref=e195]:
+                  - generic [ref=e197]:
+                    - tablist [ref=e200]:
+                      - tab "Schedule Master Setup" [selected] [ref=e201] [cursor=pointer]
+                      - tab "Bug Hunter Tests" [ref=e202] [cursor=pointer]
+                      - tab "New Features" [ref=e203] [cursor=pointer]
+                    - tabpanel "Schedule Master Setup" [ref=e205]:
+                      - generic [ref=e206]:
+                        - generic [ref=e207]:
+                          - generic [ref=e208]:
+                            - heading "Schedule Templates" [level=2] [ref=e209]
+                            - paragraph [ref=e210]: Create reusable schedule templates with full task dependencies and automation
+                            - generic [ref=e212]:
+                              - img [ref=e213]
+                              - generic [ref=e215]: "Terminology:"
+                              - generic [ref=e216]:
+                                - generic [ref=e217]:
+                                  - strong [ref=e218]: SM
                                   - text: = Schedule Master
-                                - generic [ref=e200]:
-                                  - strong [ref=e201]: SMT
+                                - generic [ref=e219]:
+                                  - strong [ref=e220]: SMT
                                   - text: = Table (24 cols)
-                                - generic [ref=e202]:
-                                  - strong [ref=e203]: Gantt
+                                - generic [ref=e221]:
+                                  - strong [ref=e222]: Gantt
                                   - text: = Timeline chart
-                                - generic [ref=e204]:
-                                  - strong [ref=e205]: Task
+                                - generic [ref=e223]:
+                                  - strong [ref=e224]: Task
                                   - text: = Row + bar
-                                - generic [ref=e206]:
-                                  - strong [ref=e207]: Deps
+                                - generic [ref=e225]:
+                                  - strong [ref=e226]: Deps
                                   - text: = Arrows
-                                - generic [ref=e208]:
-                                  - strong [ref=e209]: FS/SS/FF
+                                - generic [ref=e227]:
+                                  - strong [ref=e228]: FS/SS/FF
                                   - text: = Dep types
-                          - generic [ref=e210]:
-                            - button "Gantt Bible" [ref=e211] [cursor=pointer]:
-                              - img [ref=e212]
+                          - generic [ref=e229]:
+                            - button "Gantt Bible" [ref=e230] [cursor=pointer]:
+                              - img [ref=e231]
                               - text: Gantt Bible
-                            - button "Gantt Bug Hunter" [ref=e214] [cursor=pointer]:
-                              - img [ref=e215]
+                            - button "Gantt Bug Hunter" [ref=e233] [cursor=pointer]:
+                              - img [ref=e234]
                               - text: Gantt Bug Hunter
-                            - button "Copy Docs" [ref=e218] [cursor=pointer]:
-                              - img [ref=e219]
+                            - button "Copy Docs" [ref=e237] [cursor=pointer]:
+                              - img [ref=e238]
                               - text: Copy Docs
-                              - img [ref=e221]
-                            - button "New Template" [ref=e223] [cursor=pointer]:
-                              - img [ref=e224]
+                              - img [ref=e240]
+                            - button "New Template" [ref=e242] [cursor=pointer]:
+                              - img [ref=e243]
                               - text: New Template
-                        - generic [ref=e226]:
-                          - combobox [ref=e227]:
+                        - generic [ref=e245]:
+                          - combobox [ref=e246]:
                             - option "Bug Hunter Schedule Master"
                             - option "Schedule MAster (Default)" [selected]
-                          - button "Duplicate Template" [ref=e228] [cursor=pointer]:
-                            - img [ref=e229]
-                          - button "Export to Excel" [ref=e231] [cursor=pointer]:
-                            - img [ref=e232]
-                          - generic "Import from Excel" [ref=e234] [cursor=pointer]:
-                            - img [ref=e235]
-                          - button "View Gantt Chart" [ref=e237] [cursor=pointer]:
-                            - img [ref=e238]
-                        - generic [ref=e240]:
-                          - table [ref=e241]:
-                            - rowgroup [ref=e242]:
-                              - 'row "Select all rows # Task Name Supplier / Group Predecessors Duration Start Date Lock PO Req Auto PO Price Items Critical Tags Photo Cert Cert Lag Sup Check Auto Complete Subtasks Linked Tasks Manual Multi Order Time Call Up Plan Plan Sales Precon Final Certificate Site Photo Client Client Photo Photos Actions" [ref=e243]':
-                                - cell "Select all rows" [ref=e244]:
-                                  - generic [ref=e245]:
-                                    - img [ref=e247]
-                                    - checkbox "Select all rows" [ref=e249] [cursor=pointer]
-                                - cell "#" [ref=e251]:
-                                  - generic [ref=e252]:
-                                    - img [ref=e254]
-                                    - generic [ref=e256]: "#"
-                                - cell "Task Name" [ref=e257]:
-                                  - generic [ref=e258]:
-                                    - img [ref=e260]
-                                    - generic [ref=e263] [cursor=pointer]:
-                                      - generic [ref=e264]: Task Name
-                                      - img [ref=e265]
-                                - cell "Supplier / Group" [ref=e268]:
-                                  - generic [ref=e269]:
-                                    - img [ref=e271]
-                                    - generic [ref=e274] [cursor=pointer]:
-                                      - generic [ref=e275]: Supplier / Group
-                                      - img [ref=e276]
-                                - cell "Predecessors" [ref=e279]:
-                                  - generic [ref=e280]:
-                                    - img [ref=e282]
-                                    - generic [ref=e285] [cursor=pointer]:
-                                      - generic [ref=e286]: Predecessors
-                                      - img [ref=e287]
-                                - cell "Duration" [ref=e290]:
-                                  - generic [ref=e291]:
-                                    - img [ref=e293]
-                                    - generic [ref=e296] [cursor=pointer]:
-                                      - generic [ref=e297]: Duration
-                                      - img [ref=e298]
-                                - cell "Start Date" [ref=e301]:
-                                  - generic [ref=e302]:
-                                    - img [ref=e304]
-                                    - generic [ref=e307] [cursor=pointer]:
-                                      - generic [ref=e308]: Start Date
-                                      - img [ref=e309]
-                                    - img [ref=e311]
-                                - cell "Lock" [ref=e314]:
-                                  - generic [ref=e315]:
-                                    - img [ref=e317]
-                                    - generic [ref=e319] [cursor=pointer]: Lock
-                                - cell "PO Req" [ref=e321]:
-                                  - generic [ref=e322]:
-                                    - img [ref=e324]
-                                    - generic [ref=e327] [cursor=pointer]:
-                                      - generic [ref=e328]: PO Req
-                                      - img [ref=e329]
-                                - cell "Auto PO" [ref=e332]:
-                                  - generic [ref=e333]:
-                                    - img [ref=e335]
-                                    - generic [ref=e338] [cursor=pointer]:
-                                      - generic [ref=e339]: Auto PO
-                                      - img [ref=e340]
-                                - cell "Price Items" [ref=e343]:
-                                  - generic [ref=e344]:
-                                    - img [ref=e346]
-                                    - generic [ref=e349] [cursor=pointer]:
-                                      - generic [ref=e350]: Price Items
-                                      - img [ref=e351]
-                                - cell "Critical" [ref=e354]:
-                                  - generic [ref=e355]:
-                                    - img [ref=e357]
-                                    - generic [ref=e360] [cursor=pointer]:
-                                      - generic [ref=e361]: Critical
-                                      - img [ref=e362]
-                                - cell "Tags" [ref=e365]:
-                                  - generic [ref=e366]:
-                                    - img [ref=e368]
-                                    - generic [ref=e371] [cursor=pointer]:
-                                      - generic [ref=e372]: Tags
-                                      - img [ref=e373]
-                                - cell "Photo" [ref=e376]:
-                                  - generic [ref=e377]:
-                                    - img [ref=e379]
-                                    - generic [ref=e382] [cursor=pointer]:
-                                      - generic [ref=e383]: Photo
-                                      - img [ref=e384]
-                                - cell "Cert" [ref=e387]:
-                                  - generic [ref=e388]:
-                                    - img [ref=e390]
-                                    - generic [ref=e393] [cursor=pointer]:
-                                      - generic [ref=e394]: Cert
-                                      - img [ref=e395]
-                                - cell "Cert Lag" [ref=e398]:
-                                  - generic [ref=e399]:
-                                    - img [ref=e401]
-                                    - generic [ref=e404] [cursor=pointer]:
-                                      - generic [ref=e405]: Cert Lag
-                                      - img [ref=e406]
-                                - cell "Sup Check" [ref=e409]:
-                                  - generic [ref=e410]:
-                                    - img [ref=e412]
-                                    - generic [ref=e415] [cursor=pointer]:
-                                      - generic [ref=e416]: Sup Check
-                                      - img [ref=e417]
-                                - cell "Auto Complete" [ref=e420]:
-                                  - generic [ref=e421]:
-                                    - img [ref=e423]
-                                    - generic [ref=e426] [cursor=pointer]:
-                                      - generic [ref=e427]: Auto Complete
-                                      - img [ref=e428]
-                                - cell "Subtasks" [ref=e431]:
-                                  - generic [ref=e432]:
-                                    - img [ref=e434]
-                                    - generic [ref=e437] [cursor=pointer]:
-                                      - generic [ref=e438]: Subtasks
-                                      - img [ref=e439]
-                                - cell "Linked Tasks" [ref=e442]:
-                                  - generic [ref=e443]:
-                                    - img [ref=e445]
-                                    - generic [ref=e448] [cursor=pointer]:
-                                      - generic [ref=e449]: Linked Tasks
-                                      - img [ref=e450]
-                                - cell "Manual" [ref=e453]:
-                                  - generic [ref=e454]:
-                                    - img [ref=e456]
-                                    - generic [ref=e459] [cursor=pointer]:
-                                      - generic [ref=e460]: Manual
-                                      - img [ref=e461]
-                                - cell "Multi" [ref=e464]:
-                                  - generic [ref=e465]:
-                                    - img [ref=e467]
-                                    - generic [ref=e470] [cursor=pointer]:
-                                      - generic [ref=e471]: Multi
-                                      - img [ref=e472]
-                                - cell "Order Time" [ref=e475]:
-                                  - generic [ref=e476]:
-                                    - img [ref=e478]
-                                    - generic [ref=e481] [cursor=pointer]:
-                                      - generic [ref=e482]: Order Time
-                                      - img [ref=e483]
-                                - cell "Call Up" [ref=e486]:
-                                  - generic [ref=e487]:
-                                    - img [ref=e489]
-                                    - generic [ref=e492] [cursor=pointer]:
-                                      - generic [ref=e493]: Call Up
-                                      - img [ref=e494]
-                                - cell "Plan" [ref=e497]:
-                                  - generic [ref=e498]:
-                                    - img [ref=e500]
-                                    - generic [ref=e503] [cursor=pointer]:
-                                      - generic [ref=e504]: Plan
-                                      - img [ref=e505]
-                                - cell "Plan" [ref=e508]:
-                                  - generic [ref=e509]:
-                                    - img [ref=e511]
-                                    - generic [ref=e513] [cursor=pointer]: Plan
-                                - cell "Sales" [ref=e515]:
-                                  - generic [ref=e516]:
-                                    - img [ref=e518]
-                                    - generic [ref=e520] [cursor=pointer]: Sales
-                                - cell "Precon" [ref=e522]:
-                                  - generic [ref=e523]:
-                                    - img [ref=e525]
-                                    - generic [ref=e527] [cursor=pointer]: Precon
-                                - cell "Final Certificate" [ref=e529]:
-                                  - generic [ref=e530]:
-                                    - img [ref=e532]
-                                    - generic [ref=e534] [cursor=pointer]: Final Certificate
-                                - cell "Site" [ref=e536]:
-                                  - generic [ref=e537]:
-                                    - img [ref=e539]
-                                    - generic [ref=e541] [cursor=pointer]: Site
-                                - cell "Photo" [ref=e543]:
-                                  - generic [ref=e544]:
-                                    - img [ref=e546]
-                                    - generic [ref=e548] [cursor=pointer]: Photo
-                                - cell "Client" [ref=e550]:
-                                  - generic [ref=e551]:
-                                    - img [ref=e553]
-                                    - generic [ref=e555] [cursor=pointer]: Client
-                                - cell "Client Photo" [ref=e557]:
-                                  - generic [ref=e558]:
-                                    - img [ref=e560]
-                                    - generic [ref=e562] [cursor=pointer]: Client Photo
-                                - cell "Photos" [ref=e564]:
-                                  - generic [ref=e565]:
-                                    - img [ref=e567]
-                                    - generic [ref=e569] [cursor=pointer]: Photos
-                                - cell "Actions" [ref=e571]:
-                                  - generic [ref=e572]:
-                                    - img [ref=e574]
-                                    - generic [ref=e576]: Actions
-                              - row [ref=e577]:
-                                - cell [ref=e578]
-                                - cell [ref=e579]
-                                - cell [ref=e580]:
-                                  - textbox "Filter..." [ref=e581]
-                                - cell [ref=e582]:
-                                  - textbox "Filter..." [ref=e583]
-                                - cell [ref=e584]
-                                - cell [ref=e585]
-                                - cell [ref=e586]
-                                - cell [ref=e587]
-                                - cell [ref=e588]
-                                - cell [ref=e589]
-                                - cell [ref=e590]
-                                - cell [ref=e591]
-                                - cell [ref=e592]:
-                                  - textbox "Filter..." [ref=e593]
-                                - cell [ref=e594]
-                                - cell [ref=e595]
-                                - cell [ref=e596]
+                          - button "Duplicate Template" [ref=e247] [cursor=pointer]:
+                            - img [ref=e248]
+                          - button "Export to Excel" [ref=e250] [cursor=pointer]:
+                            - img [ref=e251]
+                          - generic "Import from Excel" [ref=e253] [cursor=pointer]:
+                            - img [ref=e254]
+                          - button "View Gantt Chart" [ref=e256] [cursor=pointer]:
+                            - img [ref=e257]
+                        - generic [ref=e259]:
+                          - table [ref=e260]:
+                            - rowgroup [ref=e261]:
+                              - 'row "Select all rows # Task Name Supplier / Group Predecessors Duration Start Date Lock PO Req Auto PO Price Items Critical Tags Photo Cert Cert Lag Sup Check Auto Complete Subtasks Linked Tasks Manual Multi Order Time Call Up Plan Plan Sales Precon Final Certificate Site Photo Client Client Photo Photos Actions" [ref=e262]':
+                                - cell "Select all rows" [ref=e263]:
+                                  - generic [ref=e264]:
+                                    - img [ref=e266]
+                                    - checkbox "Select all rows" [ref=e268] [cursor=pointer]
+                                - cell "#" [ref=e270]:
+                                  - generic [ref=e271]:
+                                    - img [ref=e273]
+                                    - generic [ref=e275]: "#"
+                                - cell "Task Name" [ref=e276]:
+                                  - generic [ref=e277]:
+                                    - img [ref=e279]
+                                    - generic [ref=e282] [cursor=pointer]:
+                                      - generic [ref=e283]: Task Name
+                                      - img [ref=e284]
+                                - cell "Supplier / Group" [ref=e287]:
+                                  - generic [ref=e288]:
+                                    - img [ref=e290]
+                                    - generic [ref=e293] [cursor=pointer]:
+                                      - generic [ref=e294]: Supplier / Group
+                                      - img [ref=e295]
+                                - cell "Predecessors" [ref=e298]:
+                                  - generic [ref=e299]:
+                                    - img [ref=e301]
+                                    - generic [ref=e304] [cursor=pointer]:
+                                      - generic [ref=e305]: Predecessors
+                                      - img [ref=e306]
+                                - cell "Duration" [ref=e309]:
+                                  - generic [ref=e310]:
+                                    - img [ref=e312]
+                                    - generic [ref=e315] [cursor=pointer]:
+                                      - generic [ref=e316]: Duration
+                                      - img [ref=e317]
+                                - cell "Start Date" [ref=e320]:
+                                  - generic [ref=e321]:
+                                    - img [ref=e323]
+                                    - generic [ref=e326] [cursor=pointer]:
+                                      - generic [ref=e327]: Start Date
+                                      - img [ref=e328]
+                                    - img [ref=e330]
+                                - cell "Lock" [ref=e333]:
+                                  - generic [ref=e334]:
+                                    - img [ref=e336]
+                                    - generic [ref=e338] [cursor=pointer]: Lock
+                                - cell "PO Req" [ref=e340]:
+                                  - generic [ref=e341]:
+                                    - img [ref=e343]
+                                    - generic [ref=e346] [cursor=pointer]:
+                                      - generic [ref=e347]: PO Req
+                                      - img [ref=e348]
+                                - cell "Auto PO" [ref=e351]:
+                                  - generic [ref=e352]:
+                                    - img [ref=e354]
+                                    - generic [ref=e357] [cursor=pointer]:
+                                      - generic [ref=e358]: Auto PO
+                                      - img [ref=e359]
+                                - cell "Price Items" [ref=e362]:
+                                  - generic [ref=e363]:
+                                    - img [ref=e365]
+                                    - generic [ref=e368] [cursor=pointer]:
+                                      - generic [ref=e369]: Price Items
+                                      - img [ref=e370]
+                                - cell "Critical" [ref=e373]:
+                                  - generic [ref=e374]:
+                                    - img [ref=e376]
+                                    - generic [ref=e379] [cursor=pointer]:
+                                      - generic [ref=e380]: Critical
+                                      - img [ref=e381]
+                                - cell "Tags" [ref=e384]:
+                                  - generic [ref=e385]:
+                                    - img [ref=e387]
+                                    - generic [ref=e390] [cursor=pointer]:
+                                      - generic [ref=e391]: Tags
+                                      - img [ref=e392]
+                                - cell "Photo" [ref=e395]:
+                                  - generic [ref=e396]:
+                                    - img [ref=e398]
+                                    - generic [ref=e401] [cursor=pointer]:
+                                      - generic [ref=e402]: Photo
+                                      - img [ref=e403]
+                                - cell "Cert" [ref=e406]:
+                                  - generic [ref=e407]:
+                                    - img [ref=e409]
+                                    - generic [ref=e412] [cursor=pointer]:
+                                      - generic [ref=e413]: Cert
+                                      - img [ref=e414]
+                                - cell "Cert Lag" [ref=e417]:
+                                  - generic [ref=e418]:
+                                    - img [ref=e420]
+                                    - generic [ref=e423] [cursor=pointer]:
+                                      - generic [ref=e424]: Cert Lag
+                                      - img [ref=e425]
+                                - cell "Sup Check" [ref=e428]:
+                                  - generic [ref=e429]:
+                                    - img [ref=e431]
+                                    - generic [ref=e434] [cursor=pointer]:
+                                      - generic [ref=e435]: Sup Check
+                                      - img [ref=e436]
+                                - cell "Auto Complete" [ref=e439]:
+                                  - generic [ref=e440]:
+                                    - img [ref=e442]
+                                    - generic [ref=e445] [cursor=pointer]:
+                                      - generic [ref=e446]: Auto Complete
+                                      - img [ref=e447]
+                                - cell "Subtasks" [ref=e450]:
+                                  - generic [ref=e451]:
+                                    - img [ref=e453]
+                                    - generic [ref=e456] [cursor=pointer]:
+                                      - generic [ref=e457]: Subtasks
+                                      - img [ref=e458]
+                                - cell "Linked Tasks" [ref=e461]:
+                                  - generic [ref=e462]:
+                                    - img [ref=e464]
+                                    - generic [ref=e467] [cursor=pointer]:
+                                      - generic [ref=e468]: Linked Tasks
+                                      - img [ref=e469]
+                                - cell "Manual" [ref=e472]:
+                                  - generic [ref=e473]:
+                                    - img [ref=e475]
+                                    - generic [ref=e478] [cursor=pointer]:
+                                      - generic [ref=e479]: Manual
+                                      - img [ref=e480]
+                                - cell "Multi" [ref=e483]:
+                                  - generic [ref=e484]:
+                                    - img [ref=e486]
+                                    - generic [ref=e489] [cursor=pointer]:
+                                      - generic [ref=e490]: Multi
+                                      - img [ref=e491]
+                                - cell "Order Time" [ref=e494]:
+                                  - generic [ref=e495]:
+                                    - img [ref=e497]
+                                    - generic [ref=e500] [cursor=pointer]:
+                                      - generic [ref=e501]: Order Time
+                                      - img [ref=e502]
+                                - cell "Call Up" [ref=e505]:
+                                  - generic [ref=e506]:
+                                    - img [ref=e508]
+                                    - generic [ref=e511] [cursor=pointer]:
+                                      - generic [ref=e512]: Call Up
+                                      - img [ref=e513]
+                                - cell "Plan" [ref=e516]:
+                                  - generic [ref=e517]:
+                                    - img [ref=e519]
+                                    - generic [ref=e522] [cursor=pointer]:
+                                      - generic [ref=e523]: Plan
+                                      - img [ref=e524]
+                                - cell "Plan" [ref=e527]:
+                                  - generic [ref=e528]:
+                                    - img [ref=e530]
+                                    - generic [ref=e532] [cursor=pointer]: Plan
+                                - cell "Sales" [ref=e534]:
+                                  - generic [ref=e535]:
+                                    - img [ref=e537]
+                                    - generic [ref=e539] [cursor=pointer]: Sales
+                                - cell "Precon" [ref=e541]:
+                                  - generic [ref=e542]:
+                                    - img [ref=e544]
+                                    - generic [ref=e546] [cursor=pointer]: Precon
+                                - cell "Final Certificate" [ref=e548]:
+                                  - generic [ref=e549]:
+                                    - img [ref=e551]
+                                    - generic [ref=e553] [cursor=pointer]: Final Certificate
+                                - cell "Site" [ref=e555]:
+                                  - generic [ref=e556]:
+                                    - img [ref=e558]
+                                    - generic [ref=e560] [cursor=pointer]: Site
+                                - cell "Photo" [ref=e562]:
+                                  - generic [ref=e563]:
+                                    - img [ref=e565]
+                                    - generic [ref=e567] [cursor=pointer]: Photo
+                                - cell "Client" [ref=e569]:
+                                  - generic [ref=e570]:
+                                    - img [ref=e572]
+                                    - generic [ref=e574] [cursor=pointer]: Client
+                                - cell "Client Photo" [ref=e576]:
+                                  - generic [ref=e577]:
+                                    - img [ref=e579]
+                                    - generic [ref=e581] [cursor=pointer]: Client Photo
+                                - cell "Photos" [ref=e583]:
+                                  - generic [ref=e584]:
+                                    - img [ref=e586]
+                                    - generic [ref=e588] [cursor=pointer]: Photos
+                                - cell "Actions" [ref=e590]:
+                                  - generic [ref=e591]:
+                                    - img [ref=e593]
+                                    - generic [ref=e595]: Actions
+                              - row [ref=e596]:
                                 - cell [ref=e597]
                                 - cell [ref=e598]
-                                - cell [ref=e599]
-                                - cell [ref=e600]
-                                - cell [ref=e601]
-                                - cell [ref=e602]
+                                - cell [ref=e599]:
+                                  - textbox "Filter..." [ref=e600]
+                                - cell [ref=e601]:
+                                  - textbox "Filter..." [ref=e602]
                                 - cell [ref=e603]
                                 - cell [ref=e604]
                                 - cell [ref=e605]
@@ -446,20 +439,39 @@
                                 - cell [ref=e608]
                                 - cell [ref=e609]
                                 - cell [ref=e610]
-                                - cell [ref=e611]
-                                - cell [ref=e612]
+                                - cell [ref=e611]:
+                                  - textbox "Filter..." [ref=e612]
                                 - cell [ref=e613]
                                 - cell [ref=e614]
                                 - cell [ref=e615]
-                            - rowgroup [ref=e616]:
-                              - row "2 Task 2 Select supplier... 1FS 2 2 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e617]:
-                                - cell [ref=e618]:
-                                  - checkbox [ref=e619] [cursor=pointer]
-                                - cell "2" [ref=e620]
-                                - cell "Task 2" [ref=e621]:
-                                  - textbox [ref=e622]: Task 2
-                                - cell "Select supplier..." [ref=e623]:
-                                  - combobox [ref=e624]:
+                                - cell [ref=e616]
+                                - cell [ref=e617]
+                                - cell [ref=e618]
+                                - cell [ref=e619]
+                                - cell [ref=e620]
+                                - cell [ref=e621]
+                                - cell [ref=e622]
+                                - cell [ref=e623]
+                                - cell [ref=e624]
+                                - cell [ref=e625]
+                                - cell [ref=e626]
+                                - cell [ref=e627]
+                                - cell [ref=e628]
+                                - cell [ref=e629]
+                                - cell [ref=e630]
+                                - cell [ref=e631]
+                                - cell [ref=e632]
+                                - cell [ref=e633]
+                                - cell [ref=e634]
+                            - rowgroup [ref=e635]:
+                              - row "2 Task 2 Select supplier... 1FS 2 0 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e636]:
+                                - cell [ref=e637]:
+                                  - checkbox [ref=e638] [cursor=pointer]
+                                - cell "2" [ref=e639]
+                                - cell "Task 2" [ref=e640]:
+                                  - textbox [ref=e641]: Task 2
+                                - cell "Select supplier..." [ref=e642]:
+                                  - combobox [ref=e643]:
                                     - option "Select supplier..." [selected]
                                     - option "A1 Builders Finals Services Group"
                                     - option "AIR CONDITIONING"
@@ -702,82 +714,82 @@
                                     - option "Wayke Waterproofing."
                                     - option "Wayke Waterproofing. Ware"
                                     - option "Work Place Health and Safety"
-                                - cell "1FS" [ref=e625]:
-                                  - button "1FS" [ref=e626] [cursor=pointer]
-                                - cell "2" [ref=e627]:
-                                  - spinbutton [ref=e628]: "2"
-                                - cell "2" [ref=e629]:
-                                  - generic [ref=e630]: "2"
-                                - cell "Unlocked - allows cascade updates" [ref=e631]:
-                                  - checkbox "Unlocked - allows cascade updates" [ref=e632]
-                                - cell [ref=e633]:
-                                  - checkbox [checked] [ref=e634]
-                                - cell "Select a supplier first" [ref=e635]:
-                                  - checkbox "Select a supplier first" [disabled] [ref=e636]
-                                - cell "0 items" [ref=e637]:
-                                  - button "0 items" [disabled] [ref=e638]
-                                - cell [ref=e639]:
-                                  - checkbox [ref=e640]
-                                - cell [ref=e641]:
-                                  - textbox "tag1, tag2" [ref=e642]
-                                - cell [ref=e643]:
-                                  - checkbox [ref=e644]
-                                - cell [ref=e645]:
-                                  - checkbox [ref=e646]
-                                - cell "10" [ref=e647]:
-                                  - spinbutton [disabled] [ref=e648]: "10"
-                                - cell [ref=e649]:
-                                  - checkbox [ref=e651]
-                                - cell "0 tasks" [ref=e652]:
-                                  - button "0 tasks" [ref=e653] [cursor=pointer]
-                                - cell "0 subtasks" [ref=e654]:
-                                  - button "0 subtasks" [ref=e655] [cursor=pointer]
-                                - cell "0 tasks" [ref=e656]:
-                                  - button "0 tasks" [ref=e657] [cursor=pointer]
+                                - cell "1FS" [ref=e644]:
+                                  - button "1FS" [ref=e645] [cursor=pointer]
+                                - cell "2" [ref=e646]:
+                                  - spinbutton [ref=e647]: "2"
+                                - cell "0" [ref=e648]:
+                                  - generic [ref=e649]: "0"
+                                - cell "Unlocked - allows cascade updates" [ref=e650]:
+                                  - checkbox "Unlocked - allows cascade updates" [ref=e651]
+                                - cell [ref=e652]:
+                                  - checkbox [checked] [ref=e653]
+                                - cell "Select a supplier first" [ref=e654]:
+                                  - checkbox "Select a supplier first" [disabled] [ref=e655]
+                                - cell "0 items" [ref=e656]:
+                                  - button "0 items" [disabled] [ref=e657]
                                 - cell [ref=e658]:
-                                  - checkbox [ref=e659] [cursor=pointer]
+                                  - checkbox [ref=e659]
                                 - cell [ref=e660]:
-                                  - checkbox [ref=e661] [cursor=pointer]
+                                  - textbox "tag1, tag2" [ref=e661]
                                 - cell [ref=e662]:
-                                  - checkbox [ref=e663] [cursor=pointer]
+                                  - checkbox [ref=e663]
                                 - cell [ref=e664]:
-                                  - checkbox [ref=e665] [cursor=pointer]
-                                - cell [ref=e666]:
-                                  - checkbox [ref=e667] [cursor=pointer]
-                                - cell "Toggle Plan" [ref=e668]:
-                                  - checkbox "Toggle Plan" [ref=e669] [cursor=pointer]
-                                - cell "Toggle Sales" [ref=e670]:
-                                  - checkbox "Toggle Sales" [ref=e671] [cursor=pointer]
-                                - cell "Toggle Precon" [ref=e672]:
-                                  - checkbox "Toggle Precon" [ref=e673] [cursor=pointer]
-                                - cell "Toggle Final Certificate" [ref=e674]:
-                                  - checkbox "Toggle Final Certificate" [ref=e675] [cursor=pointer]
-                                - cell "Toggle Site" [ref=e676]:
-                                  - checkbox "Toggle Site" [ref=e677] [cursor=pointer]
-                                - cell "Toggle Photo" [ref=e678]:
-                                  - checkbox "Toggle Photo" [ref=e679] [cursor=pointer]
-                                - cell "Toggle Client" [ref=e680]:
-                                  - checkbox "Toggle Client" [ref=e681] [cursor=pointer]
-                                - cell "Toggle Client Photo" [ref=e682]:
-                                  - checkbox "Toggle Client Photo" [ref=e683] [cursor=pointer]
-                                - cell "Toggle Photos" [ref=e684]:
-                                  - checkbox "Toggle Photos" [ref=e685] [cursor=pointer]
-                                - cell [ref=e686]:
-                                  - generic [ref=e687]:
-                                    - button "Move up" [ref=e688] [cursor=pointer]:
-                                      - img [ref=e689]
-                                    - button "Move down" [ref=e691] [cursor=pointer]:
-                                      - img [ref=e692]
-                                    - button "Delete" [ref=e694] [cursor=pointer]:
-                                      - img [ref=e695]
-                              - row "3 Task 3 Select supplier... 1FS 2 2 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e697]:
-                                - cell [ref=e698]:
-                                  - checkbox [ref=e699] [cursor=pointer]
-                                - cell "3" [ref=e700]
-                                - cell "Task 3" [ref=e701]:
-                                  - textbox [ref=e702]: Task 3
-                                - cell "Select supplier..." [ref=e703]:
-                                  - combobox [ref=e704]:
+                                  - checkbox [ref=e665]
+                                - cell "10" [ref=e666]:
+                                  - spinbutton [disabled] [ref=e667]: "10"
+                                - cell [ref=e668]:
+                                  - checkbox [ref=e670]
+                                - cell "0 tasks" [ref=e671]:
+                                  - button "0 tasks" [ref=e672] [cursor=pointer]
+                                - cell "0 subtasks" [ref=e673]:
+                                  - button "0 subtasks" [ref=e674] [cursor=pointer]
+                                - cell "0 tasks" [ref=e675]:
+                                  - button "0 tasks" [ref=e676] [cursor=pointer]
+                                - cell [ref=e677]:
+                                  - checkbox [ref=e678] [cursor=pointer]
+                                - cell [ref=e679]:
+                                  - checkbox [ref=e680] [cursor=pointer]
+                                - cell [ref=e681]:
+                                  - checkbox [ref=e682] [cursor=pointer]
+                                - cell [ref=e683]:
+                                  - checkbox [ref=e684] [cursor=pointer]
+                                - cell [ref=e685]:
+                                  - checkbox [ref=e686] [cursor=pointer]
+                                - cell "Toggle Plan" [ref=e687]:
+                                  - checkbox "Toggle Plan" [ref=e688] [cursor=pointer]
+                                - cell "Toggle Sales" [ref=e689]:
+                                  - checkbox "Toggle Sales" [ref=e690] [cursor=pointer]
+                                - cell "Toggle Precon" [ref=e691]:
+                                  - checkbox "Toggle Precon" [ref=e692] [cursor=pointer]
+                                - cell "Toggle Final Certificate" [ref=e693]:
+                                  - checkbox "Toggle Final Certificate" [ref=e694] [cursor=pointer]
+                                - cell "Toggle Site" [ref=e695]:
+                                  - checkbox "Toggle Site" [ref=e696] [cursor=pointer]
+                                - cell "Toggle Photo" [ref=e697]:
+                                  - checkbox "Toggle Photo" [ref=e698] [cursor=pointer]
+                                - cell "Toggle Client" [ref=e699]:
+                                  - checkbox "Toggle Client" [ref=e700] [cursor=pointer]
+                                - cell "Toggle Client Photo" [ref=e701]:
+                                  - checkbox "Toggle Client Photo" [ref=e702] [cursor=pointer]
+                                - cell "Toggle Photos" [ref=e703]:
+                                  - checkbox "Toggle Photos" [ref=e704] [cursor=pointer]
+                                - cell [ref=e705]:
+                                  - generic [ref=e706]:
+                                    - button "Move up" [ref=e707] [cursor=pointer]:
+                                      - img [ref=e708]
+                                    - button "Move down" [ref=e710] [cursor=pointer]:
+                                      - img [ref=e711]
+                                    - button "Delete" [ref=e713] [cursor=pointer]:
+                                      - img [ref=e714]
+                              - row "1 Task 1 Select supplier... None -3 0 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e716]:
+                                - cell [ref=e717]:
+                                  - checkbox [ref=e718] [cursor=pointer]
+                                - cell "1" [ref=e719]
+                                - cell "Task 1" [ref=e720]:
+                                  - textbox [ref=e721]: Task 1
+                                - cell "Select supplier..." [ref=e722]:
+                                  - combobox [ref=e723]:
                                     - option "Select supplier..." [selected]
                                     - option "A1 Builders Finals Services Group"
                                     - option "AIR CONDITIONING"
@@ -1020,82 +1032,80 @@
                                     - option "Wayke Waterproofing."
                                     - option "Wayke Waterproofing. Ware"
                                     - option "Work Place Health and Safety"
-                                - cell "1FS" [ref=e705]:
-                                  - button "1FS" [ref=e706] [cursor=pointer]
-                                - cell "2" [ref=e707]:
-                                  - spinbutton [ref=e708]: "2"
-                                - cell "2" [ref=e709]:
-                                  - generic [ref=e710]: "2"
-                                - cell "Unlocked - allows cascade updates" [ref=e711]:
-                                  - checkbox "Unlocked - allows cascade updates" [ref=e712]
-                                - cell [ref=e713]:
-                                  - checkbox [checked] [ref=e714]
-                                - cell "Select a supplier first" [ref=e715]:
-                                  - checkbox "Select a supplier first" [disabled] [ref=e716]
-                                - cell "0 items" [ref=e717]:
-                                  - button "0 items" [disabled] [ref=e718]
-                                - cell [ref=e719]:
-                                  - checkbox [ref=e720]
-                                - cell [ref=e721]:
-                                  - textbox "tag1, tag2" [ref=e722]
-                                - cell [ref=e723]:
-                                  - checkbox [ref=e724]
-                                - cell [ref=e725]:
-                                  - checkbox [ref=e726]
-                                - cell "10" [ref=e727]:
-                                  - spinbutton [disabled] [ref=e728]: "10"
-                                - cell [ref=e729]:
-                                  - checkbox [ref=e731]
-                                - cell "0 tasks" [ref=e732]:
-                                  - button "0 tasks" [ref=e733] [cursor=pointer]
-                                - cell "0 subtasks" [ref=e734]:
-                                  - button "0 subtasks" [ref=e735] [cursor=pointer]
-                                - cell "0 tasks" [ref=e736]:
-                                  - button "0 tasks" [ref=e737] [cursor=pointer]
+                                - cell "None" [ref=e724]:
+                                  - button "None" [ref=e725] [cursor=pointer]
+                                - cell "-3" [ref=e726]:
+                                  - spinbutton [ref=e727]: "-3"
+                                - cell "0" [ref=e728]:
+                                  - generic [ref=e729]: "0"
+                                - cell "Unlocked - allows cascade updates" [ref=e730]:
+                                  - checkbox "Unlocked - allows cascade updates" [ref=e731]
+                                - cell [ref=e732]:
+                                  - checkbox [checked] [ref=e733]
+                                - cell "Select a supplier first" [ref=e734]:
+                                  - checkbox "Select a supplier first" [disabled] [ref=e735]
+                                - cell "0 items" [ref=e736]:
+                                  - button "0 items" [disabled] [ref=e737]
                                 - cell [ref=e738]:
-                                  - checkbox [ref=e739] [cursor=pointer]
+                                  - checkbox [ref=e739]
                                 - cell [ref=e740]:
-                                  - checkbox [ref=e741] [cursor=pointer]
+                                  - textbox "tag1, tag2" [ref=e741]
                                 - cell [ref=e742]:
-                                  - checkbox [ref=e743] [cursor=pointer]
+                                  - checkbox [ref=e743]
                                 - cell [ref=e744]:
-                                  - checkbox [ref=e745] [cursor=pointer]
-                                - cell [ref=e746]:
-                                  - checkbox [ref=e747] [cursor=pointer]
-                                - cell "Toggle Plan" [ref=e748]:
-                                  - checkbox "Toggle Plan" [ref=e749] [cursor=pointer]
-                                - cell "Toggle Sales" [ref=e750]:
-                                  - checkbox "Toggle Sales" [ref=e751] [cursor=pointer]
-                                - cell "Toggle Precon" [ref=e752]:
-                                  - checkbox "Toggle Precon" [ref=e753] [cursor=pointer]
-                                - cell "Toggle Final Certificate" [ref=e754]:
-                                  - checkbox "Toggle Final Certificate" [ref=e755] [cursor=pointer]
-                                - cell "Toggle Site" [ref=e756]:
-                                  - checkbox "Toggle Site" [ref=e757] [cursor=pointer]
-                                - cell "Toggle Photo" [ref=e758]:
-                                  - checkbox "Toggle Photo" [ref=e759] [cursor=pointer]
-                                - cell "Toggle Client" [ref=e760]:
-                                  - checkbox "Toggle Client" [ref=e761] [cursor=pointer]
-                                - cell "Toggle Client Photo" [ref=e762]:
-                                  - checkbox "Toggle Client Photo" [ref=e763] [cursor=pointer]
-                                - cell "Toggle Photos" [ref=e764]:
-                                  - checkbox "Toggle Photos" [ref=e765] [cursor=pointer]
-                                - cell [ref=e766]:
-                                  - generic [ref=e767]:
-                                    - button "Move up" [ref=e768] [cursor=pointer]:
-                                      - img [ref=e769]
-                                    - button "Move down" [ref=e771] [cursor=pointer]:
-                                      - img [ref=e772]
-                                    - button "Delete" [ref=e774] [cursor=pointer]:
-                                      - img [ref=e775]
-                              - row "4 Task 4 Select supplier... 3FS 2 4 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e777]:
-                                - cell [ref=e778]:
-                                  - checkbox [ref=e779] [cursor=pointer]
-                                - cell "4" [ref=e780]
-                                - cell "Task 4" [ref=e781]:
-                                  - textbox [ref=e782]: Task 4
-                                - cell "Select supplier..." [ref=e783]:
-                                  - combobox [ref=e784]:
+                                  - checkbox [ref=e745]
+                                - cell "10" [ref=e746]:
+                                  - spinbutton [disabled] [ref=e747]: "10"
+                                - cell [ref=e748]:
+                                  - checkbox [ref=e750]
+                                - cell "0 tasks" [ref=e751]:
+                                  - button "0 tasks" [ref=e752] [cursor=pointer]
+                                - cell "0 subtasks" [ref=e753]:
+                                  - button "0 subtasks" [ref=e754] [cursor=pointer]
+                                - cell "0 tasks" [ref=e755]:
+                                  - button "0 tasks" [ref=e756] [cursor=pointer]
+                                - cell [ref=e757]:
+                                  - checkbox [ref=e758] [cursor=pointer]
+                                - cell [ref=e759]:
+                                  - checkbox [ref=e760] [cursor=pointer]
+                                - cell [ref=e761]:
+                                  - checkbox [ref=e762] [cursor=pointer]
+                                - cell [ref=e763]:
+                                  - checkbox [ref=e764] [cursor=pointer]
+                                - cell [ref=e765]:
+                                  - checkbox [ref=e766] [cursor=pointer]
+                                - cell "Toggle Plan" [ref=e767]:
+                                  - checkbox "Toggle Plan" [ref=e768] [cursor=pointer]
+                                - cell "Toggle Sales" [ref=e769]:
+                                  - checkbox "Toggle Sales" [ref=e770] [cursor=pointer]
+                                - cell "Toggle Precon" [ref=e771]:
+                                  - checkbox "Toggle Precon" [ref=e772] [cursor=pointer]
+                                - cell "Toggle Final Certificate" [ref=e773]:
+                                  - checkbox "Toggle Final Certificate" [ref=e774] [cursor=pointer]
+                                - cell "Toggle Site" [ref=e775]:
+                                  - checkbox "Toggle Site" [ref=e776] [cursor=pointer]
+                                - cell "Toggle Photo" [ref=e777]:
+                                  - checkbox "Toggle Photo" [ref=e778] [cursor=pointer]
+                                - cell "Toggle Client" [ref=e779]:
+                                  - checkbox "Toggle Client" [ref=e780] [cursor=pointer]
+                                - cell "Toggle Client Photo" [ref=e781]:
+                                  - checkbox "Toggle Client Photo" [ref=e782] [cursor=pointer]
+                                - cell "Toggle Photos" [ref=e783]:
+                                  - checkbox "Toggle Photos" [ref=e784] [cursor=pointer]
+                                - cell [ref=e785]:
+                                  - generic [ref=e786]:
+                                    - button "Move down" [ref=e787] [cursor=pointer]:
+                                      - img [ref=e788]
+                                    - button "Delete" [ref=e790] [cursor=pointer]:
+                                      - img [ref=e791]
+                              - row "3 Task 3 Select supplier... 1FS 2 0 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e793]:
+                                - cell [ref=e794]:
+                                  - checkbox [ref=e795] [cursor=pointer]
+                                - cell "3" [ref=e796]
+                                - cell "Task 3" [ref=e797]:
+                                  - textbox [ref=e798]: Task 3
+                                - cell "Select supplier..." [ref=e799]:
+                                  - combobox [ref=e800]:
                                     - option "Select supplier..." [selected]
                                     - option "A1 Builders Finals Services Group"
                                     - option "AIR CONDITIONING"
@@ -1338,82 +1348,82 @@
                                     - option "Wayke Waterproofing."
                                     - option "Wayke Waterproofing. Ware"
                                     - option "Work Place Health and Safety"
-                                - cell "3FS" [ref=e785]:
-                                  - button "3FS" [ref=e786] [cursor=pointer]
-                                - cell "2" [ref=e787]:
-                                  - spinbutton [ref=e788]: "2"
-                                - cell "4" [ref=e789]:
-                                  - generic [ref=e790]: "4"
-                                - cell "Unlocked - allows cascade updates" [ref=e791]:
-                                  - checkbox "Unlocked - allows cascade updates" [ref=e792]
-                                - cell [ref=e793]:
-                                  - checkbox [checked] [ref=e794]
-                                - cell "Select a supplier first" [ref=e795]:
-                                  - checkbox "Select a supplier first" [disabled] [ref=e796]
-                                - cell "0 items" [ref=e797]:
-                                  - button "0 items" [disabled] [ref=e798]
-                                - cell [ref=e799]:
-                                  - checkbox [ref=e800]
-                                - cell [ref=e801]:
-                                  - textbox "tag1, tag2" [ref=e802]
-                                - cell [ref=e803]:
-                                  - checkbox [ref=e804]
-                                - cell [ref=e805]:
-                                  - checkbox [ref=e806]
-                                - cell "10" [ref=e807]:
-                                  - spinbutton [disabled] [ref=e808]: "10"
+                                - cell "1FS" [ref=e801]:
+                                  - button "1FS" [ref=e802] [cursor=pointer]
+                                - cell "2" [ref=e803]:
+                                  - spinbutton [ref=e804]: "2"
+                                - cell "0" [ref=e805]:
+                                  - generic [ref=e806]: "0"
+                                - cell "Unlocked - allows cascade updates" [ref=e807]:
+                                  - checkbox "Unlocked - allows cascade updates" [ref=e808]
                                 - cell [ref=e809]:
-                                  - checkbox [ref=e811]
-                                - cell "0 tasks" [ref=e812]:
-                                  - button "0 tasks" [ref=e813] [cursor=pointer]
-                                - cell "0 subtasks" [ref=e814]:
-                                  - button "0 subtasks" [ref=e815] [cursor=pointer]
-                                - cell "0 tasks" [ref=e816]:
-                                  - button "0 tasks" [ref=e817] [cursor=pointer]
-                                - cell [ref=e818]:
-                                  - checkbox [ref=e819] [cursor=pointer]
-                                - cell [ref=e820]:
-                                  - checkbox [ref=e821] [cursor=pointer]
-                                - cell [ref=e822]:
-                                  - checkbox [ref=e823] [cursor=pointer]
-                                - cell [ref=e824]:
-                                  - checkbox [ref=e825] [cursor=pointer]
-                                - cell [ref=e826]:
-                                  - checkbox [ref=e827] [cursor=pointer]
-                                - cell "Toggle Plan" [ref=e828]:
-                                  - checkbox "Toggle Plan" [ref=e829] [cursor=pointer]
-                                - cell "Toggle Sales" [ref=e830]:
-                                  - checkbox "Toggle Sales" [ref=e831] [cursor=pointer]
-                                - cell "Toggle Precon" [ref=e832]:
-                                  - checkbox "Toggle Precon" [ref=e833] [cursor=pointer]
-                                - cell "Toggle Final Certificate" [ref=e834]:
-                                  - checkbox "Toggle Final Certificate" [ref=e835] [cursor=pointer]
-                                - cell "Toggle Site" [ref=e836]:
-                                  - checkbox "Toggle Site" [ref=e837] [cursor=pointer]
-                                - cell "Toggle Photo" [ref=e838]:
-                                  - checkbox "Toggle Photo" [ref=e839] [cursor=pointer]
-                                - cell "Toggle Client" [ref=e840]:
-                                  - checkbox "Toggle Client" [ref=e841] [cursor=pointer]
-                                - cell "Toggle Client Photo" [ref=e842]:
-                                  - checkbox "Toggle Client Photo" [ref=e843] [cursor=pointer]
-                                - cell "Toggle Photos" [ref=e844]:
-                                  - checkbox "Toggle Photos" [ref=e845] [cursor=pointer]
-                                - cell [ref=e846]:
-                                  - generic [ref=e847]:
-                                    - button "Move up" [ref=e848] [cursor=pointer]:
-                                      - img [ref=e849]
-                                    - button "Move down" [ref=e851] [cursor=pointer]:
-                                      - img [ref=e852]
-                                    - button "Delete" [ref=e854] [cursor=pointer]:
-                                      - img [ref=e855]
-                              - row "1 Task 1 Select supplier... None -3 0 Locked - prevents cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e857]:
-                                - cell [ref=e858]:
-                                  - checkbox [ref=e859] [cursor=pointer]
-                                - cell "1" [ref=e860]
-                                - cell "Task 1" [ref=e861]:
-                                  - textbox [ref=e862]: Task 1
-                                - cell "Select supplier..." [ref=e863]:
-                                  - combobox [ref=e864]:
+                                  - checkbox [checked] [ref=e810]
+                                - cell "Select a supplier first" [ref=e811]:
+                                  - checkbox "Select a supplier first" [disabled] [ref=e812]
+                                - cell "0 items" [ref=e813]:
+                                  - button "0 items" [disabled] [ref=e814]
+                                - cell [ref=e815]:
+                                  - checkbox [ref=e816]
+                                - cell [ref=e817]:
+                                  - textbox "tag1, tag2" [ref=e818]
+                                - cell [ref=e819]:
+                                  - checkbox [ref=e820]
+                                - cell [ref=e821]:
+                                  - checkbox [ref=e822]
+                                - cell "10" [ref=e823]:
+                                  - spinbutton [disabled] [ref=e824]: "10"
+                                - cell [ref=e825]:
+                                  - checkbox [ref=e827]
+                                - cell "0 tasks" [ref=e828]:
+                                  - button "0 tasks" [ref=e829] [cursor=pointer]
+                                - cell "0 subtasks" [ref=e830]:
+                                  - button "0 subtasks" [ref=e831] [cursor=pointer]
+                                - cell "0 tasks" [ref=e832]:
+                                  - button "0 tasks" [ref=e833] [cursor=pointer]
+                                - cell [ref=e834]:
+                                  - checkbox [ref=e835] [cursor=pointer]
+                                - cell [ref=e836]:
+                                  - checkbox [ref=e837] [cursor=pointer]
+                                - cell [ref=e838]:
+                                  - checkbox [ref=e839] [cursor=pointer]
+                                - cell [ref=e840]:
+                                  - checkbox [ref=e841] [cursor=pointer]
+                                - cell [ref=e842]:
+                                  - checkbox [ref=e843] [cursor=pointer]
+                                - cell "Toggle Plan" [ref=e844]:
+                                  - checkbox "Toggle Plan" [ref=e845] [cursor=pointer]
+                                - cell "Toggle Sales" [ref=e846]:
+                                  - checkbox "Toggle Sales" [ref=e847] [cursor=pointer]
+                                - cell "Toggle Precon" [ref=e848]:
+                                  - checkbox "Toggle Precon" [ref=e849] [cursor=pointer]
+                                - cell "Toggle Final Certificate" [ref=e850]:
+                                  - checkbox "Toggle Final Certificate" [ref=e851] [cursor=pointer]
+                                - cell "Toggle Site" [ref=e852]:
+                                  - checkbox "Toggle Site" [ref=e853] [cursor=pointer]
+                                - cell "Toggle Photo" [ref=e854]:
+                                  - checkbox "Toggle Photo" [ref=e855] [cursor=pointer]
+                                - cell "Toggle Client" [ref=e856]:
+                                  - checkbox "Toggle Client" [ref=e857] [cursor=pointer]
+                                - cell "Toggle Client Photo" [ref=e858]:
+                                  - checkbox "Toggle Client Photo" [ref=e859] [cursor=pointer]
+                                - cell "Toggle Photos" [ref=e860]:
+                                  - checkbox "Toggle Photos" [ref=e861] [cursor=pointer]
+                                - cell [ref=e862]:
+                                  - generic [ref=e863]:
+                                    - button "Move up" [ref=e864] [cursor=pointer]:
+                                      - img [ref=e865]
+                                    - button "Move down" [ref=e867] [cursor=pointer]:
+                                      - img [ref=e868]
+                                    - button "Delete" [ref=e870] [cursor=pointer]:
+                                      - img [ref=e871]
+                              - row "4 Task 4 Select supplier... 3FS 2 2 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e873]:
+                                - cell [ref=e874]:
+                                  - checkbox [ref=e875] [cursor=pointer]
+                                - cell "4" [ref=e876]
+                                - cell "Task 4" [ref=e877]:
+                                  - textbox [ref=e878]: Task 4
+                                - cell "Select supplier..." [ref=e879]:
+                                  - combobox [ref=e880]:
                                     - option "Select supplier..." [selected]
                                     - option "A1 Builders Finals Services Group"
                                     - option "AIR CONDITIONING"
@@ -1656,80 +1666,82 @@
                                     - option "Wayke Waterproofing."
                                     - option "Wayke Waterproofing. Ware"
                                     - option "Work Place Health and Safety"
-                                - cell "None" [ref=e865]:
-                                  - button "None" [ref=e866] [cursor=pointer]
-                                - cell "-3" [ref=e867]:
-                                  - spinbutton [ref=e868]: "-3"
-                                - cell "0" [ref=e869]:
-                                  - generic [ref=e870]: "0"
-                                - cell "Locked - prevents cascade updates" [ref=e871]:
-                                  - checkbox "Locked - prevents cascade updates" [checked] [ref=e872]
-                                - cell [ref=e873]:
-                                  - checkbox [checked] [ref=e874]
-                                - cell "Select a supplier first" [ref=e875]:
-                                  - checkbox "Select a supplier first" [disabled] [ref=e876]
-                                - cell "0 items" [ref=e877]:
-                                  - button "0 items" [disabled] [ref=e878]
-                                - cell [ref=e879]:
-                                  - checkbox [ref=e880]
-                                - cell [ref=e881]:
-                                  - textbox "tag1, tag2" [ref=e882]
-                                - cell [ref=e883]:
-                                  - checkbox [ref=e884]
-                                - cell [ref=e885]:
-                                  - checkbox [ref=e886]
-                                - cell "10" [ref=e887]:
-                                  - spinbutton [disabled] [ref=e888]: "10"
+                                - cell "3FS" [ref=e881]:
+                                  - button "3FS" [ref=e882] [cursor=pointer]
+                                - cell "2" [ref=e883]:
+                                  - spinbutton [ref=e884]: "2"
+                                - cell "2" [ref=e885]:
+                                  - generic [ref=e886]: "2"
+                                - cell "Unlocked - allows cascade updates" [ref=e887]:
+                                  - checkbox "Unlocked - allows cascade updates" [ref=e888]
                                 - cell [ref=e889]:
-                                  - checkbox [ref=e891]
-                                - cell "0 tasks" [ref=e892]:
-                                  - button "0 tasks" [ref=e893] [cursor=pointer]
-                                - cell "0 subtasks" [ref=e894]:
-                                  - button "0 subtasks" [ref=e895] [cursor=pointer]
-                                - cell "0 tasks" [ref=e896]:
-                                  - button "0 tasks" [ref=e897] [cursor=pointer]
-                                - cell [ref=e898]:
-                                  - checkbox [ref=e899] [cursor=pointer]
-                                - cell [ref=e900]:
-                                  - checkbox [ref=e901] [cursor=pointer]
-                                - cell [ref=e902]:
-                                  - checkbox [ref=e903] [cursor=pointer]
-                                - cell [ref=e904]:
-                                  - checkbox [ref=e905] [cursor=pointer]
-                                - cell [ref=e906]:
-                                  - checkbox [ref=e907] [cursor=pointer]
-                                - cell "Toggle Plan" [ref=e908]:
-                                  - checkbox "Toggle Plan" [ref=e909] [cursor=pointer]
-                                - cell "Toggle Sales" [ref=e910]:
-                                  - checkbox "Toggle Sales" [ref=e911] [cursor=pointer]
-                                - cell "Toggle Precon" [ref=e912]:
-                                  - checkbox "Toggle Precon" [ref=e913] [cursor=pointer]
-                                - cell "Toggle Final Certificate" [ref=e914]:
-                                  - checkbox "Toggle Final Certificate" [ref=e915] [cursor=pointer]
-                                - cell "Toggle Site" [ref=e916]:
-                                  - checkbox "Toggle Site" [ref=e917] [cursor=pointer]
-                                - cell "Toggle Photo" [ref=e918]:
-                                  - checkbox "Toggle Photo" [ref=e919] [cursor=pointer]
-                                - cell "Toggle Client" [ref=e920]:
-                                  - checkbox "Toggle Client" [ref=e921] [cursor=pointer]
-                                - cell "Toggle Client Photo" [ref=e922]:
-                                  - checkbox "Toggle Client Photo" [ref=e923] [cursor=pointer]
-                                - cell "Toggle Photos" [ref=e924]:
-                                  - checkbox "Toggle Photos" [ref=e925] [cursor=pointer]
-                                - cell [ref=e926]:
-                                  - generic [ref=e927]:
-                                    - button "Move down" [ref=e928] [cursor=pointer]:
-                                      - img [ref=e929]
-                                    - button "Delete" [ref=e931] [cursor=pointer]:
-                                      - img [ref=e932]
-                              - row "5 Task 5 Select supplier... 4FS 2 6 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e934]:
-                                - cell [ref=e935]:
-                                  - checkbox [ref=e936] [cursor=pointer]
-                                - cell "5" [ref=e937]
-                                - cell "Task 5" [ref=e938]:
-                                  - textbox [ref=e939]: Task 5
-                                - cell "Select supplier..." [ref=e940]:
-                                  - combobox [ref=e941]:
+                                  - checkbox [checked] [ref=e890]
+                                - cell "Select a supplier first" [ref=e891]:
+                                  - checkbox "Select a supplier first" [disabled] [ref=e892]
+                                - cell "0 items" [ref=e893]:
+                                  - button "0 items" [disabled] [ref=e894]
+                                - cell [ref=e895]:
+                                  - checkbox [ref=e896]
+                                - cell [ref=e897]:
+                                  - textbox "tag1, tag2" [ref=e898]
+                                - cell [ref=e899]:
+                                  - checkbox [ref=e900]
+                                - cell [ref=e901]:
+                                  - checkbox [ref=e902]
+                                - cell "10" [ref=e903]:
+                                  - spinbutton [disabled] [ref=e904]: "10"
+                                - cell [ref=e905]:
+                                  - checkbox [ref=e907]
+                                - cell "0 tasks" [ref=e908]:
+                                  - button "0 tasks" [ref=e909] [cursor=pointer]
+                                - cell "0 subtasks" [ref=e910]:
+                                  - button "0 subtasks" [ref=e911] [cursor=pointer]
+                                - cell "0 tasks" [ref=e912]:
+                                  - button "0 tasks" [ref=e913] [cursor=pointer]
+                                - cell [ref=e914]:
+                                  - checkbox [ref=e915] [cursor=pointer]
+                                - cell [ref=e916]:
+                                  - checkbox [ref=e917] [cursor=pointer]
+                                - cell [ref=e918]:
+                                  - checkbox [ref=e919] [cursor=pointer]
+                                - cell [ref=e920]:
+                                  - checkbox [ref=e921] [cursor=pointer]
+                                - cell [ref=e922]:
+                                  - checkbox [ref=e923] [cursor=pointer]
+                                - cell "Toggle Plan" [ref=e924]:
+                                  - checkbox "Toggle Plan" [ref=e925] [cursor=pointer]
+                                - cell "Toggle Sales" [ref=e926]:
+                                  - checkbox "Toggle Sales" [ref=e927] [cursor=pointer]
+                                - cell "Toggle Precon" [ref=e928]:
+                                  - checkbox "Toggle Precon" [ref=e929] [cursor=pointer]
+                                - cell "Toggle Final Certificate" [ref=e930]:
+                                  - checkbox "Toggle Final Certificate" [ref=e931] [cursor=pointer]
+                                - cell "Toggle Site" [ref=e932]:
+                                  - checkbox "Toggle Site" [ref=e933] [cursor=pointer]
+                                - cell "Toggle Photo" [ref=e934]:
+                                  - checkbox "Toggle Photo" [ref=e935] [cursor=pointer]
+                                - cell "Toggle Client" [ref=e936]:
+                                  - checkbox "Toggle Client" [ref=e937] [cursor=pointer]
+                                - cell "Toggle Client Photo" [ref=e938]:
+                                  - checkbox "Toggle Client Photo" [ref=e939] [cursor=pointer]
+                                - cell "Toggle Photos" [ref=e940]:
+                                  - checkbox "Toggle Photos" [ref=e941] [cursor=pointer]
+                                - cell [ref=e942]:
+                                  - generic [ref=e943]:
+                                    - button "Move up" [ref=e944] [cursor=pointer]:
+                                      - img [ref=e945]
+                                    - button "Move down" [ref=e947] [cursor=pointer]:
+                                      - img [ref=e948]
+                                    - button "Delete" [ref=e950] [cursor=pointer]:
+                                      - img [ref=e951]
+                              - row "5 Task 5 Select supplier... 4FS 2 4 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e953]:
+                                - cell [ref=e954]:
+                                  - checkbox [ref=e955] [cursor=pointer]
+                                - cell "5" [ref=e956]
+                                - cell "Task 5" [ref=e957]:
+                                  - textbox [ref=e958]: Task 5
+                                - cell "Select supplier..." [ref=e959]:
+                                  - combobox [ref=e960]:
                                     - option "Select supplier..." [selected]
                                     - option "A1 Builders Finals Services Group"
                                     - option "AIR CONDITIONING"
@@ -1972,334 +1984,334 @@
                                     - option "Wayke Waterproofing."
                                     - option "Wayke Waterproofing. Ware"
                                     - option "Work Place Health and Safety"
-                                - cell "4FS" [ref=e942]:
-                                  - button "4FS" [ref=e943] [cursor=pointer]
-                                - cell "2" [ref=e944]:
-                                  - spinbutton [ref=e945]: "2"
-                                - cell "6" [ref=e946]:
-                                  - generic [ref=e947]: "6"
-                                - cell "Unlocked - allows cascade updates" [ref=e948]:
-                                  - checkbox "Unlocked - allows cascade updates" [ref=e949]
-                                - cell [ref=e950]:
-                                  - checkbox [checked] [ref=e951]
-                                - cell "Select a supplier first" [ref=e952]:
-                                  - checkbox "Select a supplier first" [disabled] [ref=e953]
-                                - cell "0 items" [ref=e954]:
-                                  - button "0 items" [disabled] [ref=e955]
-                                - cell [ref=e956]:
-                                  - checkbox [ref=e957]
-                                - cell [ref=e958]:
-                                  - textbox "tag1, tag2" [ref=e959]
-                                - cell [ref=e960]:
-                                  - checkbox [ref=e961]
-                                - cell [ref=e962]:
-                                  - checkbox [ref=e963]
-                                - cell "10" [ref=e964]:
-                                  - spinbutton [disabled] [ref=e965]: "10"
-                                - cell [ref=e966]:
-                                  - checkbox [ref=e968]
-                                - cell "0 tasks" [ref=e969]:
-                                  - button "0 tasks" [ref=e970] [cursor=pointer]
-                                - cell "0 subtasks" [ref=e971]:
-                                  - button "0 subtasks" [ref=e972] [cursor=pointer]
-                                - cell "0 tasks" [ref=e973]:
-                                  - button "0 tasks" [ref=e974] [cursor=pointer]
+                                - cell "4FS" [ref=e961]:
+                                  - button "4FS" [ref=e962] [cursor=pointer]
+                                - cell "2" [ref=e963]:
+                                  - spinbutton [ref=e964]: "2"
+                                - cell "4" [ref=e965]:
+                                  - generic [ref=e966]: "4"
+                                - cell "Unlocked - allows cascade updates" [ref=e967]:
+                                  - checkbox "Unlocked - allows cascade updates" [ref=e968]
+                                - cell [ref=e969]:
+                                  - checkbox [checked] [ref=e970]
+                                - cell "Select a supplier first" [ref=e971]:
+                                  - checkbox "Select a supplier first" [disabled] [ref=e972]
+                                - cell "0 items" [ref=e973]:
+                                  - button "0 items" [disabled] [ref=e974]
                                 - cell [ref=e975]:
-                                  - checkbox [ref=e976] [cursor=pointer]
+                                  - checkbox [ref=e976]
                                 - cell [ref=e977]:
-                                  - checkbox [ref=e978] [cursor=pointer]
+                                  - textbox "tag1, tag2" [ref=e978]
                                 - cell [ref=e979]:
-                                  - checkbox [ref=e980] [cursor=pointer]
+                                  - checkbox [ref=e980]
                                 - cell [ref=e981]:
-                                  - checkbox [ref=e982] [cursor=pointer]
-                                - cell [ref=e983]:
-                                  - checkbox [ref=e984] [cursor=pointer]
-                                - cell "Toggle Plan" [ref=e985]:
-                                  - checkbox "Toggle Plan" [ref=e986] [cursor=pointer]
-                                - cell "Toggle Sales" [ref=e987]:
-                                  - checkbox "Toggle Sales" [ref=e988] [cursor=pointer]
-                                - cell "Toggle Precon" [ref=e989]:
-                                  - checkbox "Toggle Precon" [ref=e990] [cursor=pointer]
-                                - cell "Toggle Final Certificate" [ref=e991]:
-                                  - checkbox "Toggle Final Certificate" [ref=e992] [cursor=pointer]
-                                - cell "Toggle Site" [ref=e993]:
-                                  - checkbox "Toggle Site" [ref=e994] [cursor=pointer]
-                                - cell "Toggle Photo" [ref=e995]:
-                                  - checkbox "Toggle Photo" [ref=e996] [cursor=pointer]
-                                - cell "Toggle Client" [ref=e997]:
-                                  - checkbox "Toggle Client" [ref=e998] [cursor=pointer]
-                                - cell "Toggle Client Photo" [ref=e999]:
-                                  - checkbox "Toggle Client Photo" [ref=e1000] [cursor=pointer]
-                                - cell "Toggle Photos" [ref=e1001]:
-                                  - checkbox "Toggle Photos" [ref=e1002] [cursor=pointer]
-                                - cell [ref=e1003]:
-                                  - generic [ref=e1004]:
-                                    - button "Move up" [ref=e1005] [cursor=pointer]:
-                                      - img [ref=e1006]
-                                    - button "Delete" [ref=e1008] [cursor=pointer]:
-                                      - img [ref=e1009]
-                          - button "Add Row" [ref=e1012] [cursor=pointer]:
-                            - img [ref=e1013]
+                                  - checkbox [ref=e982]
+                                - cell "10" [ref=e983]:
+                                  - spinbutton [disabled] [ref=e984]: "10"
+                                - cell [ref=e985]:
+                                  - checkbox [ref=e987]
+                                - cell "0 tasks" [ref=e988]:
+                                  - button "0 tasks" [ref=e989] [cursor=pointer]
+                                - cell "0 subtasks" [ref=e990]:
+                                  - button "0 subtasks" [ref=e991] [cursor=pointer]
+                                - cell "0 tasks" [ref=e992]:
+                                  - button "0 tasks" [ref=e993] [cursor=pointer]
+                                - cell [ref=e994]:
+                                  - checkbox [ref=e995] [cursor=pointer]
+                                - cell [ref=e996]:
+                                  - checkbox [ref=e997] [cursor=pointer]
+                                - cell [ref=e998]:
+                                  - checkbox [ref=e999] [cursor=pointer]
+                                - cell [ref=e1000]:
+                                  - checkbox [ref=e1001] [cursor=pointer]
+                                - cell [ref=e1002]:
+                                  - checkbox [ref=e1003] [cursor=pointer]
+                                - cell "Toggle Plan" [ref=e1004]:
+                                  - checkbox "Toggle Plan" [ref=e1005] [cursor=pointer]
+                                - cell "Toggle Sales" [ref=e1006]:
+                                  - checkbox "Toggle Sales" [ref=e1007] [cursor=pointer]
+                                - cell "Toggle Precon" [ref=e1008]:
+                                  - checkbox "Toggle Precon" [ref=e1009] [cursor=pointer]
+                                - cell "Toggle Final Certificate" [ref=e1010]:
+                                  - checkbox "Toggle Final Certificate" [ref=e1011] [cursor=pointer]
+                                - cell "Toggle Site" [ref=e1012]:
+                                  - checkbox "Toggle Site" [ref=e1013] [cursor=pointer]
+                                - cell "Toggle Photo" [ref=e1014]:
+                                  - checkbox "Toggle Photo" [ref=e1015] [cursor=pointer]
+                                - cell "Toggle Client" [ref=e1016]:
+                                  - checkbox "Toggle Client" [ref=e1017] [cursor=pointer]
+                                - cell "Toggle Client Photo" [ref=e1018]:
+                                  - checkbox "Toggle Client Photo" [ref=e1019] [cursor=pointer]
+                                - cell "Toggle Photos" [ref=e1020]:
+                                  - checkbox "Toggle Photos" [ref=e1021] [cursor=pointer]
+                                - cell [ref=e1022]:
+                                  - generic [ref=e1023]:
+                                    - button "Move up" [ref=e1024] [cursor=pointer]:
+                                      - img [ref=e1025]
+                                    - button "Delete" [ref=e1027] [cursor=pointer]:
+                                      - img [ref=e1028]
+                          - button "Add Row" [ref=e1031] [cursor=pointer]:
+                            - img [ref=e1032]
                             - text: Add Row
-                        - generic [ref=e1016]:
-                          - generic [ref=e1017]:
-                            - generic [ref=e1018]:
-                              - heading "DHTMLX Gantt View (Trial)" [level=2] [ref=e1019]
-                              - paragraph [ref=e1020]: 30-day PRO trial with auto-scheduling, critical path, and advanced features
-                            - generic [ref=e1021]:
-                              - generic [ref=e1022]:
-                                - textbox "Search tasks..." [ref=e1023]
-                                - img [ref=e1024]
-                              - generic [ref=e1026]:
-                                - button "Day" [ref=e1027] [cursor=pointer]
-                                - button "Week" [ref=e1028] [cursor=pointer]
-                                - button "Month" [ref=e1029] [cursor=pointer]
-                              - generic [ref=e1030]:
-                                - button "↶ Undo" [disabled] [ref=e1031]
-                                - button "↷ Redo" [disabled] [ref=e1032]
-                              - button "Hide Checkboxes" [ref=e1033] [cursor=pointer]
-                              - button "#" [ref=e1034] [cursor=pointer]
-                              - button "Columns" [ref=e1036] [cursor=pointer]:
-                                - img [ref=e1037]
+                        - generic [ref=e1035]:
+                          - generic [ref=e1036]:
+                            - generic [ref=e1037]:
+                              - heading "DHTMLX Gantt View (Trial)" [level=2] [ref=e1038]
+                              - paragraph [ref=e1039]: 30-day PRO trial with auto-scheduling, critical path, and advanced features
+                            - generic [ref=e1040]:
+                              - generic [ref=e1041]:
+                                - textbox "Search tasks..." [ref=e1042]
+                                - img [ref=e1043]
+                              - generic [ref=e1045]:
+                                - button "Day" [ref=e1046] [cursor=pointer]
+                                - button "Week" [ref=e1047] [cursor=pointer]
+                                - button "Month" [ref=e1048] [cursor=pointer]
+                              - generic [ref=e1049]:
+                                - button "↶ Undo" [disabled] [ref=e1050]
+                                - button "↷ Redo" [disabled] [ref=e1051]
+                              - button "Hide Checkboxes" [ref=e1052] [cursor=pointer]
+                              - button "#" [ref=e1053] [cursor=pointer]
+                              - button "Columns" [ref=e1055] [cursor=pointer]:
+                                - img [ref=e1056]
                                 - text: Columns
-                              - button "Close" [ref=e1039] [cursor=pointer]:
-                                - img [ref=e1040]
-                          - generic [ref=e1043]:
-                            - generic [ref=e1044]:
-                              - treegrid [ref=e1048]:
-                                - row "# Task Name Predecessors Supplier/Group Duration Confirm Supplier Confirm Start Complete Lock New task" [ref=e1049]:
-                                  - columnheader "#" [ref=e1050]
-                                  - columnheader "Task Name" [ref=e1051]
-                                  - columnheader "Predecessors" [ref=e1052]
-                                  - columnheader "Supplier/Group" [ref=e1053]
-                                  - columnheader "Duration" [ref=e1054]
-                                  - columnheader "Confirm" [ref=e1055]
-                                  - columnheader "Supplier Confirm" [ref=e1056]
-                                  - columnheader "Start" [ref=e1057]
-                                  - columnheader "Complete" [ref=e1058]
-                                  - columnheader "Lock" [ref=e1059]
-                                  - columnheader "New task" [ref=e1060] [cursor=pointer]: 
-                                - rowgroup [ref=e1061]:
-                                  - 'row "Task: Task 1 Duration: -3 days Start: 2025-11-23 End: 2025-11-19" [level=1] [ref=e1062]':
-                                    - gridcell "#1" [ref=e1063]:
-                                      - generic [ref=e1064]: "#1"
-                                    - gridcell "Task 1" [ref=e1065]:
-                                      - generic [ref=e1066]: Task 1
-                                    - gridcell "-" [ref=e1067]:
-                                      - generic [ref=e1068]: "-"
-                                    - gridcell "-" [ref=e1069]:
-                                      - generic [ref=e1070]: "-"
-                                    - gridcell "-3 days" [ref=e1071]:
-                                      - generic [ref=e1072]: "-3 days"
-                                    - gridcell [ref=e1073]:
-                                      - checkbox [ref=e1075]
-                                    - gridcell [ref=e1076]:
-                                      - checkbox [ref=e1078]
-                                    - gridcell [ref=e1079]:
-                                      - checkbox [ref=e1081]
-                                    - gridcell [ref=e1082]:
-                                      - checkbox [ref=e1084]
-                                    - gridcell [ref=e1085]:
-                                      - checkbox [checked] [ref=e1087]
-                                    - gridcell "New task" [ref=e1088]:
-                                      - button "New task" [ref=e1089] [cursor=pointer]: 
-                                  - 'row "Task: Task 2 Duration: -1 days Start: 2025-11-24 End: 2025-11-21" [level=1] [ref=e1090]':
-                                    - gridcell "#2" [ref=e1091]:
-                                      - generic [ref=e1092]: "#2"
-                                    - gridcell "Task 2" [ref=e1093]:
-                                      - generic [ref=e1094]: Task 2
-                                    - gridcell "1FS" [ref=e1095]:
-                                      - generic [ref=e1096]: 1FS
-                                    - gridcell "-" [ref=e1097]:
-                                      - generic [ref=e1098]: "-"
-                                    - gridcell "-1 days" [ref=e1099]:
-                                      - generic [ref=e1100]: "-1 days"
+                              - button "Close" [ref=e1058] [cursor=pointer]:
+                                - img [ref=e1059]
+                          - generic [ref=e1062]:
+                            - generic [ref=e1063]:
+                              - treegrid [ref=e1067]:
+                                - row "# Task Name Predecessors Supplier/Group Duration Confirm Supplier Confirm Start Complete Lock New task" [ref=e1068]:
+                                  - columnheader "#" [ref=e1069]
+                                  - columnheader "Task Name" [ref=e1070]
+                                  - columnheader "Predecessors" [ref=e1071]
+                                  - columnheader "Supplier/Group" [ref=e1072]
+                                  - columnheader "Duration" [ref=e1073]
+                                  - columnheader "Confirm" [ref=e1074]
+                                  - columnheader "Supplier Confirm" [ref=e1075]
+                                  - columnheader "Start" [ref=e1076]
+                                  - columnheader "Complete" [ref=e1077]
+                                  - columnheader "Lock" [ref=e1078]
+                                  - columnheader "New task" [ref=e1079] [cursor=pointer]: 
+                                - rowgroup [ref=e1080]:
+                                  - 'row "Task: Task 1 Duration: -3 days Start: 2025-11-23 End: 2025-11-19" [level=1] [ref=e1081]':
+                                    - gridcell "#1" [ref=e1082]:
+                                      - generic [ref=e1083]: "#1"
+                                    - gridcell "Task 1" [ref=e1084]:
+                                      - generic [ref=e1085]: Task 1
+                                    - gridcell "-" [ref=e1086]:
+                                      - generic [ref=e1087]: "-"
+                                    - gridcell "-" [ref=e1088]:
+                                      - generic [ref=e1089]: "-"
+                                    - gridcell "-3 days" [ref=e1090]:
+                                      - generic [ref=e1091]: "-3 days"
+                                    - gridcell [ref=e1092]:
+                                      - checkbox [ref=e1094]
+                                    - gridcell [ref=e1095]:
+                                      - checkbox [ref=e1097]
+                                    - gridcell [ref=e1098]:
+                                      - checkbox [ref=e1100]
                                     - gridcell [ref=e1101]:
                                       - checkbox [ref=e1103]
                                     - gridcell [ref=e1104]:
-                                      - checkbox [ref=e1106]
-                                    - gridcell [ref=e1107]:
-                                      - checkbox [ref=e1109]
-                                    - gridcell [ref=e1110]:
-                                      - checkbox [ref=e1112]
-                                    - gridcell [ref=e1113]:
-                                      - checkbox [ref=e1115]
-                                    - gridcell "New task" [ref=e1116]:
-                                      - button "New task" [ref=e1117] [cursor=pointer]: 
-                                  - 'row "Task: Task 3 Duration: -1 days Start: 2025-11-24 End: 2025-11-21" [level=1] [ref=e1118]':
-                                    - gridcell "#3" [ref=e1119]:
-                                      - generic [ref=e1120]: "#3"
-                                    - gridcell "Task 3" [ref=e1121]:
-                                      - generic [ref=e1122]: Task 3
-                                    - gridcell "1FS" [ref=e1123]:
-                                      - generic [ref=e1124]: 1FS
-                                    - gridcell "-" [ref=e1125]:
-                                      - generic [ref=e1126]: "-"
-                                    - gridcell "-1 days" [ref=e1127]:
-                                      - generic [ref=e1128]: "-1 days"
+                                      - checkbox [checked] [ref=e1106]
+                                    - gridcell "New task" [ref=e1107]:
+                                      - button "New task" [ref=e1108] [cursor=pointer]: 
+                                  - 'row "Task: Task 2 Duration: -1 days Start: 2025-11-24 End: 2025-11-21" [level=1] [ref=e1109]':
+                                    - gridcell "#2" [ref=e1110]:
+                                      - generic [ref=e1111]: "#2"
+                                    - gridcell "Task 2" [ref=e1112]:
+                                      - generic [ref=e1113]: Task 2
+                                    - gridcell "1FS" [ref=e1114]:
+                                      - generic [ref=e1115]: 1FS
+                                    - gridcell "-" [ref=e1116]:
+                                      - generic [ref=e1117]: "-"
+                                    - gridcell "-1 days" [ref=e1118]:
+                                      - generic [ref=e1119]: "-1 days"
+                                    - gridcell [ref=e1120]:
+                                      - checkbox [ref=e1122]
+                                    - gridcell [ref=e1123]:
+                                      - checkbox [ref=e1125]
+                                    - gridcell [ref=e1126]:
+                                      - checkbox [ref=e1128]
                                     - gridcell [ref=e1129]:
                                       - checkbox [ref=e1131]
                                     - gridcell [ref=e1132]:
                                       - checkbox [ref=e1134]
-                                    - gridcell [ref=e1135]:
-                                      - checkbox [ref=e1137]
-                                    - gridcell [ref=e1138]:
-                                      - checkbox [ref=e1140]
-                                    - gridcell [ref=e1141]:
-                                      - checkbox [ref=e1143]
-                                    - gridcell "New task" [ref=e1144]:
-                                      - button "New task" [ref=e1145] [cursor=pointer]: 
-                                  - 'row "Task: Task 4 Duration: 0 days Start: 2025-11-25 End: 2025-11-25" [level=1] [ref=e1146]':
-                                    - gridcell "#4" [ref=e1147]:
-                                      - generic [ref=e1148]: "#4"
-                                    - gridcell "Task 4" [ref=e1149]:
-                                      - generic [ref=e1150]: Task 4
-                                    - gridcell "3FS" [ref=e1151]:
-                                      - generic [ref=e1152]: 3FS
-                                    - gridcell "-" [ref=e1153]:
-                                      - generic [ref=e1154]: "-"
-                                    - gridcell "-" [ref=e1155]:
-                                      - generic [ref=e1156]: "-"
+                                    - gridcell "New task" [ref=e1135]:
+                                      - button "New task" [ref=e1136] [cursor=pointer]: 
+                                  - 'row "Task: Task 3 Duration: -1 days Start: 2025-11-24 End: 2025-11-21" [level=1] [ref=e1137]':
+                                    - gridcell "#3" [ref=e1138]:
+                                      - generic [ref=e1139]: "#3"
+                                    - gridcell "Task 3" [ref=e1140]:
+                                      - generic [ref=e1141]: Task 3
+                                    - gridcell "1FS" [ref=e1142]:
+                                      - generic [ref=e1143]: 1FS
+                                    - gridcell "-" [ref=e1144]:
+                                      - generic [ref=e1145]: "-"
+                                    - gridcell "-1 days" [ref=e1146]:
+                                      - generic [ref=e1147]: "-1 days"
+                                    - gridcell [ref=e1148]:
+                                      - checkbox [ref=e1150]
+                                    - gridcell [ref=e1151]:
+                                      - checkbox [ref=e1153]
+                                    - gridcell [ref=e1154]:
+                                      - checkbox [ref=e1156]
                                     - gridcell [ref=e1157]:
                                       - checkbox [ref=e1159]
                                     - gridcell [ref=e1160]:
                                       - checkbox [ref=e1162]
-                                    - gridcell [ref=e1163]:
-                                      - checkbox [ref=e1165]
-                                    - gridcell [ref=e1166]:
-                                      - checkbox [ref=e1168]
-                                    - gridcell [ref=e1169]:
-                                      - checkbox [ref=e1171]
-                                    - gridcell "New task" [ref=e1172]:
-                                      - button "New task" [ref=e1173] [cursor=pointer]: 
-                                  - 'row "Task: Task 5 Duration: 1 days Start: 2025-11-26 End: 2025-11-27" [level=1] [ref=e1174]':
-                                    - gridcell "#5" [ref=e1175]:
-                                      - generic [ref=e1176]: "#5"
-                                    - gridcell "Task 5" [ref=e1177]:
-                                      - generic [ref=e1178]: Task 5
-                                    - gridcell "4FS" [ref=e1179]:
-                                      - generic [ref=e1180]: 4FS
-                                    - gridcell "-" [ref=e1181]:
-                                      - generic [ref=e1182]: "-"
-                                    - gridcell "1 day" [ref=e1183]:
-                                      - generic [ref=e1184]: 1 day
+                                    - gridcell "New task" [ref=e1163]:
+                                      - button "New task" [ref=e1164] [cursor=pointer]: 
+                                  - 'row "Task: Task 4 Duration: 0 days Start: 2025-11-25 End: 2025-11-25" [level=1] [ref=e1165]':
+                                    - gridcell "#4" [ref=e1166]:
+                                      - generic [ref=e1167]: "#4"
+                                    - gridcell "Task 4" [ref=e1168]:
+                                      - generic [ref=e1169]: Task 4
+                                    - gridcell "3FS" [ref=e1170]:
+                                      - generic [ref=e1171]: 3FS
+                                    - gridcell "-" [ref=e1172]:
+                                      - generic [ref=e1173]: "-"
+                                    - gridcell "-" [ref=e1174]:
+                                      - generic [ref=e1175]: "-"
+                                    - gridcell [ref=e1176]:
+                                      - checkbox [ref=e1178]
+                                    - gridcell [ref=e1179]:
+                                      - checkbox [ref=e1181]
+                                    - gridcell [ref=e1182]:
+                                      - checkbox [ref=e1184]
                                     - gridcell [ref=e1185]:
                                       - checkbox [ref=e1187]
                                     - gridcell [ref=e1188]:
                                       - checkbox [ref=e1190]
-                                    - gridcell [ref=e1191]:
-                                      - checkbox [ref=e1193]
-                                    - gridcell [ref=e1194]:
-                                      - checkbox [ref=e1196]
-                                    - gridcell [ref=e1197]:
-                                      - checkbox [ref=e1199]
-                                    - gridcell "New task" [ref=e1200]:
-                                      - button "New task" [ref=e1201] [cursor=pointer]: 
-                              - generic [ref=e1209]:
-                                - generic [ref=e1210]:
-                                  - generic [ref=e1211]:
-                                    - generic "November 2025" [ref=e1212]
-                                    - generic "December 2025" [ref=e1213]:
-                                      - generic [ref=e1214]: December 2025
-                                  - generic [ref=e1215]:
-                                    - generic "13" [ref=e1216]
-                                    - generic "14" [ref=e1217]
-                                    - generic "15" [ref=e1218]
-                                    - generic "16" [ref=e1219]
-                                    - generic "17" [ref=e1220]
-                                    - generic "18" [ref=e1221]
-                                    - generic "19" [ref=e1222]
-                                    - generic "20" [ref=e1223]
-                                    - generic "21" [ref=e1224]
-                                    - generic "22" [ref=e1225]
-                                    - generic "23" [ref=e1226]
-                                    - generic "24" [ref=e1227]
-                                    - generic "25" [ref=e1228]
-                                    - generic "26" [ref=e1229]
-                                    - generic "27" [ref=e1230]
-                                    - generic "28" [ref=e1231]
-                                    - generic "29" [ref=e1232]
-                                    - generic "30" [ref=e1233]
-                                    - generic "01" [ref=e1234]
-                                    - generic "02" [ref=e1235]
-                                    - generic "03" [ref=e1236]
-                                    - generic "04" [ref=e1237]
-                                    - generic "05" [ref=e1238]
-                                    - generic "06" [ref=e1239]
-                                    - generic "07" [ref=e1240]
-                                    - generic "08" [ref=e1241]
-                                    - generic "09" [ref=e1242]
-                                - generic [ref=e1243]:
+                                    - gridcell "New task" [ref=e1191]:
+                                      - button "New task" [ref=e1192] [cursor=pointer]: 
+                                  - 'row "Task: Task 5 Duration: 1 days Start: 2025-11-26 End: 2025-11-27" [level=1] [ref=e1193]':
+                                    - gridcell "#5" [ref=e1194]:
+                                      - generic [ref=e1195]: "#5"
+                                    - gridcell "Task 5" [ref=e1196]:
+                                      - generic [ref=e1197]: Task 5
+                                    - gridcell "4FS" [ref=e1198]:
+                                      - generic [ref=e1199]: 4FS
+                                    - gridcell "-" [ref=e1200]:
+                                      - generic [ref=e1201]: "-"
+                                    - gridcell "1 day" [ref=e1202]:
+                                      - generic [ref=e1203]: 1 day
+                                    - gridcell [ref=e1204]:
+                                      - checkbox [ref=e1206]
+                                    - gridcell [ref=e1207]:
+                                      - checkbox [ref=e1209]
+                                    - gridcell [ref=e1210]:
+                                      - checkbox [ref=e1212]
+                                    - gridcell [ref=e1213]:
+                                      - checkbox [ref=e1215]
+                                    - gridcell [ref=e1216]:
+                                      - checkbox [ref=e1218]
+                                    - gridcell "New task" [ref=e1219]:
+                                      - button "New task" [ref=e1220] [cursor=pointer]: 
+                              - generic [ref=e1228]:
+                                - generic [ref=e1229]:
+                                  - generic [ref=e1230]:
+                                    - generic "November 2025" [ref=e1231]
+                                    - generic "December 2025" [ref=e1232]:
+                                      - generic [ref=e1233]: December 2025
+                                  - generic [ref=e1234]:
+                                    - generic "13" [ref=e1235]
+                                    - generic "14" [ref=e1236]
+                                    - generic "15" [ref=e1237]
+                                    - generic "16" [ref=e1238]
+                                    - generic "17" [ref=e1239]
+                                    - generic "18" [ref=e1240]
+                                    - generic "19" [ref=e1241]
+                                    - generic "20" [ref=e1242]
+                                    - generic "21" [ref=e1243]
+                                    - generic "22" [ref=e1244]
+                                    - generic "23" [ref=e1245]
+                                    - generic "24" [ref=e1246]
+                                    - generic "25" [ref=e1247]
+                                    - generic "26" [ref=e1248]
+                                    - generic "27" [ref=e1249]
+                                    - generic "28" [ref=e1250]
+                                    - generic "29" [ref=e1251]
+                                    - generic "30" [ref=e1252]
+                                    - generic "01" [ref=e1253]
+                                    - generic "02" [ref=e1254]
+                                    - generic "03" [ref=e1255]
+                                    - generic "04" [ref=e1256]
+                                    - generic "05" [ref=e1257]
+                                    - generic "06" [ref=e1258]
+                                    - generic "07" [ref=e1259]
+                                    - generic "08" [ref=e1260]
+                                    - generic "09" [ref=e1261]
+                                - generic [ref=e1262]:
                                   - generic:
                                     - img "Link Task 1 (end) Task 2 (start)":
-                                      - generic [ref=e1260] [cursor=pointer]: 
+                                      - generic [ref=e1279] [cursor=pointer]: 
                                     - img "Link Task 1 (end) Task 3 (start)":
-                                      - generic [ref=e1277] [cursor=pointer]: 
+                                      - generic [ref=e1296] [cursor=pointer]: 
                                     - img "Link Task 3 (end) Task 4 (start)":
-                                      - generic [ref=e1294] [cursor=pointer]: 
+                                      - generic [ref=e1313] [cursor=pointer]: 
                                     - img "Link Task 4 (end) Task 5 (start)":
-                                      - generic [ref=e1311] [cursor=pointer]: 
-                                  - generic [ref=e1312]:
+                                      - generic [ref=e1330] [cursor=pointer]: 
+                                  - generic [ref=e1331]:
                                     - 'img "Task: Task 1 Duration: -3 days Start: 2025-11-23 End: 2025-11-19"':
-                                      - generic [ref=e1313]: Task 1
-                                      - generic [ref=e1314]: ◄
-                                      - generic [ref=e1315]: ►
+                                      - generic [ref=e1332]: Task 1
+                                      - generic [ref=e1333]: ◄
+                                      - generic [ref=e1334]: ►
                                     - 'img "Task: Task 2 Duration: -1 days Start: 2025-11-24 End: 2025-11-21"':
-                                      - generic [ref=e1318]: Task 2
-                                      - generic [ref=e1319]: ◄
-                                      - generic [ref=e1320]: ►
+                                      - generic [ref=e1337]: Task 2
+                                      - generic [ref=e1338]: ◄
+                                      - generic [ref=e1339]: ►
                                     - 'img "Task: Task 3 Duration: -1 days Start: 2025-11-24 End: 2025-11-21"':
-                                      - generic [ref=e1323]: Task 3
-                                      - generic [ref=e1324]: ◄
-                                      - generic [ref=e1325]: ►
+                                      - generic [ref=e1342]: Task 3
+                                      - generic [ref=e1343]: ◄
+                                      - generic [ref=e1344]: ►
                                     - 'img "Task: Task 4 Duration: 0 days Start: 2025-11-25 End: 2025-11-25"':
-                                      - generic [ref=e1328]: Task 4
-                                      - generic [ref=e1329]: ◄
-                                      - generic [ref=e1330]: ►
-                                    - 'img "Task: Task 5 Duration: 1 days Start: 2025-11-26 End: 2025-11-27" [ref=e1333]':
-                                      - generic [ref=e1335]: Task 5
-                                      - generic [ref=e1336]: ◄
-                                      - generic [ref=e1337]: ►
-                            - iframe [ref=e1344]:
+                                      - generic [ref=e1347]: Task 4
+                                      - generic [ref=e1348]: ◄
+                                      - generic [ref=e1349]: ►
+                                    - 'img "Task: Task 5 Duration: 1 days Start: 2025-11-26 End: 2025-11-27" [ref=e1352]':
+                                      - generic [ref=e1354]: Task 5
+                                      - generic [ref=e1355]: ◄
+                                      - generic [ref=e1356]: ►
+                            - iframe [ref=e1363]:
                               
-                          - generic [ref=e1346]:
-                            - generic [ref=e1347]: "Trial Features: Auto-scheduling • Critical Path • Undo/Redo • Drag Links • Resource Management"
-                            - generic [ref=e1350]:
-                              - img [ref=e1351]
-                              - generic [ref=e1353]: "Terminology:"
-                              - generic [ref=e1354]:
-                                - generic [ref=e1355]:
-                                  - strong [ref=e1356]: SM
+                          - generic [ref=e1365]:
+                            - generic [ref=e1366]: "Trial Features: Auto-scheduling • Critical Path • Undo/Redo • Drag Links • Resource Management"
+                            - generic [ref=e1369]:
+                              - img [ref=e1370]
+                              - generic [ref=e1372]: "Terminology:"
+                              - generic [ref=e1373]:
+                                - generic [ref=e1374]:
+                                  - strong [ref=e1375]: SM
                                   - text: = Schedule Master
-                                - generic [ref=e1357]:
-                                  - strong [ref=e1358]: SMT
+                                - generic [ref=e1376]:
+                                  - strong [ref=e1377]: SMT
                                   - text: = Table (24 cols)
-                                - generic [ref=e1359]:
-                                  - strong [ref=e1360]: Gantt
+                                - generic [ref=e1378]:
+                                  - strong [ref=e1379]: Gantt
                                   - text: = Timeline chart
-                                - generic [ref=e1361]:
-                                  - strong [ref=e1362]: Task
+                                - generic [ref=e1380]:
+                                  - strong [ref=e1381]: Task
                                   - text: = Row + bar
-                                - generic [ref=e1363]:
-                                  - strong [ref=e1364]: Deps
+                                - generic [ref=e1382]:
+                                  - strong [ref=e1383]: Deps
                                   - text: = Arrows
-                                - generic [ref=e1365]:
-                                  - strong [ref=e1366]: FS/SS/FF
+                                - generic [ref=e1384]:
+                                  - strong [ref=e1385]: FS/SS/FF
                                   - text: = Dep types
-                            - generic [ref=e1367]: Double-click task to edit dependencies
-  - generic [ref=e1369]:
-    - heading "🧪 Visual Test Running..." [level=2] [ref=e1370]
-    - paragraph [ref=e1371]: ✅ PASS - Test completed successfully in 6.8s!
-    - generic [ref=e1372]:
-      - generic [ref=e1373]: "✅ Selected task: Task 1"
-      - generic [ref=e1374]: "✅ Original start date: 11/18/2025"
-      - generic [ref=e1375]: ✅ Found 2 dependent task(s)
-      - generic [ref=e1376]: ✅ Moving task 5 days forward (11/18/2025 → 11/23/2025)
-      - generic [ref=e1377]: "🔄 Calling backend API for task #299..."
-      - generic [ref=e1378]: ✅ Backend cascade triggered - updated 5 task(s)
-      - generic [ref=e1379]: ✅ All 2 dependent task(s) cascaded correctly
-      - generic [ref=e1380]: ✅ Task "Task 2" moved correctly (+5 days)
-      - generic [ref=e1381]: ✅ Task "Task 3" moved correctly (+5 days)
-      - generic [ref=e1382]: ✅ Unlocked task - cascade will recalculate position
-      - generic [ref=e1383]: ✅ TEST PASSED
+                            - generic [ref=e1386]: Double-click task to edit dependencies
+  - generic [ref=e1388]:
+    - heading "🧪 Visual Test Running..." [level=2] [ref=e1389]
+    - paragraph [ref=e1390]: ✅ PASS - Test completed successfully in 6.8s!
+    - generic [ref=e1391]:
+      - generic [ref=e1392]: "✅ Selected task: Task 1"
+      - generic [ref=e1393]: "✅ Original start date: 11/18/2025"
+      - generic [ref=e1394]: ✅ Found 2 dependent task(s)
+      - generic [ref=e1395]: ✅ Moving task 5 days forward (11/18/2025 → 11/23/2025)
+      - generic [ref=e1396]: "🔄 Calling backend API for task #299..."
+      - generic [ref=e1397]: ✅ Backend cascade triggered - updated 5 task(s)
+      - generic [ref=e1398]: ✅ All 2 dependent task(s) cascaded correctly
+      - generic [ref=e1399]: ✅ Task "Task 2" moved correctly (+5 days)
+      - generic [ref=e1400]: ✅ Task "Task 3" moved correctly (+5 days)
+      - generic [ref=e1401]: ✅ Unlocked task - cascade will recalculate position
+      - generic [ref=e1402]: ✅ TEST PASSED
 ```

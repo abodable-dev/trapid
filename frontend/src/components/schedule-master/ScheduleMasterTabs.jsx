@@ -85,14 +85,14 @@ export default function ScheduleMasterTabs() {
           </div>
         </div>
 
-        <TabPanels className="flex-1 overflow-hidden">
+        <TabPanels className="flex-1 overflow-auto">
           {/* Schedule Master Setup Tab */}
           <TabPanel className="h-full">
             <ScheduleTemplateEditor />
           </TabPanel>
 
           {/* Bug Hunter Tests Tab */}
-          <TabPanel className="h-full">
+          <TabPanel className="h-full overflow-auto">
             <BugHunterTests />
           </TabPanel>
 

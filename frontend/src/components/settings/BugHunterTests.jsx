@@ -526,110 +526,135 @@ export default function BugHunterTests() {
           </table>
         </div>
 
-        {/* History Modal */}
+        {/* History Modal Popup */}
         {showHistory && (
-          <div className="mt-4 rounded-lg bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-900/5 dark:ring-white/10 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                Test Audit History: {tests.find(t => t.id === showHistory)?.name}
-              </h3>
-              <button
+          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+              {/* Background overlay */}
+              <div
+                className="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75 transition-opacity"
+                aria-hidden="true"
                 onClick={() => setShowHistory(null)}
-                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="space-y-2">
-              {getTestHistory(showHistory).length > 0 ? (
-                getTestHistory(showHistory).map((run, idx) => (
-                  <div
-                    key={run.id || idx}
-                    className={`p-3 rounded-md ${
-                      run.status === 'pass'
-                        ? 'bg-green-50 dark:bg-green-900/20'
-                        : run.status === 'fail'
-                        ? 'bg-red-50 dark:bg-red-900/20'
-                        : 'bg-yellow-50 dark:bg-yellow-900/20'
-                    }`}
+              ></div>
+
+              {/* Center modal */}
+              <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
+
+              {/* Modal panel */}
+              <div className="relative inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6">
+                <div className="absolute top-0 right-0 pt-4 pr-4">
+                  <button
+                    type="button"
+                    className="rounded-md bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+                    onClick={() => setShowHistory(null)}
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      {run.status === 'pass' ? (
-                        <span className="text-green-600 dark:text-green-400 font-bold text-lg">✓</span>
-                      ) : run.status === 'fail' ? (
-                        <span className="text-red-600 dark:text-red-400 font-bold text-lg">✗</span>
-                      ) : (
-                        <span className="text-yellow-600 dark:text-yellow-400 font-bold text-lg">⚠</span>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-gray-900 dark:text-white font-medium mb-1">
-                          Run #{run.id} - {run.status === 'pass' ? 'PASSED' : run.status === 'fail' ? 'FAILED' : 'ERROR'}
-                        </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {run.message || run.status.toUpperCase()}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-2">
-                      <div>
-                        <span className="text-gray-400 dark:text-gray-500">Run At:</span>{' '}
-                        <span className="font-medium">
-                          {new Date(run.created_at || run.timestamp).toLocaleString('en-AU', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            hour12: true
-                          })}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-400 dark:text-gray-500">Run By:</span>{' '}
-                        <span className="font-medium">Claude Code (API)</span>
-                      </div>
-                      {run.duration !== undefined && run.duration !== null && (
-                        <div>
-                          <span className="text-gray-400 dark:text-gray-500">Duration:</span>{' '}
-                          <span className="font-medium">{run.duration}s</span>
-                        </div>
-                      )}
-                      {run.template_id && (
-                        <div>
-                          <span className="text-gray-400 dark:text-gray-500">Template:</span>{' '}
-                          <span className="font-medium">{scheduleTemplates.find(t => t.id === run.template_id)?.name || `ID ${run.template_id}`}</span>
-                        </div>
-                      )}
-                    </div>
-                    {run.console_output && (
-                      <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Console Output</span>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(run.console_output)
-                              toast.success('Console output copied to clipboard', { duration: 2000 })
-                            }}
-                            className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
-                          >
-                            Copy
-                          </button>
-                        </div>
-                        <pre className="text-xs bg-gray-900 dark:bg-black text-green-400 p-3 rounded overflow-x-auto max-h-64 overflow-y-auto font-mono">
-{run.console_output}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <ClockIcon className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No test history found</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Run this test to see history</p>
+                    <span className="sr-only">Close</span>
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-              )}
+
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                    <h3 className="text-lg font-semibold leading-6 text-gray-900 dark:text-white mb-4" id="modal-title">
+                      Test Audit History: {tests.find(t => t.id === showHistory)?.name}
+                    </h3>
+
+                    <div className="mt-4 max-h-[60vh] overflow-y-auto space-y-3">
+                      {getTestHistory(showHistory).length > 0 ? (
+                        getTestHistory(showHistory).map((run, idx) => (
+                          <div
+                            key={run.id || idx}
+                            className={`p-4 rounded-lg ${
+                              run.status === 'pass'
+                                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                                : run.status === 'fail'
+                                ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                                : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 mb-3">
+                              {run.status === 'pass' ? (
+                                <span className="text-green-600 dark:text-green-400 font-bold text-xl">✓</span>
+                              ) : run.status === 'fail' ? (
+                                <span className="text-red-600 dark:text-red-400 font-bold text-xl">✗</span>
+                              ) : (
+                                <span className="text-yellow-600 dark:text-yellow-400 font-bold text-xl">⚠</span>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm text-gray-900 dark:text-white font-semibold mb-1">
+                                  Run #{run.id} - {run.status === 'pass' ? 'PASSED' : run.status === 'fail' ? 'FAILED' : 'ERROR'}
+                                </div>
+                                <div className="text-sm text-gray-700 dark:text-gray-300">
+                                  {run.message || run.status.toUpperCase()}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-3">
+                              <div>
+                                <span className="text-gray-500 dark:text-gray-500">Run At:</span>{' '}
+                                <span className="font-medium text-gray-900 dark:text-white">
+                                  {new Date(run.created_at || run.timestamp).toLocaleString('en-AU', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: true
+                                  })}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 dark:text-gray-500">Run By:</span>{' '}
+                                <span className="font-medium text-gray-900 dark:text-white">Claude Code (API)</span>
+                              </div>
+                              {run.duration !== undefined && run.duration !== null && (
+                                <div>
+                                  <span className="text-gray-500 dark:text-gray-500">Duration:</span>{' '}
+                                  <span className="font-medium text-gray-900 dark:text-white">{run.duration}s</span>
+                                </div>
+                              )}
+                              {run.template_id && (
+                                <div>
+                                  <span className="text-gray-500 dark:text-gray-500">Template:</span>{' '}
+                                  <span className="font-medium text-gray-900 dark:text-white">{scheduleTemplates.find(t => t.id === run.template_id)?.name || `ID ${run.template_id}`}</span>
+                                </div>
+                              )}
+                            </div>
+                            {run.console_output && (
+                              <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-sm font-semibold text-gray-900 dark:text-white">Console Output</span>
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(run.console_output)
+                                      toast.success('Console output copied to clipboard', { duration: 2000 })
+                                    }}
+                                    className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold"
+                                  >
+                                    Copy
+                                  </button>
+                                </div>
+                                <pre className="text-xs bg-gray-900 dark:bg-black text-green-400 p-4 rounded-lg overflow-x-auto max-h-64 overflow-y-auto font-mono">
+{run.console_output}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-12">
+                          <ClockIcon className="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                          <p className="text-base text-gray-500 dark:text-gray-400 font-medium">No test history found</p>
+                          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Run this test to see history</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
