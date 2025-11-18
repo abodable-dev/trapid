@@ -1324,19 +1324,45 @@ export default function TrapidTableView({
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  setEditModeActive(false)
-                  setEditingRowId(null)
-                  setEditingData({})
-                  setShowDeleteButton(false)
-                  setSelectedRows(new Set())
-                }}
-                className="px-6 py-2.5 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2 backdrop-blur-sm"
-              >
-                <XMarkIcon className="h-5 w-5" />
-                Exit Edit Mode
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Save & Exit button - saves current row if editing */}
+                <button
+                  onClick={async () => {
+                    // Save current editing row if any
+                    if (editingRowId !== null && Object.keys(editingData).length > 0) {
+                      await onEdit(editingData)
+                    }
+                    setEditModeActive(false)
+                    setEditingRowId(null)
+                    setEditingData({})
+                    setShowDeleteButton(false)
+                    setSelectedRows(new Set())
+                  }}
+                  className="px-6 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2 shadow-lg"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Save & Exit
+                </button>
+
+                {/* Exit Without Saving button */}
+                <button
+                  onClick={() => {
+                    if (confirm('Exit without saving? Any unsaved changes will be lost.')) {
+                      setEditModeActive(false)
+                      setEditingRowId(null)
+                      setEditingData({})
+                      setShowDeleteButton(false)
+                      setSelectedRows(new Set())
+                    }
+                  }}
+                  className="px-6 py-2.5 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2 backdrop-blur-sm"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                  Exit Without Saving
+                </button>
+              </div>
             </div>
           </div>
         )}
