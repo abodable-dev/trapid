@@ -1374,11 +1374,10 @@ export default function TrapidTableView({
           </div>
 
           {/* Cascade Filters Button - Excel-style popup - Always visible */}
-          <div className="relative">
+          <div className="relative group">
             <button
               onClick={() => setShowCascadeDropdown(!showCascadeDropdown)}
               className="px-3 h-[42px] bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-200 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
-              title="Excel-style cascade filters"
             >
               <FunnelIcon className="w-4 h-4" />
               Filters
@@ -1388,6 +1387,12 @@ export default function TrapidTableView({
                 </span>
               )}
             </button>
+
+            {/* Instant tooltip */}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-none z-[100] pointer-events-none">
+              Excel-style cascade filters
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[-1px] border-4 border-transparent border-b-gray-900 dark:border-b-gray-700"></div>
+            </div>
 
             {/* Excel-style dropdown panel */}
             {showCascadeDropdown && (
