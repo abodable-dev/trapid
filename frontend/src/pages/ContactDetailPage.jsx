@@ -27,7 +27,6 @@ import ContactMapCard from '../components/contacts/ContactMapCard'
 import ContactGroupsSection from '../components/contacts/ContactGroupsSection'
 import ContactRelationshipsSection from '../components/contacts/ContactRelationshipsSection'
 import CommunicationsTab from '../components/communications/CommunicationsTab'
-import BackButton from '../components/common/BackButton'
 import PortalUserSection from '../components/contacts/PortalUserSection'
 
 // Helper function to format ABN as XX XXX XXX XXX
@@ -799,7 +798,6 @@ export default function ContactDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-12">
           <div className="text-red-600 dark:text-red-400 mb-4">{error || 'Contact not found'}</div>
-          <BackButton />
         </div>
       </div>
     )
@@ -812,8 +810,6 @@ export default function ContactDetailPage() {
         <div className="max-w-7xl mx-auto pt-1 pb-1">
         {/* Header */}
         <div>
-          <BackButton className="mb-1" />
-
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-base font-bold text-gray-900 dark:text-white">

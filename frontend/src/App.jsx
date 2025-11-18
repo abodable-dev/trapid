@@ -119,6 +119,8 @@ function App() {
         <Route path="/accounts" element={<AppLayout><AccountsPage /></AppLayout>} />
         <Route path="/users" element={<AppLayout><UsersPage /></AppLayout>} />
         <Route path="/health" element={<AppLayout><HealthPage /></AppLayout>} />
+        <Route path="/permissions" element={<Navigate to="/admin/system?tab=permissions" replace />} />
+        <Route path="/system/performance" element={<Navigate to="/admin/system?tab=performance" replace />} />
         <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />
         <Route path="/suppliers/new" element={<AppLayout><SupplierNewPage /></AppLayout>} />
         <Route path="/suppliers/:id/edit" element={<AppLayout><SupplierEditPage /></AppLayout>} />

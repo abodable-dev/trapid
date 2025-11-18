@@ -115,7 +115,7 @@ export default function PermissionsPage() {
   // Check if current user can manage permissions
   if (!can('manage_permissions')) {
     return (
-      <div className="p-8">
+      <div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800">You do not have permission to manage user permissions.</p>
         </div>
@@ -125,7 +125,7 @@ export default function PermissionsPage() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div>
         <div className="flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -135,7 +135,7 @@ export default function PermissionsPage() {
 
   if (error) {
     return (
-      <div className="p-8">
+      <div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800">{error}</p>
         </div>
@@ -144,7 +144,7 @@ export default function PermissionsPage() {
   }
 
   return (
-    <div className="p-8">
+    <div>
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
           <ShieldCheckIcon className="h-8 w-8 text-blue-600" />

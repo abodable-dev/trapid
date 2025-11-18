@@ -28,7 +28,6 @@ import CommunicationsTab from '../components/communications/CommunicationsTab'
 import LocationMapCard from '../components/job-detail/LocationMapCard'
 import AddressAutocomplete from '../components/common/AddressAutocomplete'
 import JobContactsSection from '../components/job-detail/JobContactsSection'
-import BackButton from '../components/common/BackButton'
 import RainLogTab from '../components/rain-log/RainLogTab'
 
 const tabs = [
@@ -320,8 +319,6 @@ export default function JobDetailPage() {
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
           <div className="px-8 py-6">
-            <BackButton className="mb-4" />
-
             <div className="flex items-center gap-4 mb-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-600">
                 <BriefcaseIcon className="h-6 w-6 text-white" />

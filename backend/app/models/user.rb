@@ -60,6 +60,58 @@ class User < ApplicationRecord
     admin? || builder?
   end
 
+  # Returns array of permission strings for this user
+  def permissions
+    perms = []
+
+    # Base permissions for all users
+    perms += ['view_dashboard', 'view_jobs', 'view_contacts']
+
+    # Role-specific permissions
+    case role
+    when 'admin'
+      # Admins get all permissions
+      perms += [
+        'manage_permissions',
+        'manage_users',
+        'manage_system',
+        'create_templates',
+        'edit_schedule',
+        'view_supervisor_tasks',
+        'view_builder_tasks',
+        'edit_projects',
+        'manage_workflows',
+        'view_gantt',
+        'manage_company_settings',
+        'manage_integrations'
+      ]
+    when 'product_owner'
+      perms += [
+        'create_templates',
+        'edit_schedule',
+        'edit_projects',
+        'view_gantt'
+      ]
+    when 'estimator'
+      perms += [
+        'edit_schedule',
+        'edit_projects',
+        'view_gantt'
+      ]
+    when 'supervisor'
+      perms += [
+        'view_supervisor_tasks',
+        'view_gantt'
+      ]
+    when 'builder'
+      perms += [
+        'view_builder_tasks'
+      ]
+    end
+
+    perms.uniq
+  end
+
   # OAuth helper methods
   def self.from_omniauth(auth)
     where(provider: auth.provider, uid: auth.uid).first_or_create do |user|

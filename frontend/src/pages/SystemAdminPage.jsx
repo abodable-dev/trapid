@@ -1,29 +1,30 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
-import { RocketLaunchIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
-import AccountsLayout from '../components/layout/AccountsLayout'
+import {
+  RocketLaunchIcon,
+  ArrowDownTrayIcon,
+  BuildingOfficeIcon,
+  ShieldCheckIcon,
+  CalendarDaysIcon,
+  DocumentTextIcon,
+  ClipboardDocumentCheckIcon,
+  StarIcon,
+  WrenchScrewdriverIcon,
+  BoltIcon,
+  BookOpenIcon,
+  SparklesIcon,
+  ChartBarIcon,
+  KeyIcon
+} from '@heroicons/react/24/outline'
 import { api } from '../api'
 
 // Lazy load tab components to reduce initial bundle size
-const XeroConnection = lazy(() => import('../components/settings/XeroConnection'))
-const OneDriveConnection = lazy(() => import('../components/settings/OneDriveConnection'))
-const OutlookConnection = lazy(() => import('../components/settings/OutlookConnection'))
-const TwilioConfiguration = lazy(() => import('../components/settings/TwilioConfiguration'))
-const FolderTemplatesTab = lazy(() => import('../components/settings/FolderTemplatesTab'))
 const ScheduleMasterTabs = lazy(() => import('../components/schedule-master/ScheduleMasterTabs'))
-const XeroFieldMappingTab = lazy(() => import('../components/settings/XeroFieldMappingTab'))
-const TablesTab = lazy(() => import('../components/settings/TablesTab'))
-const SchemaPage = lazy(() => import('./SchemaPage'))
 const DocumentationCategoriesTab = lazy(() => import('../components/settings/DocumentationCategoriesTab'))
 const RolesAndGroupsTab = lazy(() => import('../components/settings/RolesAndGroupsTab'))
-const ContactRolesManagement = lazy(() => import('../components/settings/ContactRolesManagement'))
 const SupervisorChecklistTab = lazy(() => import('../components/settings/SupervisorChecklistTab'))
-const WorkflowAdminPage = lazy(() => import('./WorkflowAdminPage'))
-const PublicHolidaysPage = lazy(() => import('./PublicHolidaysPage'))
-const GitBranchVisualization = lazy(() => import('../components/settings/GitBranchVisualization'))
 const CompanySettingsTab = lazy(() => import('../components/settings/CompanySettingsTab'))
-const AgentStatus = lazy(() => import('../components/settings/AgentStatus'))
 const AgentShortcutsTab = lazy(() => import('../components/settings/AgentShortcutsTab'))
 const UserManualTab = lazy(() => import('../components/settings/UserManualTab'))
 const InspiringQuotesTab = lazy(() => import('../components/settings/InspiringQuotesTab'))
@@ -91,10 +92,10 @@ function SecurityTab() {
                   Manage detailed permission settings and access controls for your organization.
                 </p>
                 <Link
-                  to="/permissions"
+                  to="/admin/system?tab=permissions"
                   className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
-                  Open Permissions Manager
+                  Go to Permissions Tab
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                   </svg>
@@ -216,17 +217,13 @@ export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Map tab names to indices - NEW STRUCTURE: 17 tabs
+  // Map tab names to indices - REORGANIZED: 13 tabs (operational moved to Company)
   const tabs = [
     'company',
     'security',
-    'contact-roles',
-    'workflows',
-    'folder-templates',
     'schedule-master',
     'documentation',
     'supervisor-checklist',
-    'xero-field-mapping',
     'gold-standard',
     'developer-tools',
     'claude-shortcuts',
@@ -328,19 +325,19 @@ export default function SettingsPage() {
   }
 
   return (
-    <AccountsLayout>
+    <main>
       <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>
-        <div className="px-4 sm:px-6 lg:px-8 py-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">System Administration</h1>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Configure system settings, integrations, and developer tools
-            </p>
-          </div>
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">System Administration</h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Configure system settings, integrations, and developer tools
+          </p>
+        </div>
+        <div>
           <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 w-full overflow-x-auto">
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -348,11 +345,12 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <BuildingOfficeIcon className="h-5 w-5" />
               Company
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -360,11 +358,12 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <ShieldCheckIcon className="h-5 w-5" />
               Security
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -372,47 +371,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              Contact Roles
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
-                ${
-                  selected
-                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
-                }`
-              }
-            >
-              Workflows
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
-                ${
-                  selected
-                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
-                }`
-              }
-            >
-              Folder Templates
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
-                ${
-                  selected
-                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
-                }`
-              }
-            >
+              <CalendarDaysIcon className="h-5 w-5" />
               Schedule Master
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -420,11 +384,12 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <DocumentTextIcon className="h-5 w-5" />
               Documentation
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -432,11 +397,12 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <ClipboardDocumentCheckIcon className="h-5 w-5" />
               Supervisor Checklist
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -444,23 +410,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              Xero Field Mapping
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
-                ${
-                  selected
-                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
-                }`
-              }
-            >
+              <StarIcon className="h-5 w-5" />
               Gold Standard View
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -468,11 +423,12 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <WrenchScrewdriverIcon className="h-5 w-5" />
               Developer Tools
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -480,11 +436,12 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <BoltIcon className="h-5 w-5" />
               Claude Shortcuts
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -492,11 +449,12 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <BookOpenIcon className="h-5 w-5" />
               User Manual
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -504,11 +462,12 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <SparklesIcon className="h-5 w-5" />
               Inspiring Quotes
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -516,11 +475,12 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <ChartBarIcon className="h-5 w-5" />
               Performance
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -528,11 +488,12 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <KeyIcon className="h-5 w-5" />
               Permissions
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -540,6 +501,7 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <RocketLaunchIcon className="h-5 w-5" />
               Deployment
             </Tab>
           </TabList>
@@ -560,117 +522,79 @@ export default function SettingsPage() {
             </Suspense>
           </TabPanel>
 
-          {/* 3. Contact Roles Tab */}
-          <TabPanel>
-            <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <Suspense fallback={<TabLoadingFallback />}>
-                <ContactRolesManagement />
-              </Suspense>
-            </div>
-          </TabPanel>
-
-          {/* 4. Workflows Tab */}
-          <TabPanel>
-            <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <Suspense fallback={<TabLoadingFallback />}>
-                <WorkflowAdminPage />
-              </Suspense>
-            </div>
-          </TabPanel>
-
-          {/* 5. Folder Templates Tab */}
-          <TabPanel>
-            <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <Suspense fallback={<TabLoadingFallback />}>
-                <FolderTemplatesTab />
-              </Suspense>
-            </div>
-          </TabPanel>
-
-          {/* 6. Schedule Master Tab with nested sub-tabs */}
+          {/* 3. Schedule Master Tab with nested sub-tabs */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <ScheduleMasterTabs />
             </Suspense>
           </TabPanel>
 
-          {/* 7. Documentation Categories Tab */}
+          {/* 4. Documentation Categories Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <DocumentationCategoriesTab />
             </Suspense>
           </TabPanel>
 
-          {/* 8. Supervisor Checklist Tab */}
+          {/* 5. Supervisor Checklist Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <SupervisorChecklistTab />
             </Suspense>
           </TabPanel>
 
-          {/* 9. Xero Field Mapping Tab */}
-          <TabPanel>
-            <Suspense fallback={<TabLoadingFallback />}>
-              <XeroFieldMappingTab />
-            </Suspense>
-          </TabPanel>
-
-          {/* 10. Gold Standard View Tab */}
+          {/* 6. Gold Standard View Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <GoldStandardTableTab />
             </Suspense>
           </TabPanel>
 
-          {/* 11. Developer Tools Tab with nested sub-tabs */}
+          {/* 7. Developer Tools Tab with nested sub-tabs */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <DeveloperToolsTab />
             </Suspense>
           </TabPanel>
 
-          {/* 12. Claude Shortcuts Tab */}
+          {/* 8. Claude Shortcuts Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <AgentShortcutsTab />
             </Suspense>
           </TabPanel>
 
-          {/* 13. User Manual Tab */}
+          {/* 9. User Manual Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <UserManualTab />
             </Suspense>
           </TabPanel>
 
-          {/* 14. Inspiring Quotes Tab */}
+          {/* 10. Inspiring Quotes Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <InspiringQuotesTab />
             </Suspense>
           </TabPanel>
 
-          {/* 15. Performance Tab */}
+          {/* 11. Performance Tab */}
           <TabPanel>
-            <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <Suspense fallback={<TabLoadingFallback />}>
-                <SystemPerformancePage />
-              </Suspense>
-            </div>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <SystemPerformancePage />
+            </Suspense>
           </TabPanel>
 
-          {/* 16. Permissions Tab */}
+          {/* 12. Permissions Tab */}
           <TabPanel>
-            <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <Suspense fallback={<TabLoadingFallback />}>
-                <PermissionsPage />
-              </Suspense>
-            </div>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <PermissionsPage />
+            </Suspense>
           </TabPanel>
 
-          {/* 17. Deployment Tab */}
+          {/* 13. Deployment Tab */}
           <TabPanel>
-            <div className="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
+            <div className="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-3">
               <div>
                 <h2 className="text-base/7 font-semibold text-gray-900 dark:text-white">Deployment</h2>
                 <p className="mt-1 text-sm/6 text-gray-500 dark:text-gray-400">
@@ -1003,6 +927,6 @@ export default function SettingsPage() {
           </TabPanel>
         </TabPanels>
       </TabGroup>
-    </AccountsLayout>
+    </main>
   )
 }

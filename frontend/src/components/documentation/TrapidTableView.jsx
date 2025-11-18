@@ -178,8 +178,10 @@ export default function TrapidTableView({
   const [filterName, setFilterName] = useState('') // Name for saving current filter combo
   const [selectedCascadeColumn, setSelectedCascadeColumn] = useState('') // Currently selected column in cascade filter
   const [cascadeInputValue, setCascadeInputValue] = useState('') // Input value for text-based filters
+  const [columnSearchQuery, setColumnSearchQuery] = useState('') // Search query for filtering column list
   const [activeViewId, setActiveViewId] = useState(null) // Track which saved view is currently active
   const [editingViewId, setEditingViewId] = useState(null) // Track which view is being edited
+  const [showSavedViewsDropdown, setShowSavedViewsDropdown] = useState(false) // Toggle for saved views dropdown
 
   // Save filters to localStorage whenever they change (per table)
   useEffect(() => {
@@ -1880,20 +1882,41 @@ export default function TrapidTableView({
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                       Select Column & Values:
                     </label>
+                    {/* Column search box */}
+                    <input
+                      type="text"
+                      value={columnSearchQuery}
+                      onChange={(e) => setColumnSearchQuery(e.target.value)}
+                      placeholder="Search columns..."
+                      className="w-full text-xs px-2 py-1.5 mb-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
+                    />
                     <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 mb-2">
-                      {COLUMNS.filter(col => col.key !== 'select' && !col.isComputed && col.filterable !== false).map(col => (
-                        <button
-                          key={`cascade-${col.key}`}
-                          onClick={() => setSelectedCascadeColumn(col.key === selectedCascadeColumn ? '' : col.key)}
-                          className={`w-full text-left text-xs px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                            selectedCascadeColumn === col.key
-                              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
-                              : 'text-gray-700 dark:text-gray-300'
-                          }`}
-                        >
-                          {col.label}
-                        </button>
-                      ))}
+                      {(() => {
+                        const filteredColumns = COLUMNS
+                          .filter(col => col.key !== 'select')
+                          .filter(col => col.label.toLowerCase().includes(columnSearchQuery.toLowerCase()))
+
+                        return filteredColumns.length > 0 ? filteredColumns.map(col => (
+                          <button
+                            key={`cascade-${col.key}`}
+                            onClick={() => {
+                              setSelectedCascadeColumn(col.key === selectedCascadeColumn ? '' : col.key)
+                              setColumnSearchQuery('') // Clear search after selection
+                            }}
+                            className={`w-full text-left text-xs px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                              selectedCascadeColumn === col.key
+                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
+                                : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {col.label}
+                          </button>
+                        )) : (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3">
+                            No matching columns
+                          </div>
+                        )
+                      })()}
                     </div>
 
                     {/* Show appropriate input based on column type */}
@@ -2392,7 +2415,7 @@ export default function TrapidTableView({
                         )}
 
                         {/* Inline Column Filter (Chapter 20.1) - Show only if showFilters is true */}
-                        {showFilters && column.filterable && column.filterType === 'text' && (
+                        {showFilters && column.filterType === 'text' && (
                           <input
                             type="text"
                             placeholder="Filter..."
@@ -2403,7 +2426,7 @@ export default function TrapidTableView({
                           />
                         )}
 
-                        {showFilters && column.filterable && column.filterType === 'dropdown' && colKey !== 'component' && (
+                        {showFilters && column.filterType === 'dropdown' && colKey !== 'component' && (
                           <select
                             value={columnFilters[colKey] || ''}
                             onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
@@ -2501,7 +2524,7 @@ export default function TrapidTableView({
                         )}
 
                         {/* Component multi-select checkboxes - Show only if showFilters is true */}
-                        {showFilters && column.filterable && colKey === 'component' && (
+                        {showFilters && colKey === 'component' && (
                           <div className="relative">
                             <button
                               onClick={(e) => {
@@ -2539,8 +2562,20 @@ export default function TrapidTableView({
                           </div>
                         )}
 
-                        {/* Empty spacer for columns without filters - maintains alignment - Show only if showFilters is true */}
-                        {showFilters && !column.filterable && (
+                        {/* Default text filter for columns without specific filterType - Show only if showFilters is true */}
+                        {showFilters && !column.filterType && colKey !== 'component' && colKey !== 'select' && (
+                          <input
+                            type="text"
+                            placeholder="Filter..."
+                            value={columnFilters[colKey] || ''}
+                            onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white placeholder-blue-200 dark:placeholder-blue-300"
+                          />
+                        )}
+
+                        {/* Empty spacer for select column */}
+                        {showFilters && colKey === 'select' && (
                           <div className="h-[26px]"></div>
                         )}
                       </div>

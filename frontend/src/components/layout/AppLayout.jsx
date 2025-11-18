@@ -57,8 +57,6 @@ const navigation = [
   { name: 'Outlook', href: '/outlook', icon: EnvelopeIcon },
   { name: 'OneDrive', href: '/onedrive', icon: CloudIcon },
   { name: 'Health', href: '/health', icon: PlusIcon },
-  { name: 'Performance', href: '/system/performance', icon: CpuChipIcon },
-  { name: 'Permissions', href: '/permissions', icon: ShieldCheckIcon },
   { name: 'System Admin', href: '/admin/system', icon: BeakerIcon },
   { name: 'Trinity', href: '/trinity', icon: BookOpenIcon },
   { name: 'DHTMLX Gantt', href: '/admin/system?tab=schedule-master&openGantt=dhtmlx', icon: ChartBarIcon },
@@ -511,8 +509,8 @@ export default function AppLayout({ children }) {
 
         {/* Main content */}
         <main className={classNames(
-          "py-10",
-          sidebarCollapsed ? "lg:pt-10" : ""
+          "py-4",
+          sidebarCollapsed ? "lg:pt-4" : ""
         )}>
           <div className="px-4 sm:px-6 lg:px-8">
             {children}

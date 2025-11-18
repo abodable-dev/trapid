@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api'
-import BackButton from '../components/common/BackButton'
 import {
   PlayIcon,
   CheckCircleIcon,
@@ -328,8 +327,6 @@ export default function AgentTasksPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       <div className="container mx-auto px-4 py-8">
-        <BackButton />
-
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
