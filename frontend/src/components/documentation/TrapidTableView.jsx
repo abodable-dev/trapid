@@ -1236,6 +1236,23 @@ export default function TrapidTableView({
         }
         return <span className="text-gray-400">-</span>
 
+      case 'section':
+        // Single line text - editable
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="text"
+              value={editingData.section || ''}
+              onChange={(e) => setEditingData({ ...editingData, section: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              maxLength={255}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          )
+        }
+        return entry.section || <span className="text-gray-400">-</span>
+
       default:
         return null
     }
