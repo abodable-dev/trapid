@@ -2026,8 +2026,11 @@ export default function TrapidTableView({
                         fontSize: '14px',
                         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                       }}
-                      className={`${colKey === 'select' ? 'px-1 py-1' : 'px-3 py-1'} text-gray-900 dark:text-white ${
-                        colKey === 'select' ? 'text-center' : ['price', 'quantity'].includes(colKey) ? 'text-right' : ''
+                      className={`${colKey === 'select' ? 'px-1 py-1' : 'px-3 py-1'} ${
+                        // Gray out computed columns when in edit mode
+                        editModeActive && column.isComputed ? 'text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-white'
+                      } ${
+                        colKey === 'select' ? 'text-center' : ['price', 'quantity', 'total_cost'].includes(colKey) ? 'text-right' : ''
                       } ${
                         // Non-edit mode: highlight clickable title/content cells
                         ['title', 'content'].includes(colKey) && !editModeActive ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20' : ''
