@@ -1,5 +1,7 @@
 class AddEnabledToPermissions < ActiveRecord::Migration[8.0]
   def change
-    add_column :permissions, :enabled, :boolean, default: true, null: false
+    unless column_exists?(:permissions, :enabled)
+      add_column :permissions, :enabled, :boolean, default: true, null: false
+    end
   end
 end
