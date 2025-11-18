@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { PlusIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import TrapidTableView from '../documentation/TrapidTableView'
 
 // Define price book gold standard columns - showing unique column types only
@@ -15,6 +15,7 @@ const GOLD_STANDARD_COLUMNS = [
   { key: 'component', label: 'Multi Lookup (Table)', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 220, tooltip: 'Multi Lookup - Multiple selections from another table (e.g., Suppliers table)' },
   { key: 'price', label: 'Currency', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'currency', tooltip: 'Currency field with sum - Price in AUD' },
   { key: 'quantity', label: 'Number', resizable: true, sortable: true, filterable: false, width: 100, showSum: true, sumType: 'number', tooltip: 'Number field with sum - Quantity' },
+  { key: 'whole_number', label: 'Whole Number', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'number', tooltip: 'Whole Number - Integers only (no decimals). Example: Units, Count, Days' },
   { key: 'total_cost', label: 'Computed', resizable: true, sortable: true, filterable: false, width: 140, showSum: true, sumType: 'currency', tooltip: 'Computed - Formula: price × quantity. Can also do lookups to other tables and multiply/add values', isComputed: true, computeFunction: (entry) => (entry.price || 0) * (entry.quantity || 0) },
   { key: 'audit', label: 'Date/Time', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Date/time field - Last updated timestamp' },
   { key: 'content', label: 'Multi Line Text', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 300, tooltip: 'Multi-line text field - Notes and comments' }
@@ -337,6 +338,21 @@ export default function GoldStandardTableTab() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newItem, setNewItem] = useState({
+    section: '',
+    email: '',
+    phone: '',
+    mobile: '',
+    type: '',
+    is_active: true,
+    discount: 0,
+    component: '',
+    status: 'active',
+    price: 0,
+    quantity: 0,
+    content: ''
+  })
 
   // Fetch gold standard items from API
   useEffect(() => {
@@ -401,22 +417,42 @@ export default function GoldStandardTableTab() {
     }
   }
 
-  const handleAddNew = async () => {
-    // For now, just show the message - we'll implement a proper form later
-    const message = `Add New Item
+  const handleAddNew = () => {
+    setNewItem({
+      section: '',
+      email: '',
+      phone: '',
+      mobile: '',
+      type: '',
+      is_active: true,
+      discount: 0,
+      component: '',
+      status: 'active',
+      price: 0,
+      quantity: 0,
+      content: ''
+    })
+    setShowAddModal(true)
+  }
 
-This would open a modal form with fields for:
-• Single Line Text (Code)
-• Lookup (Category dropdown)
-• Lookup with Badges (Status with colored indicators)
-• Lookup Multi-Select (Suppliers)
-• Currency (Price in AUD)
-• Number (Quantity)
-• Date/Time (Auto-populated timestamp)
-• Multi Line Text (Notes/Description)
+  const handleSaveNewItem = async () => {
+    try {
+      const response = await fetch('/api/v1/gold_standard_items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gold_standard_item: newItem })
+      })
 
-The form would validate required fields and save to the database.`
-    alert(message)
+      if (!response.ok) throw new Error('Failed to create item')
+
+      const createdItem = await response.json()
+      setData(prevData => [...prevData, createdItem])
+      setShowAddModal(false)
+      console.log('Created:', createdItem)
+    } catch (err) {
+      console.error('Error creating item:', err)
+      alert(`Failed to create item: ${err.message}`)
+    }
   }
 
   const handleImport = () => {
@@ -500,6 +536,242 @@ The form would validate required fields and save to the database.`
           </button>
         }
       />
+
+      {/* Add New Item Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add New Item</h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="px-6 py-4 space-y-4">
+              {/* Single Line Text (Code) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Code (Single Line Text)
+                </label>
+                <input
+                  type="text"
+                  value={newItem.section}
+                  onChange={(e) => setNewItem({ ...newItem, section: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="e.g., CONC-001"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={newItem.email}
+                  onChange={(e) => setNewItem({ ...newItem, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="supplier@example.com"
+                />
+              </div>
+
+              {/* Phone & Mobile */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={newItem.phone}
+                    onChange={(e) => setNewItem({ ...newItem, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="(03) 9123 4567"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Mobile
+                  </label>
+                  <input
+                    type="tel"
+                    value={newItem.mobile}
+                    onChange={(e) => setNewItem({ ...newItem, mobile: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="0407 397 541"
+                  />
+                </div>
+              </div>
+
+              {/* Category Dropdown */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Category (Lookup)
+                </label>
+                <select
+                  value={newItem.type}
+                  onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Select a category...</option>
+                  <option value="Concrete">Concrete</option>
+                  <option value="Timber">Timber</option>
+                  <option value="Steel">Steel</option>
+                  <option value="Plasterboard">Plasterboard</option>
+                  <option value="Insulation">Insulation</option>
+                  <option value="Tiles">Tiles</option>
+                  <option value="Paint">Paint</option>
+                  <option value="Roofing">Roofing</option>
+                  <option value="Electrical">Electrical</option>
+                  <option value="Plumbing">Plumbing</option>
+                  <option value="Landscaping">Landscaping</option>
+                </select>
+              </div>
+
+              {/* Status with Badges */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Status (Lookup with Badges)
+                </label>
+                <select
+                  value={newItem.status}
+                  onChange={(e) => setNewItem({ ...newItem, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              {/* Suppliers Multi-Select */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Supplier (Multi Lookup)
+                </label>
+                <select
+                  value={newItem.component}
+                  onChange={(e) => setNewItem({ ...newItem, component: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Select a supplier...</option>
+                  <option value="Boral">Boral</option>
+                  <option value="Bunnings">Bunnings</option>
+                  <option value="OneSteel">OneSteel</option>
+                  <option value="CSR">CSR</option>
+                  <option value="Beaumont">Beaumont</option>
+                  <option value="Dulux">Dulux</option>
+                  <option value="BlueScope">BlueScope</option>
+                  <option value="Monier">Monier</option>
+                  <option value="Clipsal">Clipsal</option>
+                  <option value="Reece">Reece</option>
+                  <option value="Local Quarry">Local Quarry</option>
+                </select>
+              </div>
+
+              {/* Boolean */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={newItem.is_active}
+                  onChange={(e) => setNewItem({ ...newItem, is_active: e.target.checked })}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Is Active (Boolean)
+                </label>
+              </div>
+
+              {/* Percentage */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Discount (Percentage)
+                </label>
+                <input
+                  type="number"
+                  value={newItem.discount}
+                  onChange={(e) => setNewItem({ ...newItem, discount: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="0"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                />
+              </div>
+
+              {/* Price and Quantity */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Price (Currency - AUD)
+                  </label>
+                  <input
+                    type="number"
+                    value={newItem.price}
+                    onChange={(e) => setNewItem({ ...newItem, price: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Quantity (Number)
+                  </label>
+                  <input
+                    type="number"
+                    value={newItem.quantity}
+                    onChange={(e) => setNewItem({ ...newItem, quantity: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="0"
+                    min="0"
+                    step="1"
+                  />
+                </div>
+              </div>
+
+              {/* Multi Line Text */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Notes/Description (Multi Line Text)
+                </label>
+                <textarea
+                  value={newItem.content}
+                  onChange={(e) => setNewItem({ ...newItem, content: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+                  placeholder="Enter any notes or description..."
+                />
+              </div>
+
+              {/* Auto-populated timestamp note */}
+              <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                Date/Time will be auto-populated when the item is created
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-700 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200 dark:border-gray-600">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveNewItem}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Save Item
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

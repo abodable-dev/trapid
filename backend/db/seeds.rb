@@ -241,6 +241,7 @@ gold_standard_items = [
     status: 'active',
     price: 285.00,
     quantity: 15,
+    whole_number: 3,
     unit: 'm³',
     severity: 'low',
     content: 'Standard 25MPa concrete mix for slabs and footings'
@@ -257,6 +258,7 @@ gold_standard_items = [
     status: 'active',
     price: 315.00,
     quantity: 8,
+    whole_number: 5,
     unit: 'm³',
     severity: 'low',
     content: 'High strength concrete for structural elements'
