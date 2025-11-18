@@ -1,16 +1,17 @@
 # Add RULE #1.0: Read Dense Index First
 # Run with: rails runner db/seeds/add_rule_1_0.rb
 
-Trinity.find_or_create_by!(
+rule = Trinity.find_or_initialize_by(
   category: 'bible',
   chapter_number: 1,
   section_number: '1.0'
-) do |rule|
-  rule.chapter_name = 'Overview & System-Wide Rules'
-  rule.entry_type = 'ALWAYS'
-  rule.severity = 'critical'
-  rule.title = 'Read Dense Index First, Then Full Content of Relevant Rules Only'
-  rule.description = <<~DESC
+)
+
+rule.chapter_name = 'Overview & System-Wide Rules'
+rule.entry_type = 'ALWAYS'
+rule.severity = 'critical'
+rule.title = 'Read Dense Index First, Then Full Content of Relevant Rules Only'
+rule.description = <<~DESC
     **ALWAYS read the Bible using this efficient 3-step pattern:**
 
     ## What is the Dense Index?
@@ -247,8 +248,9 @@ Trinity.find_or_create_by!(
     Trinity.bible_entries.where("dense_index ILIKE ?", "%workingdays%")
     ```
   DESC
-end
 
-puts "✅ RULE #1.0 created successfully!"
+rule.save!
+
+puts "✅ RULE #1.0 #{rule.new_record? ? 'created' : 'updated'} successfully!"
 puts "📖 Run: rails trapid:export_bible"
 puts "📝 Then commit TRAPID_BIBLE.md"
