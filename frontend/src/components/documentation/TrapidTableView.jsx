@@ -2121,31 +2121,52 @@ export default function TrapidTableView({
                         editModeActive && colKey !== 'select' && !column.isComputed ? 'cursor-pointer' : ''
                       } whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
                       title={
-                        !editModeActive && (() => {
-                          // Show full text tooltip for all text columns
-                          if (colKey === 'title') {
-                            return entry.title || ''
-                          } else if (colKey === 'content') {
-                            let contentText = ''
-                            if (entry.category === 'bible') {
-                              contentText = entry.description || entry.details || entry.examples || ''
-                            } else if (entry.category === 'teacher') {
-                              contentText = entry.summary || entry.description || entry.code_example || ''
-                            } else if (entry.category === 'lexicon') {
-                              contentText = entry.scenario || entry.description || entry.solution || ''
-                            } else {
-                              contentText = entry.description || entry.details || entry.summary || ''
+                        editModeActive && colKey !== 'select' ? (
+                          // Edit mode: show field type and format instructions
+                          column.isComputed ? 'Computed field (auto-calculated, not editable)' :
+                          colKey === 'section' ? 'Single Line Text - Click to edit' :
+                          colKey === 'email' ? 'Email - Format: example@domain.com - Click to edit' :
+                          colKey === 'phone' ? 'Phone - Format: (03) 9123 4567 or 1300 123 456 - Click to edit' :
+                          colKey === 'mobile' ? 'Mobile - Format: 0407 397 541 - Click to edit' :
+                          colKey === 'is_active' ? 'Boolean - Click checkbox to toggle true/false' :
+                          colKey === 'discount' ? 'Percentage - Enter number (shown as %) - Click to edit' :
+                          colKey === 'status' ? 'Choice - Select from dropdown: Active, Inactive, Open, Fixed, By Design, Monitoring' :
+                          colKey === 'component' ? 'Multi Lookup - Enter component name (e.g., Auth, Chat, Jobs) - Click to edit' :
+                          colKey === 'price' ? 'Currency - Enter amount in AUD - Click to edit' :
+                          colKey === 'quantity' ? 'Number - Enter any number (decimals allowed) - Click to edit' :
+                          colKey === 'whole_number' ? 'Whole Number - Enter integers only (no decimals) - Click to edit' :
+                          colKey === 'severity' ? 'Choice - Select from dropdown: Low, Medium, High, Critical' :
+                          colKey === 'updated_at' ? 'Date - Auto-updated timestamp (not editable)' :
+                          colKey === 'document_link' ? 'Document Link - Enter URL (e.g., https://example.com/doc.pdf) - Click to edit' :
+                          colKey === 'content' ? 'Multi Line Text - Click to open text editor' :
+                          colKey === 'title' ? 'Single Line Text - Click to open text editor' :
+                          column.tooltip || 'Click to edit'
+                        ) : (
+                          // Not in edit mode: show content or column description
+                          !editModeActive && (() => {
+                            // Show full text tooltip for text columns
+                            if (colKey === 'title') {
+                              return entry.title || column.tooltip || ''
+                            } else if (colKey === 'content') {
+                              let contentText = ''
+                              if (entry.category === 'bible') {
+                                contentText = entry.description || entry.details || entry.examples || ''
+                              } else if (entry.category === 'teacher') {
+                                contentText = entry.summary || entry.description || entry.code_example || ''
+                              } else if (entry.category === 'lexicon') {
+                                contentText = entry.scenario || entry.description || entry.solution || ''
+                              } else {
+                                contentText = entry.description || entry.details || entry.summary || ''
+                              }
+                              return contentText || column.tooltip || ''
+                            } else if (colKey === 'dense_index') {
+                              return entry.dense_index || ''
+                            } else if (colKey === 'component') {
+                              return entry.component || column.tooltip || ''
                             }
-                            return contentText || ''
-                          } else if (colKey === 'dense_index') {
-                            return entry.dense_index || ''
-                          } else if (colKey === 'component') {
-                            return entry.component || ''
-                          }
-                          return ''
-                        })() ||
-                        (editModeActive && editingRowId !== entry.id && ['title', 'content', 'component'].includes(colKey) ? 'Double-click to edit' : '') ||
-                        (editModeActive && editingRowId !== entry.id && ['status', 'severity'].includes(colKey) ? 'Click to edit' : '')
+                            return column.tooltip || ''
+                          })()
+                        )
                       }
                     >
                       {renderCellContent(entry, colKey)}
