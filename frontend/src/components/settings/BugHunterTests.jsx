@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { PlayIcon, EyeIcon, ClockIcon } from '@heroicons/react/24/outline'
 import toast, { Toaster } from 'react-hot-toast'
@@ -262,11 +262,13 @@ export default function BugHunterTests() {
     return history[0]
   }
 
-  const getTestHistory = (testId) => {
-    const history = testHistory.filter(h => h.test_id === testId).slice(0, 10)
-    console.log('getTestHistory for', testId, '- Found', history.length, 'runs:', history)
-    return history
-  }
+  const getTestHistory = useMemo(() => {
+    return (testId) => {
+      const history = testHistory.filter(h => h.test_id === testId).slice(0, 10)
+      console.log('getTestHistory for', testId, '- Found', history.length, 'runs:', history)
+      return history
+    }
+  }, [testHistory])
 
   const filteredTests = tests.filter(test => {
     if (!searchQuery) return true
