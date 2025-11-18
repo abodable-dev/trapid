@@ -19,8 +19,14 @@ export default function ExplorerSidebar({ onUploadClick }) {
   const [priceBooks, setPriceBooks] = useState([])
   const [loadingJobs, setLoadingJobs] = useState(true)
   const [loadingPriceBooks, setLoadingPriceBooks] = useState(true)
-  const [jobsExpanded, setJobsExpanded] = useState(true)
-  const [priceBooksExpanded, setPriceBooksExpanded] = useState(true)
+  const [jobsExpanded, setJobsExpanded] = useState(() => {
+    const saved = localStorage.getItem('jobsExpanded')
+    return saved === null ? true : saved === 'true'
+  })
+  const [priceBooksExpanded, setPriceBooksExpanded] = useState(() => {
+    const saved = localStorage.getItem('priceBooksExpanded')
+    return saved === null ? true : saved === 'true'
+  })
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     // Load from localStorage on mount
     const saved = localStorage.getItem('sidebarCollapsed')
@@ -79,6 +85,18 @@ export default function ExplorerSidebar({ onUploadClick }) {
     const newState = !sidebarCollapsed
     setSidebarCollapsed(newState)
     localStorage.setItem('sidebarCollapsed', newState.toString())
+  }
+
+  const toggleJobsExpanded = () => {
+    const newState = !jobsExpanded
+    setJobsExpanded(newState)
+    localStorage.setItem('jobsExpanded', newState.toString())
+  }
+
+  const togglePriceBooksExpanded = () => {
+    const newState = !priceBooksExpanded
+    setPriceBooksExpanded(newState)
+    localStorage.setItem('priceBooksExpanded', newState.toString())
   }
 
   return (
@@ -211,7 +229,7 @@ export default function ExplorerSidebar({ onUploadClick }) {
                   </span>
                 </Link>
                 <button
-                  onClick={() => setJobsExpanded(!jobsExpanded)}
+                  onClick={toggleJobsExpanded}
                   className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
                 >
                   <ChevronRightIcon
@@ -282,7 +300,7 @@ export default function ExplorerSidebar({ onUploadClick }) {
           ) : (
             <>
               <button
-                onClick={() => setPriceBooksExpanded(!priceBooksExpanded)}
+                onClick={togglePriceBooksExpanded}
                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="flex items-center gap-3">
