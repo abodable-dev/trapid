@@ -2112,23 +2112,23 @@ export default function TrapidTableView({
                       {/* Instant tooltip for edit mode - shows on hover with no delay */}
                       {editModeActive && colKey !== 'select' && (
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg whitespace-normal w-max max-w-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-none z-[100] pointer-events-none">
-                          {column.isComputed ? 'Computed field (auto-calculated, not editable)' :
-                           colKey === 'section' ? 'Single Line Text - Click to edit' :
-                           colKey === 'email' ? 'Email - Format: example@domain.com - Click to edit' :
-                           colKey === 'phone' ? 'Phone - Format: (03) 9123 4567 or 1300 123 456 - Click to edit' :
-                           colKey === 'mobile' ? 'Mobile - Format: 0407 397 541 - Click to edit' :
+                          {column.isComputed ? '🔒 This column is NOT editable - Computed field (auto-calculated)' :
+                           colKey === 'section' ? 'Single Line Text - Max 255 characters - Click to edit' :
+                           colKey === 'email' ? 'Email - Max 255 characters - Format: example@domain.com - Click to edit' :
+                           colKey === 'phone' ? 'Phone - Max 50 characters - Format: (03) 9123 4567 or 1300 123 456 - Click to edit' :
+                           colKey === 'mobile' ? 'Mobile - Max 50 characters - Format: 0407 397 541 - Click to edit' :
                            colKey === 'is_active' ? 'Boolean - Click checkbox to toggle true/false' :
                            colKey === 'discount' ? 'Percentage - Enter number (shown as %) - Click to edit' :
                            colKey === 'status' ? 'Choice - Select from dropdown: Active, Inactive, Open, Fixed, By Design, Monitoring' :
-                           colKey === 'component' ? 'Multi Lookup - Enter component name (e.g., Auth, Chat, Jobs) - Click to edit' :
+                           colKey === 'component' ? 'Multi Lookup - Max 255 characters - Enter component name (e.g., Auth, Chat, Jobs) - Click to edit' :
                            colKey === 'price' ? 'Currency - Enter amount in AUD - Click to edit' :
                            colKey === 'quantity' ? 'Number - Enter any number (decimals allowed) - Click to edit' :
                            colKey === 'whole_number' ? 'Whole Number - Enter integers only (no decimals) - Click to edit' :
                            colKey === 'severity' ? 'Choice - Select from dropdown: Low, Medium, High, Critical' :
-                           colKey === 'updated_at' ? 'Date - Auto-updated timestamp (not editable)' :
-                           colKey === 'document_link' ? 'Document Link - Enter URL (e.g., https://example.com/doc.pdf) - Click to edit' :
-                           colKey === 'content' ? 'Multi Line Text - Click to open text editor' :
-                           colKey === 'title' ? 'Single Line Text - Click to open text editor' :
+                           colKey === 'updated_at' ? '🔒 This column is NOT editable - Date - Auto-updated timestamp' :
+                           colKey === 'document_link' ? 'Document Link - Max 500 characters - Enter URL (e.g., https://example.com/doc.pdf) - Click to edit' :
+                           colKey === 'content' ? 'Multi Line Text - Unlimited characters - Click to open text editor' :
+                           colKey === 'title' ? 'Single Line Text - Max 255 characters - Click to open text editor' :
                            column.tooltip || 'Click to edit'}
                           {/* Tooltip arrow pointing up */}
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[-1px] border-4 border-transparent border-b-gray-900 dark:border-b-gray-700"></div>
