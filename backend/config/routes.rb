@@ -79,6 +79,9 @@ Rails.application.routes.draw do
         # Rain logs (nested under constructions)
         resources :rain_logs, only: [:index, :show, :create, :update, :destroy]
 
+        # Meetings (nested under constructions)
+        resources :meetings, only: [:index, :create]
+
       end
 
       # Schedule tasks (non-nested routes)
@@ -107,6 +110,15 @@ Rails.application.routes.draw do
           member do
             post :auto_complete_subtasks
           end
+        end
+      end
+
+      # Meetings (non-nested routes)
+      resources :meetings, only: [:index, :show, :update, :destroy] do
+        member do
+          post :start
+          post :complete
+          post :cancel
         end
       end
 
