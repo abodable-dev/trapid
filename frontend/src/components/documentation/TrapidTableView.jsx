@@ -1285,7 +1285,7 @@ export default function TrapidTableView({
                     </span>
                   </h3>
                   <p className="text-sm text-orange-100 mt-0.5">
-                    Click any cell to start editing • Changes save immediately • Exit when done
+                    Click any cell to edit • Click Save button to save changes • Exit when done
                   </p>
                 </div>
               </div>
@@ -1300,7 +1300,7 @@ export default function TrapidTableView({
                 className="px-6 py-2.5 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2 backdrop-blur-sm"
               >
                 <XMarkIcon className="h-5 w-5" />
-                Save Work
+                Exit Edit Mode
               </button>
             </div>
           </div>
