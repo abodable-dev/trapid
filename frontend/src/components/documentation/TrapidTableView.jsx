@@ -1791,9 +1791,9 @@ export default function TrapidTableView({
               <>
                 {/* Backdrop */}
                 <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowCascadeDropdown(false)} />
-                {/* Dropdown positioned to the right of button */}
+                {/* Dropdown positioned below button */}
                 <div
-                  className="absolute left-full top-0 ml-2 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto z-[60]"
+                  className="absolute left-0 top-full mt-2 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto z-[60]"
                   onClick={(e) => e.stopPropagation()}
                 >
                 <div className="p-3 space-y-3">
@@ -1815,16 +1815,21 @@ export default function TrapidTableView({
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                       Select Column & Values:
                     </label>
-                    <select
-                      value={selectedCascadeColumn}
-                      onChange={(e) => setSelectedCascadeColumn(e.target.value)}
-                      className="w-full text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white mb-2"
-                    >
-                      <option value="">Select column...</option>
-                      {COLUMNS.filter(col => col.key !== 'select' && !col.isComputed).map(col => (
-                        <option key={`cascade-${col.key}`} value={col.key}>{col.label}</option>
+                    <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 mb-2">
+                      {COLUMNS.filter(col => col.key !== 'select' && !col.isComputed && col.filterable !== false).map(col => (
+                        <button
+                          key={`cascade-${col.key}`}
+                          onClick={() => setSelectedCascadeColumn(col.key === selectedCascadeColumn ? '' : col.key)}
+                          className={`w-full text-left text-xs px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                            selectedCascadeColumn === col.key
+                              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
+                              : 'text-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          {col.label}
+                        </button>
                       ))}
-                    </select>
+                    </div>
 
                     {/* Show appropriate input based on column type */}
                     {selectedCascadeColumn && (() => {
@@ -1832,7 +1837,7 @@ export default function TrapidTableView({
                       const columnLabel = column?.label || selectedCascadeColumn
 
                       // Boolean type - show sliding toggle switch
-                      if (selectedCascadeColumn === 'boolean') {
+                      if (column?.filterType === 'boolean') {
                         const hasYesFilter = cascadeFilters.some(f => f.column === selectedCascadeColumn && f.value === true)
                         const hasNoFilter = cascadeFilters.some(f => f.column === selectedCascadeColumn && f.value === false)
                         const currentState = hasYesFilter ? true : hasNoFilter ? false : null
@@ -2356,7 +2361,7 @@ export default function TrapidTableView({
                               <span>▼</span>
                             </button>
                             {showComponentDropdown && (
-                              <div className="absolute bottom-full left-0 mb-1 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg text-xs z-[100] min-w-full max-h-64 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                              <div className="absolute top-full left-0 mt-1 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg text-xs z-[100] min-w-full max-h-64 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                                 {uniqueComponents.map(comp => (
                                   <label key={comp} className="flex items-center space-x-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 px-1 rounded cursor-pointer text-gray-900 dark:text-white whitespace-nowrap">
                                     <input
@@ -2394,7 +2399,7 @@ export default function TrapidTableView({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900">
-            {filteredAndSorted.map((entry, index) => (
+            {filteredAndSorted.length > 0 ? filteredAndSorted.map((entry, index) => (
               <tr
                 key={entry.id}
                 onDoubleClick={(e) => {
@@ -2495,7 +2500,19 @@ export default function TrapidTableView({
                   )
                 })}
               </tr>
-            ))}
+            )) : (
+              // When no rows match filters, show 10 empty placeholder rows to maintain table height
+              // This keeps filter dropdowns accessible (Chapter 20: Table must remain usable even with no matches)
+              Array.from({ length: 10 }).map((_, index) => (
+                <tr key={`empty-${index}`} className={index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-blue-50 dark:bg-blue-900/20'}>
+                  {columnOrder.filter(key => visibleColumns[key]).map(colKey => (
+                    <td key={colKey} className="px-6 py-3 text-center text-sm text-gray-400 dark:text-gray-600">
+                      {colKey === 'select' ? '' : index === 4 && colKey === columnOrder.filter(key => visibleColumns[key])[1] ? 'No entries found matching your filters' : '-'}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
 
           {/* Table Footer - shows sums for currency/numeric columns */}
@@ -2565,12 +2582,6 @@ export default function TrapidTableView({
             </tr>
           </tfoot>
         </table>
-
-        {filteredAndSorted.length === 0 && (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            No entries found matching your filters
-          </div>
-        )}
       </div>
       {/* End bordered container */}
 
