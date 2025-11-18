@@ -1280,7 +1280,7 @@ export default function TrapidTableView({
                 className="px-6 py-2.5 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2 backdrop-blur-sm"
               >
                 <XMarkIcon className="h-5 w-5" />
-                Exit Edit Mode
+                Save Work
               </button>
             </div>
           </div>
