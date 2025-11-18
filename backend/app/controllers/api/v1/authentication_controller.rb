@@ -1,7 +1,39 @@
 module Api
   module V1
     class AuthenticationController < ApplicationController
-      skip_before_action :authorize_request, only: [ :login, :signup ]
+      skip_before_action :authorize_request, only: [ :login, :signup, :dev_login ]
+
+      # GET /api/v1/auth/dev_login
+      # Dev mode only: Auto-login as default dev user
+      def dev_login
+        unless dev_mode_enabled?
+          render json: {
+            success: false,
+            error: "Dev mode is not enabled. Set DEV_MODE_AUTH_BYPASS=true in .env"
+          }, status: :forbidden
+          return
+        end
+
+        # Find or create default dev user
+        dev_user = User.find_or_create_by!(email: 'dev@trapid.local') do |user|
+          user.name = 'Dev User'
+          user.password = 'DevPassword123!'
+          user.role = 'admin'  # Give dev user admin access
+        end
+
+        token = JsonWebToken.encode(user_id: dev_user.id)
+        render json: {
+          success: true,
+          token: token,
+          dev_mode: true,
+          user: {
+            id: dev_user.id,
+            email: dev_user.email,
+            name: dev_user.name,
+            role: dev_user.role
+          }
+        }
+      end
 
       # POST /api/v1/auth/signup
       def signup
@@ -74,6 +106,10 @@ module Api
       end
 
       private
+
+      def dev_mode_enabled?
+        ENV['DEV_MODE_AUTH_BYPASS'] == 'true'
+      end
 
       def signup_params
         params.require(:user).permit(:email, :password, :password_confirmation, :name)

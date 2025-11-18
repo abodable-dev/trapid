@@ -756,7 +756,7 @@ export default function TablePage() {
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Add columns to this table before adding records</p>
                   <div className="mt-4">
                     <Link
-                      to={`/settings/tables`}
+                      to={`/admin/system?tab=tables`}
                       className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded"
                     >
                       <Cog6ToothIcon className="h-4 w-4" />

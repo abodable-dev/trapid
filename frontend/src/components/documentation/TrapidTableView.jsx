@@ -178,6 +178,8 @@ export default function TrapidTableView({
   const [filterName, setFilterName] = useState('') // Name for saving current filter combo
   const [selectedCascadeColumn, setSelectedCascadeColumn] = useState('') // Currently selected column in cascade filter
   const [cascadeInputValue, setCascadeInputValue] = useState('') // Input value for text-based filters
+  const [activeViewId, setActiveViewId] = useState(null) // Track which saved view is currently active
+  const [editingViewId, setEditingViewId] = useState(null) // Track which view is being edited
 
   // Save filters to localStorage whenever they change (per table)
   useEffect(() => {
@@ -187,6 +189,25 @@ export default function TrapidTableView({
       console.error('Error saving filters to localStorage:', error)
     }
   }, [savedFilters, tableId])
+
+  // Auto-load default view on mount
+  useEffect(() => {
+    const defaultView = savedFilters.find(view => view.isDefault)
+    if (defaultView) {
+      // Load default view's filters
+      setCascadeFilters(defaultView.filters.map(f => ({
+        id: Date.now() + Math.random(),
+        column: f.column,
+        value: f.value,
+        label: f.label
+      })))
+      // Load default view's column visibility if available
+      if (defaultView.visibleColumns) {
+        setVisibleColumns(defaultView.visibleColumns)
+      }
+      setActiveViewId(defaultView.id)
+    }
+  }, []) // Only run on mount
 
   // Component multi-select checkbox state
   const [selectedComponents, setSelectedComponents] = useState(new Set())
@@ -1786,6 +1807,50 @@ export default function TrapidTableView({
               )}
             </button>
 
+          {/* Active View Name Badge */}
+          {activeViewId && savedFilters.find(v => v.id === activeViewId) && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs font-medium rounded-lg border border-blue-300 dark:border-blue-700">
+              <span className="truncate max-w-[150px]" title={savedFilters.find(v => v.id === activeViewId)?.name}>
+                {savedFilters.find(v => v.id === activeViewId)?.isDefault && '⭐ '}
+                {savedFilters.find(v => v.id === activeViewId)?.name}
+              </span>
+            </div>
+          )}
+
+          {/* Update View Button - appears when active view has been modified */}
+          {(() => {
+            if (!activeViewId) return null
+            const activeView = savedFilters.find(v => v.id === activeViewId)
+            if (!activeView) return null
+
+            // Check if filters or columns have changed
+            const filtersChanged = JSON.stringify(cascadeFilters.map(f => ({ column: f.column, value: f.value, label: f.label })))
+              !== JSON.stringify(activeView.filters)
+            const columnsChanged = activeView.visibleColumns && JSON.stringify(visibleColumns) !== JSON.stringify(activeView.visibleColumns)
+
+            if (!filtersChanged && !columnsChanged) return null
+
+            return (
+              <button
+                onClick={() => {
+                  setSavedFilters(savedFilters.map(v =>
+                    v.id === activeViewId
+                      ? {
+                          ...v,
+                          filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, label: f.label })),
+                          visibleColumns: { ...visibleColumns }
+                        }
+                      : v
+                  ))
+                }}
+                className="px-3 py-1.5 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:hover:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                title="Save changes to this view"
+              >
+                💾 Update "{activeView.name}"
+              </button>
+            )
+          })()}
+
             {/* Excel-style dropdown panel */}
             {showCascadeDropdown && (
               <>
@@ -2051,30 +2116,57 @@ export default function TrapidTableView({
                       {/* Save current filter combo */}
                       <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                         <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                          Save This Filter Combo:
+                          Save This View:
                         </label>
-                        <div className="flex gap-1">
-                          <input
-                            type="text"
-                            value={filterName}
-                            onChange={(e) => setFilterName(e.target.value)}
-                            placeholder="Filter name..."
-                            className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
-                          />
+                        <div className="space-y-2">
+                          <div className="flex gap-1">
+                            <input
+                              type="text"
+                              value={filterName}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                if (value.length <= 20) {
+                                  setFilterName(value)
+                                }
+                              }}
+                              placeholder="View name (max 20 chars)..."
+                              maxLength={20}
+                              className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
+                            />
+                            <span className="text-[10px] text-gray-400 self-center">{filterName.length}/20</span>
+                          </div>
+                          <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              id="set-as-default"
+                              className="rounded border-gray-300"
+                            />
+                            <span>Set as default view</span>
+                          </label>
                           <button
                             onClick={() => {
                               if (!filterName.trim()) return
-                              setSavedFilters([...savedFilters, {
+                              const isDefault = document.getElementById('set-as-default').checked
+                              // If setting as default, remove default from other views
+                              const updatedFilters = isDefault
+                                ? savedFilters.map(f => ({ ...f, isDefault: false }))
+                                : savedFilters
+
+                              setSavedFilters([...updatedFilters, {
                                 id: Date.now(),
-                                name: filterName,
-                                filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, label: f.label }))
+                                name: filterName.trim(),
+                                filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, label: f.label })),
+                                visibleColumns: { ...visibleColumns },
+                                isDefault: isDefault
                               }])
+                              setActiveViewId(Date.now())
                               setFilterName('')
+                              document.getElementById('set-as-default').checked = false
                             }}
                             disabled={!filterName.trim()}
-                            className="px-3 py-1.5 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-800 dark:text-green-200 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full px-3 py-1.5 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-800 dark:text-green-200 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Save
+                            Save View
                           </button>
                         </div>
                       </div>
@@ -2089,33 +2181,94 @@ export default function TrapidTableView({
                   {savedFilters.length > 0 && (
                     <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                       <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                        Saved Filters ({savedFilters.length}):
+                        Saved Views ({savedFilters.length}):
                       </label>
                       <div className="space-y-1.5 max-h-48 overflow-y-auto">
                         {savedFilters.map((saved) => (
                           <div
                             key={saved.id}
-                            className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 px-2.5 py-1.5 rounded border border-green-200 dark:border-green-800"
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded border ${
+                              activeViewId === saved.id
+                                ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-400 dark:border-blue-600'
+                                : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                            }`}
                           >
-                            <button
-                              onClick={() => {
-                                setCascadeFilters(saved.filters.map(f => ({
-                                  id: Date.now() + Math.random(),
-                                  column: f.column,
-                                  value: f.value,
-                                  label: f.label
-                                })))
-                              }}
-                              className="flex-1 text-left text-xs text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-medium"
-                            >
-                              {saved.name} ({saved.filters.length} filters)
-                            </button>
-                            <button
-                              onClick={() => setSavedFilters(savedFilters.filter(f => f.id !== saved.id))}
-                              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-bold ml-2"
-                            >
-                              ✕
-                            </button>
+                            {editingViewId === saved.id ? (
+                              <>
+                                <input
+                                  type="text"
+                                  defaultValue={saved.name}
+                                  maxLength={20}
+                                  onBlur={(e) => {
+                                    const newName = e.target.value.trim()
+                                    if (newName) {
+                                      setSavedFilters(savedFilters.map(f =>
+                                        f.id === saved.id ? { ...f, name: newName } : f
+                                      ))
+                                    }
+                                    setEditingViewId(null)
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') e.target.blur()
+                                    if (e.key === 'Escape') setEditingViewId(null)
+                                  }}
+                                  autoFocus
+                                  className="flex-1 text-xs px-1 py-0.5 border border-blue-400 rounded bg-white dark:bg-gray-700 dark:text-white"
+                                />
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setCascadeFilters(saved.filters.map(f => ({
+                                      id: Date.now() + Math.random(),
+                                      column: f.column,
+                                      value: f.value,
+                                      label: f.label
+                                    })))
+                                    if (saved.visibleColumns) {
+                                      setVisibleColumns(saved.visibleColumns)
+                                    }
+                                    setActiveViewId(saved.id)
+                                  }}
+                                  className="flex-1 text-left text-xs text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-medium truncate"
+                                  title={`${saved.name} (${saved.filters.length} filters)`}
+                                >
+                                  {saved.isDefault && <span className="text-yellow-600 dark:text-yellow-400">⭐ </span>}
+                                  {saved.name}
+                                </button>
+                                <button
+                                  onClick={() => setEditingViewId(saved.id)}
+                                  className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-xs"
+                                  title="Edit name"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSavedFilters(savedFilters.map(f => ({
+                                      ...f,
+                                      isDefault: f.id === saved.id ? true : false
+                                    })))
+                                  }}
+                                  className={`text-xs ${saved.isDefault ? 'opacity-50' : 'hover:text-yellow-600'}`}
+                                  title={saved.isDefault ? "Already default" : "Set as default"}
+                                  disabled={saved.isDefault}
+                                >
+                                  ⭐
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (activeViewId === saved.id) setActiveViewId(null)
+                                    setSavedFilters(savedFilters.filter(f => f.id !== saved.id))
+                                  }}
+                                  className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-bold"
+                                  title="Delete view"
+                                >
+                                  ✕
+                                </button>
+                              </>
+                            )}
                           </div>
                         ))}
                       </div>

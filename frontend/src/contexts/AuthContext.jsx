@@ -12,11 +12,10 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }) => {
-  const isDevelopment = import.meta.env.MODE === 'development'
+  const devModeBypass = import.meta.env.VITE_DEV_MODE_AUTH_BYPASS === 'true'
 
-  // In development, bypass auth with a fake user
-  const [user, setUser] = useState(isDevelopment ? { id: 1, email: 'dev@example.com', name: 'Dev User' } : null)
-  const [loading, setLoading] = useState(!isDevelopment)
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [token, setToken] = useState(localStorage.getItem('token'))
 
   // Configure axios defaults
@@ -26,9 +25,9 @@ export const AuthProvider = ({ children }) => {
   }
 
   useEffect(() => {
-    // Skip auth check in development
-    if (isDevelopment) {
-      setLoading(false)
+    // Auto-login in dev mode
+    if (devModeBypass && !token) {
+      devLogin()
       return
     }
 
@@ -38,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false)
     }
-  }, [token, isDevelopment])
+  }, [token, devModeBypass])
 
   const checkAuth = async () => {
     try {
@@ -51,6 +50,27 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Auth check failed:', error)
       logout()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const devLogin = async () => {
+    try {
+      console.log('🔧 Dev Mode: Auto-logging in...')
+      const response = await axios.get('/api/v1/auth/dev_login')
+
+      if (response.data.success) {
+        const { token, user } = response.data
+        localStorage.setItem('token', token)
+        setToken(token)
+        setUser(user)
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        console.log('✅ Dev Mode: Logged in as', user.name)
+      }
+    } catch (error) {
+      console.error('❌ Dev Mode: Auto-login failed:', error)
+      console.log('Falling back to normal authentication flow')
     } finally {
       setLoading(false)
     }

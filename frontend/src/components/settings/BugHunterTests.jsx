@@ -166,7 +166,7 @@ export default function BugHunterTests() {
 
       // FIRST: Navigate to Schedule Master to show the Gantt chart
       console.log('🧪 Opening Schedule Master Gantt view for visual test...')
-      window.location.href = `/settings?tab=schedule-master&subtab=setup&template=${templateId}&runVisualTest=${testId}`
+      window.location.href = `/admin/system?tab=schedule-master&subtab=setup&template=${templateId}&runVisualTest=${testId}`
       return
     }
 
@@ -669,7 +669,7 @@ export default function BugHunterTests() {
             // Navigate to Schedule Master tab with the selected template
             const templateId = visualTestId ? selectedTemplates[visualTestId] : null
             if (templateId) {
-              window.location.href = `/settings?tab=schedule-master&subtab=setup&template=${templateId}`
+              window.location.href = `/admin/system?tab=schedule-master&subtab=setup&template=${templateId}`
             }
           }}
           templateId={visualTestId ? selectedTemplates[visualTestId] : null}

@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { RocketLaunchIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import AccountsLayout from '../components/layout/AccountsLayout'
@@ -28,6 +28,8 @@ const AgentShortcutsTab = lazy(() => import('../components/settings/AgentShortcu
 const UserManualTab = lazy(() => import('../components/settings/UserManualTab'))
 const InspiringQuotesTab = lazy(() => import('../components/settings/InspiringQuotesTab'))
 const GoldStandardTableTab = lazy(() => import('../components/settings/GoldStandardTableTab'))
+const SystemPerformancePage = lazy(() => import('./SystemPerformancePage'))
+const PermissionsPage = lazy(() => import('./PermissionsPage'))
 
 // Loading fallback component for lazy-loaded tabs
 function TabLoadingFallback() {
@@ -38,12 +40,202 @@ function TabLoadingFallback() {
   )
 }
 
+// Security Tab Component with nested sub-tabs
+function SecurityTab() {
+  return (
+    <div className="px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-4xl">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Security Settings</h2>
+
+        <TabGroup>
+          <TabList className="flex space-x-1 rounded-xl bg-indigo-900/20 p-1 mb-6">
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Users & Permissions
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Permissions Management
+            </Tab>
+          </TabList>
+
+          <TabPanels>
+            {/* Users & Permissions Tab */}
+            <TabPanel>
+              <Suspense fallback={<TabLoadingFallback />}>
+                <RolesAndGroupsTab />
+              </Suspense>
+            </TabPanel>
+
+            {/* Permissions Management Tab */}
+            <TabPanel>
+              <div className="rounded-lg bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-900/5 dark:ring-white/10 p-6">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Advanced Permissions</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                  Manage detailed permission settings and access controls for your organization.
+                </p>
+                <Link
+                  to="/permissions"
+                  className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  Open Permissions Manager
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                  </svg>
+                </Link>
+              </div>
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
+      </div>
+    </div>
+  )
+}
+
+// Developer Tools Tab Component with nested sub-tabs
+function DeveloperToolsTab() {
+  return (
+    <div className="px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-7xl">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Developer Tools</h2>
+
+        <TabGroup>
+          <TabList className="flex space-x-1 rounded-xl bg-indigo-900/20 p-1 mb-6">
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all whitespace-nowrap
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Database Tables
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all whitespace-nowrap
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Database Schema
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all whitespace-nowrap
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Git Branches
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all whitespace-nowrap
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Agent Status
+            </Tab>
+          </TabList>
+
+          <TabPanels>
+            {/* Database Tables Tab */}
+            <TabPanel>
+              <Suspense fallback={<TabLoadingFallback />}>
+                <TablesTab />
+              </Suspense>
+            </TabPanel>
+
+            {/* Database Schema Tab */}
+            <TabPanel>
+              <Suspense fallback={<TabLoadingFallback />}>
+                <SchemaPage />
+              </Suspense>
+            </TabPanel>
+
+            {/* Git Branches Tab */}
+            <TabPanel>
+              <Suspense fallback={<TabLoadingFallback />}>
+                <GitBranchVisualization />
+              </Suspense>
+            </TabPanel>
+
+            {/* Agent Status Tab */}
+            <TabPanel>
+              <Suspense fallback={<TabLoadingFallback />}>
+                <AgentStatus />
+              </Suspense>
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
+      </div>
+    </div>
+  )
+}
+
+// Company Tab Component - simply wraps CompanySettingsTab which already has Info and Holidays sub-tabs
+// The CompanySettingsTab already has its own nested sub-tabs structure
+function CompanyTab() {
+  return (
+    <Suspense fallback={<TabLoadingFallback />}>
+      <CompanySettingsTab />
+    </Suspense>
+  )
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Map tab names to indices
-  const tabs = ['company', 'integrations', 'users', 'contact-roles', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'gold-standard', 'schema', 'git', 'agents', 'claude-shortcuts', 'user-manual', 'inspiring-quotes', 'deployment']
+  // Map tab names to indices - NEW STRUCTURE: 17 tabs
+  const tabs = [
+    'company',
+    'security',
+    'contact-roles',
+    'workflows',
+    'folder-templates',
+    'schedule-master',
+    'documentation',
+    'supervisor-checklist',
+    'xero-field-mapping',
+    'gold-standard',
+    'developer-tools',
+    'claude-shortcuts',
+    'user-manual',
+    'inspiring-quotes',
+    'performance',
+    'permissions',
+    'deployment'
+  ]
 
   // Get initial tab index from URL query parameter
   const getInitialTabIndex = () => {
@@ -63,7 +255,7 @@ export default function SettingsPage() {
   const handleTabChange = (index) => {
     setSelectedIndex(index)
     const tabName = tabs[index]
-    navigate(`/settings?tab=${tabName}`, { replace: true })
+    navigate(`/admin/system?tab=${tabName}`, { replace: true })
   }
 
   // Update selected tab when URL changes (e.g., browser back/forward)
@@ -139,6 +331,12 @@ export default function SettingsPage() {
     <AccountsLayout>
       <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>
         <div className="px-4 sm:px-6 lg:px-8 py-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">System Administration</h1>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Configure system settings, integrations, and developer tools
+            </p>
+          </div>
           <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 w-full overflow-x-auto">
             <Tab
               className={({ selected }) =>
@@ -162,19 +360,7 @@ export default function SettingsPage() {
                 }`
               }
             >
-              Integrations
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
-                ${
-                  selected
-                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
-                }`
-              }
-            >
-              Users
+              Security
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -258,7 +444,7 @@ export default function SettingsPage() {
                 }`
               }
             >
-              Public Holidays
+              Xero Field Mapping
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -270,7 +456,7 @@ export default function SettingsPage() {
                 }`
               }
             >
-              Xero
+              Gold Standard View
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -282,55 +468,7 @@ export default function SettingsPage() {
                 }`
               }
             >
-              Tables
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
-                ${
-                  selected
-                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
-                }`
-              }
-            >
-              Trapid Table View
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
-                ${
-                  selected
-                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
-                }`
-              }
-            >
-              Schema
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
-                ${
-                  selected
-                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
-                }`
-              }
-            >
-              Git Branches
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
-                ${
-                  selected
-                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
-                }`
-              }
-            >
-              Agents
+              Developer Tools
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -378,50 +516,51 @@ export default function SettingsPage() {
                 }`
               }
             >
+              Performance
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Permissions
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
               Deployment
             </Tab>
           </TabList>
         </div>
 
         <TabPanels>
-          {/* Company Settings Tab */}
+          {/* 1. Company Tab with nested sub-tabs */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
-              <CompanySettingsTab />
+              <CompanyTab />
             </Suspense>
           </TabPanel>
 
-          {/* Integrations Tab */}
+          {/* 2. Security Tab with nested sub-tabs */}
           <TabPanel>
-            <div className="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
-              <div>
-                <h2 className="text-base/7 font-semibold text-gray-900 dark:text-white">Integrations</h2>
-                <p className="mt-1 text-sm/6 text-gray-500 dark:text-gray-400">
-                  Connect third-party services to sync data and automate workflows.
-                </p>
-              </div>
-
-              <div className="md:col-span-2 space-y-6">
-                <Suspense fallback={<TabLoadingFallback />}>
-                  <XeroConnection />
-                  <OneDriveConnection />
-                  <OutlookConnection />
-                  <TwilioConfiguration />
-                </Suspense>
-              </div>
-            </div>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <SecurityTab />
+            </Suspense>
           </TabPanel>
 
-          {/* Users Tab */}
-          <TabPanel>
-            <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <Suspense fallback={<TabLoadingFallback />}>
-                <RolesAndGroupsTab />
-              </Suspense>
-            </div>
-          </TabPanel>
-
-          {/* Contact Roles Tab */}
+          {/* 3. Contact Roles Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
               <Suspense fallback={<TabLoadingFallback />}>
@@ -430,7 +569,7 @@ export default function SettingsPage() {
             </div>
           </TabPanel>
 
-          {/* Workflows Tab */}
+          {/* 4. Workflows Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
               <Suspense fallback={<TabLoadingFallback />}>
@@ -439,7 +578,7 @@ export default function SettingsPage() {
             </div>
           </TabPanel>
 
-          {/* Folder Templates Tab */}
+          {/* 5. Folder Templates Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
               <Suspense fallback={<TabLoadingFallback />}>
@@ -448,102 +587,88 @@ export default function SettingsPage() {
             </div>
           </TabPanel>
 
-          {/* Schedule Master Tab with nested sub-tabs */}
+          {/* 6. Schedule Master Tab with nested sub-tabs */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <ScheduleMasterTabs />
             </Suspense>
           </TabPanel>
 
-          {/* Documentation Categories Tab */}
+          {/* 7. Documentation Categories Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <DocumentationCategoriesTab />
             </Suspense>
           </TabPanel>
 
-          {/* Supervisor Checklist Tab */}
+          {/* 8. Supervisor Checklist Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <SupervisorChecklistTab />
             </Suspense>
           </TabPanel>
 
-          {/* Public Holidays Tab */}
-          <TabPanel>
-            <Suspense fallback={<TabLoadingFallback />}>
-              <PublicHolidaysPage />
-            </Suspense>
-          </TabPanel>
-
-          {/* Xero Tab */}
+          {/* 9. Xero Field Mapping Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <XeroFieldMappingTab />
             </Suspense>
           </TabPanel>
 
-          {/* Tables Tab */}
-          <TabPanel>
-            <Suspense fallback={<TabLoadingFallback />}>
-              <TablesTab />
-            </Suspense>
-          </TabPanel>
-
-          {/* Gold Standard Table Tab */}
+          {/* 10. Gold Standard View Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <GoldStandardTableTab />
             </Suspense>
           </TabPanel>
 
-          {/* Schema Tab */}
+          {/* 11. Developer Tools Tab with nested sub-tabs */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
-              <SchemaPage />
+              <DeveloperToolsTab />
             </Suspense>
           </TabPanel>
 
-          {/* Git Branches Tab */}
-          <TabPanel>
-            <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <Suspense fallback={<TabLoadingFallback />}>
-                <GitBranchVisualization />
-              </Suspense>
-            </div>
-          </TabPanel>
-
-          {/* Agents Tab */}
-          <TabPanel>
-            <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <Suspense fallback={<TabLoadingFallback />}>
-                <AgentStatus />
-              </Suspense>
-            </div>
-          </TabPanel>
-
-          {/* Claude Shortcuts Tab */}
+          {/* 12. Claude Shortcuts Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <AgentShortcutsTab />
             </Suspense>
           </TabPanel>
 
-          {/* User Manual Tab */}
+          {/* 13. User Manual Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <UserManualTab />
             </Suspense>
           </TabPanel>
 
-          {/* Inspiring Quotes Tab */}
+          {/* 14. Inspiring Quotes Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <InspiringQuotesTab />
             </Suspense>
           </TabPanel>
 
-          {/* Deployment Tab */}
+          {/* 15. Performance Tab */}
+          <TabPanel>
+            <div className="px-4 sm:px-6 lg:px-8 py-10">
+              <Suspense fallback={<TabLoadingFallback />}>
+                <SystemPerformancePage />
+              </Suspense>
+            </div>
+          </TabPanel>
+
+          {/* 16. Permissions Tab */}
+          <TabPanel>
+            <div className="px-4 sm:px-6 lg:px-8 py-10">
+              <Suspense fallback={<TabLoadingFallback />}>
+                <PermissionsPage />
+              </Suspense>
+            </div>
+          </TabPanel>
+
+          {/* 17. Deployment Tab */}
           <TabPanel>
             <div className="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
               <div>

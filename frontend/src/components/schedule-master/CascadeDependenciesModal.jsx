@@ -654,13 +654,13 @@ export default function CascadeDependenciesModal({
                           <label className="flex items-center gap-2 text-xs cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1">
                             <input
                               type="checkbox"
-                              checked={false}
+                              checked={task.supplier_confirm || task.confirm || task.start || task.complete || task.manually_positioned || task.$manuallyPositioned}
                               onChange={() => handleUnlockTask(task)}
                               className="h-3 w-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                              title={`Untick ${lockReason} to unlock this task and allow it to cascade`}
+                              title={`Currently ${lockReason} - untick to unlock this task and allow it to cascade`}
                             />
                             <span className="text-xs text-gray-600 dark:text-gray-400">
-                              Untick "{lockReason}" to unlock and cascade
+                              {lockReason} (untick to unlock and cascade)
                             </span>
                           </label>
                         </div>

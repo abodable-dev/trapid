@@ -40,6 +40,7 @@ import {
   BanknotesIcon,
   ChartBarIcon,
   BeakerIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
@@ -57,9 +58,10 @@ const navigation = [
   { name: 'OneDrive', href: '/onedrive', icon: CloudIcon },
   { name: 'Health', href: '/health', icon: PlusIcon },
   { name: 'Performance', href: '/system/performance', icon: CpuChipIcon },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+  { name: 'Permissions', href: '/permissions', icon: ShieldCheckIcon },
+  { name: 'System Admin', href: '/admin/system', icon: BeakerIcon },
   { name: 'Trinity', href: '/trinity', icon: BookOpenIcon },
-  { name: 'DHTMLX Gantt', href: '/settings?tab=schedule-master&openGantt=dhtmlx', icon: ChartBarIcon },
+  { name: 'DHTMLX Gantt', href: '/admin/system?tab=schedule-master&openGantt=dhtmlx', icon: ChartBarIcon },
 ]
 
 // Bottom navigation items

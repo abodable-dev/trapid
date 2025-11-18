@@ -22,6 +22,7 @@ const ContactsPage = lazy(() => import('./pages/ContactsPage'))
 const ContactDetailPage = lazy(() => import('./pages/ContactDetailPage'))
 const AccountsPage = lazy(() => import('./pages/AccountsPage'))
 const UsersPage = lazy(() => import('./pages/UsersPage'))
+const SystemAdminPage = lazy(() => import('./pages/SystemAdminPage'))
 const HealthPage = lazy(() => import('./pages/HealthPage'))
 const PurchaseOrderDetailPage = lazy(() => import('./pages/PurchaseOrderDetailPage'))
 const PurchaseOrderEditPage = lazy(() => import('./pages/PurchaseOrderEditPage'))
@@ -31,7 +32,6 @@ const SupplierEditPage = lazy(() => import('./pages/SupplierEditPage'))
 const SupplierNewPage = lazy(() => import('./pages/SupplierNewPage'))
 const ImportPage = lazy(() => import('./pages/ImportPage'))
 const TablePage = lazy(() => import('./pages/TablePage'))
-const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const SchemaPage = lazy(() => import('./pages/SchemaPage'))
 const TableStandardTest = lazy(() => import('./pages/TableStandardTest'))
 const XeroCallbackPage = lazy(() => import('./pages/XeroCallbackPage'))
@@ -41,7 +41,6 @@ const OneDrivePage = lazy(() => import('./pages/OneDrivePage'))
 const WorkflowsPage = lazy(() => import('./pages/WorkflowsPage'))
 const WorkflowAdminPage = lazy(() => import('./pages/WorkflowAdminPage'))
 const PublicHolidaysPage = lazy(() => import('./pages/PublicHolidaysPage'))
-const SystemPerformancePage = lazy(() => import('./pages/SystemPerformancePage'))
 
 // Heavy components: Lazy load with priority (biggest bundle impact)
 const MasterSchedulePage = lazy(() => import('./pages/MasterSchedulePage')) // 3,952 lines Gantt!
@@ -120,7 +119,6 @@ function App() {
         <Route path="/accounts" element={<AppLayout><AccountsPage /></AppLayout>} />
         <Route path="/users" element={<AppLayout><UsersPage /></AppLayout>} />
         <Route path="/health" element={<AppLayout><HealthPage /></AppLayout>} />
-        <Route path="/system/performance" element={<AppLayout><SystemPerformancePage /></AppLayout>} />
         <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />
         <Route path="/suppliers/new" element={<AppLayout><SupplierNewPage /></AppLayout>} />
         <Route path="/suppliers/:id/edit" element={<AppLayout><SupplierEditPage /></AppLayout>} />
@@ -141,8 +139,7 @@ function App() {
             {({ onOpenGrokChat }) => <Features onOpenGrokChat={onOpenGrokChat} />}
           </AppLayout>
         } />
-        <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
-        <Route path="/settings/integrations" element={<AppLayout><SettingsPage /></AppLayout>} />
+        <Route path="/admin/system" element={<AppLayout><SystemAdminPage /></AppLayout>} />
         <Route path="/settings/schema" element={<AppLayout><SchemaPage /></AppLayout>} />
         <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
         <Route path="/table-test" element={<AppLayout><TableStandardTest /></AppLayout>} />

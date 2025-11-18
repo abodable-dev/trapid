@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { api } from '../../api'
 import PublicHolidaysPage from '../../pages/PublicHolidaysPage'
 import { setCompanySettings } from '../../utils/timezoneUtils'
+
+// Lazy load integration components
+const XeroConnection = lazy(() => import('./XeroConnection'))
+const OneDriveConnection = lazy(() => import('./OneDriveConnection'))
+const OutlookConnection = lazy(() => import('./OutlookConnection'))
+const TwilioConfiguration = lazy(() => import('./TwilioConfiguration'))
 
 const TIMEZONES = [
   { value: 'Australia/Brisbane', label: 'Brisbane (AEST/AEDT)' },
@@ -125,6 +131,18 @@ export default function CompanySettingsTab() {
               }
             >
               Holidays
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Connections
             </Tab>
           </TabList>
 
@@ -287,6 +305,18 @@ export default function CompanySettingsTab() {
             {/* Holidays Tab */}
             <TabPanel>
               <PublicHolidaysPage />
+            </TabPanel>
+
+            {/* Connections Tab */}
+            <TabPanel>
+              <div className="space-y-6">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-500 dark:text-gray-400">Loading...</div></div>}>
+                  <XeroConnection />
+                  <OneDriveConnection />
+                  <OutlookConnection />
+                  <TwilioConfiguration />
+                </Suspense>
+              </div>
             </TabPanel>
           </TabPanels>
         </TabGroup>

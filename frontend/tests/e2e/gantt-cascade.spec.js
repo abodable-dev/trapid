@@ -144,9 +144,9 @@ test.describe('Gantt Cascade Functionality', () => {
     await page.waitForTimeout(2000);
     console.log('✅ Test data reset');
 
-    // Navigate to Settings > Schedule Master > Bug Hunter Tests tab
-    console.log('📍 Navigating to Settings > Schedule Master > Bug Hunter Tests...');
-    await page.goto('/settings?tab=schedule-master&subtab=bug-hunter');
+    // Navigate to System Admin > Schedule Master > Bug Hunter Tests tab
+    console.log('📍 Navigating to System Admin > Schedule Master > Bug Hunter Tests...');
+    await page.goto('/admin/system?tab=schedule-master&subtab=bug-hunter');
     await page.waitForTimeout(2000);
 
     // Find the E2E test row and click the "eye" (visual test) button

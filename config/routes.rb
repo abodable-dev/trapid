@@ -17,6 +17,7 @@ Rails.application.routes.draw do
       post 'auth/signup', to: 'authentication#signup'
       post 'auth/login', to: 'authentication#login'
       get 'auth/me', to: 'authentication#me'
+      get 'auth/dev_login', to: 'authentication#dev_login'  # Dev mode only
 
       # OmniAuth routes
       get 'auth/microsoft_office365/callback', to: 'omniauth_callbacks#microsoft_office365'
@@ -195,6 +196,15 @@ Rails.application.routes.draw do
           post :reset_password
         end
       end
+
+      # Permissions management
+      resources :permissions, only: [:index] do
+        collection do
+          get :roles
+        end
+      end
+      get 'permissions/user/:user_id', to: 'permissions#user_permissions'
+      post 'permissions/grant', to: 'permissions#grant'
 
       # User Roles and Groups management
       resources :user_roles, only: [:index, :create, :destroy]

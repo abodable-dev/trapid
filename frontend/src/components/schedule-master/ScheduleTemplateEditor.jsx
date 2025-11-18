@@ -258,7 +258,7 @@ export default function ScheduleTemplateEditor() {
 
   // Also collapse when navigating to this tab (location change)
   useEffect(() => {
-    if (location.pathname === '/settings' && location.search.includes('schedule-master')) {
+    if (location.pathname === '/admin/system' && location.search.includes('schedule-master')) {
       setIsLeftPanelCollapsed(true)
     }
   }, [location])
@@ -407,7 +407,7 @@ export default function ScheduleTemplateEditor() {
             document.body.removeChild(testModal)
             setShowGanttView(false)
             // Navigate to Bug Hunter Tests tab
-            window.location.href = `/settings?tab=schedule-master&subtab=bug-hunter&testResult=${result.passed ? 'pass' : 'fail'}&testId=${runVisualTestParam}`
+            window.location.href = `/admin/system?tab=schedule-master&subtab=bug-hunter&testResult=${result.passed ? 'pass' : 'fail'}&testId=${runVisualTestParam}`
           }, 3000) // Keep modal visible for 3 seconds to show results
         } catch (error) {
           console.error('❌ Test error:', error)

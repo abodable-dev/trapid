@@ -349,11 +349,11 @@ function OneDriveView({
 
           <div className="mt-6">
             <Link
-              to="/settings?tab=integrations"
+              to="/admin/system?tab=integrations"
               className="inline-flex items-center gap-2 px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <Cog6ToothIcon className="h-5 w-5" />
-              Go to Settings
+              Go to System Admin
             </Link>
           </div>
 
