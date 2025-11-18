@@ -7,6 +7,7 @@ import {
   ChevronRightIcon,
   FolderIcon,
   ArrowUpTrayIcon,
+  CalendarIcon,
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
@@ -94,6 +95,21 @@ export default function ExplorerSidebar({ onUploadClick }) {
           >
             <FolderIcon className="h-5 w-5" />
             <span className="font-medium text-sm">All Tables</span>
+          </Link>
+        </div>
+
+        {/* Meetings */}
+        <div className="px-4 pb-4">
+          <Link
+            to="/meetings"
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              isActiveRoute('/meetings')
+                ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <CalendarIcon className="h-5 w-5" />
+            <span className="font-medium text-sm">Meetings</span>
           </Link>
         </div>
 
