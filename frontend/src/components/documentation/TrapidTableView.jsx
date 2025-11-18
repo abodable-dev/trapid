@@ -1547,7 +1547,8 @@ export default function TrapidTableView({
                         }
                         e.target.value = ''
                       }}
-                      className="w-full text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
+                      size="10"
+                      className="w-full text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white max-h-64 overflow-y-auto"
                     >
                       <option key="cascade-empty" value="">Select column...</option>
                       {COLUMNS.filter(col => col.filterable && col.key !== 'select').map(col => (
