@@ -2151,7 +2151,7 @@ export default function TrapidTableView({
                 }}
                 className={`${
                   editingRowId === entry.id
-                    ? 'bg-blue-100 dark:bg-blue-900/50 ring-2 ring-blue-500'
+                    ? 'bg-white dark:bg-gray-800 ring-4 ring-blue-500 shadow-lg'
                     : selectedRows.has(entry.id)
                       ? 'bg-blue-200 dark:bg-blue-800/60 ring-2 ring-blue-400 dark:ring-blue-500'
                       : index % 2 === 0
