@@ -1108,7 +1108,18 @@ export default function TrapidTableView({
             <input
               type="tel"
               value={editingData.phone || ''}
-              onChange={(e) => setEditingData({ ...editingData, phone: e.target.value })}
+              onChange={(e) => {
+                let value = e.target.value.replace(/[\s()]/g, '') // Remove formatting
+                // Auto-format landline: (0X) XXXX XXXX
+                if (value.length === 10 && value.match(/^0[2-9]\d{8}$/)) {
+                  value = `(${value.slice(0, 2)}) ${value.slice(2, 6)} ${value.slice(6)}`
+                }
+                // Auto-format 1300/1800: 1300 XXX XXX
+                else if (value.length === 10 && value.match(/^1[38]00\d{6}$/)) {
+                  value = `${value.slice(0, 4)} ${value.slice(4, 7)} ${value.slice(7)}`
+                }
+                setEditingData({ ...editingData, phone: value })
+              }}
               onClick={(e) => e.stopPropagation()}
               onFocus={(e) => e.target.select()}
               placeholder="(03) 9123 4567"
@@ -1135,7 +1146,14 @@ export default function TrapidTableView({
             <input
               type="tel"
               value={editingData.mobile || ''}
-              onChange={(e) => setEditingData({ ...editingData, mobile: e.target.value })}
+              onChange={(e) => {
+                let value = e.target.value.replace(/\s/g, '') // Remove spaces
+                // Auto-format if 10 digits entered (Australian mobile)
+                if (value.length === 10 && value.match(/^04\d{8}$/)) {
+                  value = `${value.slice(0, 4)} ${value.slice(4, 7)} ${value.slice(7)}`
+                }
+                setEditingData({ ...editingData, mobile: value })
+              }}
               onClick={(e) => e.stopPropagation()}
               onFocus={(e) => e.target.select()}
               placeholder="0407 397 541"
