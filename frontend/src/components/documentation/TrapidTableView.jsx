@@ -1251,11 +1251,15 @@ export default function TrapidTableView({
             />
           )
         }
-        return (
-          <div className="px-2 py-1 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded border border-gray-200 dark:border-gray-600">
-            {entry.section || <span className="text-gray-400">-</span>}
-          </div>
-        )
+        // Show white box only in edit mode, plain text otherwise
+        if (editModeActive) {
+          return (
+            <div className="px-2 py-1 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded border border-gray-200 dark:border-gray-600">
+              {entry.section || <span className="text-gray-400">-</span>}
+            </div>
+          )
+        }
+        return entry.section || <span className="text-gray-400">-</span>
 
       default:
         return null
