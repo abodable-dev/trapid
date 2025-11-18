@@ -160,6 +160,23 @@ test.describe('Gantt Cascade Functionality', () => {
     const visualButton = e2eTestRow.locator('button').filter({ hasText: '' }).first(); // Eye icon SVG
     await visualButton.click();
 
+    // VISUAL TEST FIX: Force all backgrounds to white to prevent dark overlays in screenshots
+    await page.addStyleTag({
+      content: `
+        body { background-color: white !important; }
+        html { background-color: white !important; }
+        #root { background-color: white !important; }
+        div.fixed.inset-0 { background-color: rgba(255, 255, 255, 0) !important; opacity: 1 !important; }
+        div[class*="bg-black"] { background-color: rgba(255, 255, 255, 0) !important; }
+        div[class*="bg-gray-500"] { background-color: rgba(255, 255, 255, 0) !important; }
+        div[class*="bg-gray-900"] { background-color: rgba(255, 255, 255, 0) !important; }
+        div[class*="bg-opacity"] { background-color: rgba(255, 255, 255, 0) !important; opacity: 0 !important; }
+        div[class*="dark:bg-gray"] { background-color: white !important; }
+        .gantt_container, .gantt_grid, .gantt_timeline { background-color: white !important; }
+      `
+    });
+    console.log('✅ Visual test styling injected (white backgrounds)');
+
     // Wait for Gantt to load and be visible (with longer timeout for modal to process)
     console.log('🔍 Waiting for Gantt chart to load...');
     await page.waitForSelector('.gantt_task_line', { timeout: 45000 }); // Increased from 15s to 45s

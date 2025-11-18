@@ -575,16 +575,9 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-end justify-center p-4 pb-8">
-        {/* Backdrop - lighter opacity so Gantt is visible during visual tests */}
-        <div
-          className="fixed inset-0 bg-black bg-opacity-20 dark:bg-opacity-30 transition-opacity"
-          onClick={onClose}
-        />
-
-        {/* Modal - positioned at bottom of screen */}
-        <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-7xl w-full max-h-[60vh] overflow-hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-8 flex justify-center pointer-events-none">
+      {/* Modal - positioned at bottom of screen, fully opaque so no darkening effect */}
+      <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-7xl w-full max-h-[60vh] overflow-hidden pointer-events-auto border-4 border-indigo-500 dark:border-indigo-400">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-teal-50 dark:from-gray-800 dark:to-gray-800">
             <div className="flex items-center gap-3">
@@ -858,7 +851,6 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
             </button>
           </div>
         </div>
-      </div>
     </div>
   )
 }

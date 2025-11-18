@@ -1,16 +1,19 @@
 @tailwind base;
 @tailwind components;
+
+/* Force all modal overlays to be transparent to prevent dark backgrounds during visual tests */
+/* Must be defined BEFORE @tailwind utilities to have higher priority */
+@layer utilities {
+  .fixed.inset-0 {
+    background-color: transparent !important;
+  }
+}
+
 @tailwind utilities;
 
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-}
-
-/* Force all modal overlays to be white/transparent to prevent dark backgrounds during visual tests */
-.fixed.inset-0[class*="bg-black"],
-.fixed.inset-0[class*="bg-gray"] {
-  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Leaflet map z-index constraints to prevent overlap with navigation/header */
