@@ -2320,8 +2320,15 @@ export default function TrapidTableView({
                                     ▼
                                   </button>
                                 </div>
-                                <span className="flex-1 text-[11px] text-gray-700 dark:text-gray-300">
-                                  <span className="font-semibold text-purple-600 dark:text-purple-400">{index + 1}.</span> {filter.label}
+                                <span className="flex-1 text-[11px] text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                                  <span className="font-semibold text-purple-600 dark:text-purple-400">{index + 1}.</span>
+                                  <span className="font-medium text-blue-600 dark:text-blue-400">
+                                    {COLUMNS.find(col => col.key === filter.column)?.label || filter.column}:
+                                  </span>
+                                  <span className="font-semibold">
+                                    {filter.operator && filter.operator !== '=' && <span className="text-orange-600 dark:text-orange-400">{filter.operator} </span>}
+                                    {filter.value}
+                                  </span>
                                 </span>
                                 <button
                                   onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.id !== filter.id))}
