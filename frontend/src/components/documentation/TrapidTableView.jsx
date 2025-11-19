@@ -192,6 +192,7 @@ export default function TrapidTableView({
   const [activeViewId, setActiveViewId] = useState(null) // Track which saved view is currently active
   const [editingViewId, setEditingViewId] = useState(null) // Track which view is being edited
   const [editingFilterId, setEditingFilterId] = useState(null) // Track which filter is being edited
+  const [editingFilterValue, setEditingFilterValue] = useState('') // Track the temporary value while editing
 
   // Save filters to localStorage whenever they change (per table)
   useEffect(() => {
@@ -202,25 +203,25 @@ export default function TrapidTableView({
     }
   }, [savedFilters, tableId])
 
-  // Auto-load default view on mount
-  useEffect(() => {
-    const defaultView = savedFilters.find(view => view.isDefault)
-    if (defaultView) {
-      // Load default view's filters
-      setCascadeFilters(defaultView.filters.map(f => ({
-        id: Date.now() + Math.random(),
-        column: f.column,
-        value: f.value,
-        operator: f.operator || '=',
-        label: f.label
-      })))
-      // Load default view's column visibility if available
-      if (defaultView.visibleColumns) {
-        setVisibleColumns(defaultView.visibleColumns)
-      }
-      setActiveViewId(defaultView.id)
-    }
-  }, []) // Only run on mount
+  // Auto-load default view on mount - DISABLED to start with clean slate
+  // useEffect(() => {
+  //   const defaultView = savedFilters.find(view => view.isDefault)
+  //   if (defaultView) {
+  //     // Load default view's filters
+  //     setCascadeFilters(defaultView.filters.map(f => ({
+  //       id: Date.now() + Math.random(),
+  //       column: f.column,
+  //       value: f.value,
+  //       operator: f.operator || '=',
+  //       label: f.label
+  //     })))
+  //     // Load default view's column visibility if available
+  //     if (defaultView.visibleColumns) {
+  //       setVisibleColumns(defaultView.visibleColumns)
+  //     }
+  //     setActiveViewId(defaultView.id)
+  //   }
+  // }, []) // Only run on mount
 
   // Component multi-select checkbox state
   const [selectedComponents, setSelectedComponents] = useState(new Set())
@@ -1879,30 +1880,67 @@ export default function TrapidTableView({
                 </span>
               )}
             </button>
-            {/* Active Saved View Name */}
-            {activeViewId && (() => {
-              const activeView = savedFilters.find(v => v.id === activeViewId)
-              return activeView ? (
-                <span className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                  </svg>
-                  {activeView.name}
-                  {cascadeFilters.length > 0 && (
-                    <span className="inline-flex items-center justify-center min-w-[16px] h-[16px] bg-gray-500 dark:bg-gray-600 text-white rounded-full text-[9px] font-bold ml-0.5">
-                      {cascadeFilters.length}
-                    </span>
-                  )}
-                </span>
-              ) : null
-            })()}
           </div>
+
+          {/* Quick Access Saved View Buttons */}
+          {savedFilters
+            .sort((a, b) => {
+              // Default view always first
+              if (a.isDefault) return -1
+              if (b.isDefault) return 1
+              return 0
+            })
+            .map((view) => (
+            <button
+              key={view.id}
+              onClick={() => {
+                setCascadeFilters(view.filters.map(f => ({
+                  id: Date.now() + Math.random(),
+                  column: f.column,
+                  value: f.value,
+                  operator: f.operator || '=',
+                  label: f.label
+                })))
+                if (view.visibleColumns) {
+                  setVisibleColumns(view.visibleColumns)
+                }
+                setActiveViewId(view.id)
+              }}
+              className={`px-3 py-1.5 ${
+                activeViewId === view.id
+                  ? 'bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-800 dark:text-blue-200 border border-blue-400 dark:border-blue-600'
+                  : 'bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800'
+              } text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap`}
+              title={`${view.filters.length} filter${view.filters.length !== 1 ? 's' : ''}, ${view.visibleColumns ? Object.values(view.visibleColumns).filter(Boolean).length : 0} columns`}
+            >
+              {view.isDefault && <span className="text-yellow-600 dark:text-yellow-400">⭐</span>}
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              {view.name}
+              {view.filters.length > 0 && (
+                <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] ${
+                  activeViewId === view.id
+                    ? 'bg-blue-600 dark:bg-blue-500'
+                    : 'bg-green-600 dark:bg-green-700'
+                } text-white rounded-full text-[10px] font-bold`}>
+                  {view.filters.length}
+                </span>
+              )}
+            </button>
+          ))}
 
           {/* Update View Button - appears when active view has been modified */}
           {(() => {
             if (!activeViewId) return null
             const activeView = savedFilters.find(v => v.id === activeViewId)
             if (!activeView) return null
+
+            // Don't show update button while:
+            // 1. Editing a filter value inline
+            // 2. The cascade dropdown is open (user may be working with filters)
+            // 3. User is typing a new view name (filterName has content)
+            if (editingFilterId || showCascadeDropdown || filterName.trim()) return null
 
             // Check if filters or columns have changed
             // Normalize both current and saved filters to include default operator
@@ -1932,7 +1970,7 @@ export default function TrapidTableView({
                       : v
                   ))
                 }}
-                className="px-3 py-1.5 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:hover:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white text-sm font-bold rounded-lg shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 whitespace-nowrap animate-pulse"
                 title="Save changes to this view"
               >
                 💾 Update "{activeView.name}"
@@ -1947,7 +1985,7 @@ export default function TrapidTableView({
                 <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowCascadeDropdown(false)} />
                 {/* Dropdown positioned in center like a modal */}
                 <div
-                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl overflow-y-auto z-[60]"
+                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50vw] h-[90vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl overflow-y-auto z-[60]"
                   onClick={(e) => e.stopPropagation()}
                 >
                 <div className="p-3">
@@ -1965,7 +2003,7 @@ export default function TrapidTableView({
                   </div>
 
                   {/* Main content: 4 columns - Column Select | Value Select | Column Visibility | Saved Views */}
-                  <div className="grid grid-cols-[1.5fr,1fr,250px,280px] gap-4 h-[calc(90vh-4rem)]">
+                  <div className="grid grid-cols-[1fr,1.5fr,fit-content(200px),280px] gap-4 h-[calc(90vh-4rem)]">
                     {/* LEFT COLUMN: Column Selection */}
                     <div>
                       <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -2337,7 +2375,8 @@ export default function TrapidTableView({
                                   {editingFilterId === filter.id ? (
                                     <input
                                       type="text"
-                                      defaultValue={filter.value}
+                                      value={editingFilterValue}
+                                      onChange={(e) => setEditingFilterValue(e.target.value)}
                                       onBlur={(e) => {
                                         const newValue = e.target.value.trim()
                                         if (newValue) {
@@ -2356,10 +2395,14 @@ export default function TrapidTableView({
                                           ))
                                         }
                                         setEditingFilterId(null)
+                                        setEditingFilterValue('')
                                       }}
                                       onKeyDown={(e) => {
                                         if (e.key === 'Enter') e.target.blur()
-                                        if (e.key === 'Escape') setEditingFilterId(null)
+                                        if (e.key === 'Escape') {
+                                          setEditingFilterId(null)
+                                          setEditingFilterValue('')
+                                        }
                                       }}
                                       autoFocus
                                       className="flex-1 px-1 py-0.5 border border-blue-400 rounded bg-white dark:bg-gray-700 dark:text-white text-[11px] font-semibold min-w-[60px]"
@@ -2367,7 +2410,10 @@ export default function TrapidTableView({
                                   ) : (
                                     <span
                                       className="font-semibold cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 px-1 rounded"
-                                      onClick={() => setEditingFilterId(filter.id)}
+                                      onClick={() => {
+                                        setEditingFilterId(filter.id)
+                                        setEditingFilterValue(filter.value)
+                                      }}
                                       title="Click to edit value"
                                     >
                                       {filter.operator && filter.operator !== '=' && <span className="text-orange-600 dark:text-orange-400">{filter.operator} </span>}
@@ -2394,12 +2440,29 @@ export default function TrapidTableView({
                     </div>
 
                     {/* COLUMN 3: Column Visibility */}
-                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 h-full overflow-y-auto">
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                        Show/Hide Columns:
-                      </label>
+                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 h-full overflow-y-auto w-fit max-w-[200px]">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                          Show/Hide Columns:
+                        </label>
+                        <button
+                          onClick={() => {
+                            const allVisible = COLUMNS.filter(col => col.key !== 'select').every(col => visibleColumns[col.key] !== false)
+                            const newVisibility = {}
+                            COLUMNS.filter(col => col.key !== 'select').forEach(col => {
+                              newVisibility[col.key] = !allVisible
+                            })
+                            setVisibleColumns({ ...visibleColumns, ...newVisibility })
+                          }}
+                          className="px-2 py-0.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-[10px] font-medium rounded transition-colors"
+                        >
+                          {COLUMNS.filter(col => col.key !== 'select').every(col => visibleColumns[col.key] !== false) ? 'Deselect All' : 'Select All'}
+                        </button>
+                      </div>
                       <div className="space-y-0.5">
-                        {COLUMNS.filter(col => col.key !== 'select').map((column, index) => (
+                        {COLUMNS.filter(col => col.key !== 'select')
+                          .sort((a, b) => a.label.localeCompare(b.label))
+                          .map((column, index) => (
                           <label key={column.key} className={`flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 px-2 py-0.5 cursor-pointer ${
                             index % 2 === 0 ? 'bg-blue-50 dark:bg-blue-900/10' : 'bg-white dark:bg-gray-800'
                           }`}>
@@ -2432,6 +2495,53 @@ export default function TrapidTableView({
                         </span>
                       )}
                     </div>
+
+                    {/* Update existing view button - only show if active view has been modified */}
+                    {(() => {
+                      if (!activeViewId || cascadeFilters.length === 0) return null
+                      const activeView = savedFilters.find(v => v.id === activeViewId)
+                      if (!activeView) return null
+
+                      // Check if filters or columns have changed
+                      const normalizeFilter = (f) => ({
+                        column: f.column,
+                        value: f.value,
+                        operator: f.operator || '=',
+                        label: f.label
+                      })
+                      const currentFilters = JSON.stringify(cascadeFilters.map(normalizeFilter))
+                      const savedFiltersStr = JSON.stringify(activeView.filters.map(normalizeFilter))
+                      const filtersChanged = currentFilters !== savedFiltersStr
+                      const columnsChanged = activeView.visibleColumns && JSON.stringify(visibleColumns) !== JSON.stringify(activeView.visibleColumns)
+
+                      if (!filtersChanged && !columnsChanged) return null
+
+                      return (
+                        <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
+                          <button
+                            onClick={() => {
+                              setSavedFilters(savedFilters.map(v =>
+                                v.id === activeViewId
+                                  ? {
+                                      ...v,
+                                      filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label })),
+                                      visibleColumns: { ...visibleColumns }
+                                    }
+                                  : v
+                              ))
+                              // Clear active filters and view
+                              setCascadeFilters([])
+                              setActiveViewId(null)
+                              setShowCascadeDropdown(false)
+                            }}
+                            className="w-full px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white text-sm font-bold rounded-lg shadow-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap"
+                            title="Save changes to this view and close"
+                          >
+                            💾 Update "{activeView.name}"
+                          </button>
+                        </div>
+                      )
+                    })()}
 
                     {/* Save current view section - only show if there are active filters */}
                     {cascadeFilters.length > 0 && (
@@ -2505,7 +2615,7 @@ export default function TrapidTableView({
                           Your Saved Views ({savedFilters.length}):
                         </label>
                         <div className="space-y-1.5">
-                          {savedFilters.map((saved) => (
+                          {savedFilters.map((saved, index) => (
                             <div
                               key={saved.id}
                               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded border ${
@@ -2564,6 +2674,39 @@ export default function TrapidTableView({
                                     <div className="text-[10px] text-gray-500 dark:text-gray-400">
                                       {saved.filters.length} filter{saved.filters.length !== 1 ? 's' : ''} • {saved.visibleColumns ? Object.values(saved.visibleColumns).filter(Boolean).length : 0} column{saved.visibleColumns && Object.values(saved.visibleColumns).filter(Boolean).length !== 1 ? 's' : ''}
                                     </div>
+                                  </div>
+                                  {/* Up/Down arrows for reordering */}
+                                  <div className="flex flex-col gap-0.5">
+                                    <button
+                                      onClick={() => {
+                                        if (index === 0) return
+                                        const newFilters = [...savedFilters]
+                                        const temp = newFilters[index]
+                                        newFilters[index] = newFilters[index - 1]
+                                        newFilters[index - 1] = temp
+                                        setSavedFilters(newFilters)
+                                      }}
+                                      disabled={index === 0}
+                                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none"
+                                      title="Move up"
+                                    >
+                                      ▲
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        if (index === savedFilters.length - 1) return
+                                        const newFilters = [...savedFilters]
+                                        const temp = newFilters[index]
+                                        newFilters[index] = newFilters[index + 1]
+                                        newFilters[index + 1] = temp
+                                        setSavedFilters(newFilters)
+                                      }}
+                                      disabled={index === savedFilters.length - 1}
+                                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none"
+                                      title="Move down"
+                                    >
+                                      ▼
+                                    </button>
                                   </div>
                                   <button
                                     onClick={() => {
