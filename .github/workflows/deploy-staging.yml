@@ -18,17 +18,11 @@ jobs:
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
-          cat > ~/.netrc <<'EOF'
-          machine git.heroku.com
-            login
-            password ${HEROKU_API_KEY}
-          machine api.heroku.com
-            login
-            password ${HEROKU_API_KEY}
-          EOF
-          # Substitute the API key
-          sed -i "s/\${HEROKU_API_KEY}/$HEROKU_API_KEY/g" ~/.netrc
-          chmod 600 ~/.netrc
+          # Configure git to use API key as password
+          git config --global credential.helper store
+          echo "https://:$HEROKU_API_KEY@git.heroku.com" > ~/.git-credentials
+          chmod 600 ~/.git-credentials
+
           git remote add heroku https://git.heroku.com/trapid-backend.git || true
           git push heroku rob:main --force
 
