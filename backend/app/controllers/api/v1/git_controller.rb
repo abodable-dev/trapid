@@ -111,7 +111,12 @@ module Api
 
       # Check if git command is available
       def git_available?
-        @git_available ||= system('which git > /dev/null 2>&1')
+        return @git_available unless @git_available.nil?
+        @git_available = begin
+          `which git 2>/dev/null`.strip.present?
+        rescue => e
+          false
+        end
       end
     end
   end
