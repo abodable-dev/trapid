@@ -10,6 +10,8 @@ import {
   PhotoIcon
 } from '@heroicons/react/24/outline'
 import api from '../api'
+import AssetInsuranceTab from '../components/corporate/AssetInsuranceTab'
+import AssetServiceHistoryTab from '../components/corporate/AssetServiceHistoryTab'
 
 export default function AssetDetailPage() {
   const { id } = useParams()
@@ -165,8 +167,8 @@ export default function AssetDetailPage() {
       {/* Tab Content */}
       <div className="bg-white shadow rounded-lg p-6">
         {activeTab === 'overview' && <OverviewTab asset={asset} />}
-        {activeTab === 'insurance' && <InsuranceTab asset={asset} onUpdate={loadAsset} />}
-        {activeTab === 'service' && <ServiceHistoryTab asset={asset} onUpdate={loadAsset} />}
+        {activeTab === 'insurance' && <AssetInsuranceTab asset={asset} onUpdate={loadAsset} />}
+        {activeTab === 'service' && <AssetServiceHistoryTab asset={asset} onUpdate={loadAsset} />}
         {activeTab === 'activity' && <ActivityTab asset={asset} />}
       </div>
     </div>
@@ -264,14 +266,6 @@ function OverviewTab({ asset }) {
       )}
     </div>
   )
-}
-
-function InsuranceTab({ asset, onUpdate }) {
-  return <div>Insurance tab - Component will be created separately</div>
-}
-
-function ServiceHistoryTab({ asset, onUpdate }) {
-  return <div>Service History tab - Component will be created separately</div>
 }
 
 function ActivityTab({ asset }) {

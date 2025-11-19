@@ -12,6 +12,11 @@ import {
   ArrowLeftIcon
 } from '@heroicons/react/24/outline'
 import api from '../api'
+import CompanyFinancialTab from '../components/corporate/CompanyFinancialTab'
+import CompanyAssetsTab from '../components/corporate/CompanyAssetsTab'
+import CompanyComplianceTab from '../components/corporate/CompanyComplianceTab'
+import CompanyDocumentsTab from '../components/corporate/CompanyDocumentsTab'
+import CompanyActivityTab from '../components/corporate/CompanyActivityTab'
 
 export default function CompanyDetailPage() {
   const { id } = useParams()
@@ -153,11 +158,11 @@ export default function CompanyDetailPage() {
       <div className="bg-white shadow rounded-lg p-6">
         {activeTab === 'overview' && <OverviewTab company={company} />}
         {activeTab === 'directors' && <DirectorsTab company={company} onUpdate={loadCompany} />}
-        {activeTab === 'financial' && <FinancialTab company={company} />}
-        {activeTab === 'assets' && <AssetsTab company={company} />}
-        {activeTab === 'compliance' && <ComplianceTab company={company} onUpdate={loadCompany} />}
-        {activeTab === 'documents' && <DocumentsTab company={company} onUpdate={loadCompany} />}
-        {activeTab === 'activity' && <ActivityTab company={company} />}
+        {activeTab === 'financial' && <CompanyFinancialTab company={company} onUpdate={loadCompany} />}
+        {activeTab === 'assets' && <CompanyAssetsTab company={company} />}
+        {activeTab === 'compliance' && <CompanyComplianceTab company={company} onUpdate={loadCompany} />}
+        {activeTab === 'documents' && <CompanyDocumentsTab company={company} onUpdate={loadCompany} />}
+        {activeTab === 'activity' && <CompanyActivityTab company={company} />}
       </div>
     </div>
   )
@@ -223,24 +228,4 @@ function OverviewTab({ company }) {
 
 function DirectorsTab({ company, onUpdate }) {
   return <div>Directors tab - Component will be created separately</div>
-}
-
-function FinancialTab({ company }) {
-  return <div>Financial tab - Component will be created separately</div>
-}
-
-function AssetsTab({ company }) {
-  return <div>Assets tab - Component will be created separately</div>
-}
-
-function ComplianceTab({ company, onUpdate }) {
-  return <div>Compliance tab - Component will be created separately</div>
-}
-
-function DocumentsTab({ company, onUpdate }) {
-  return <div>Documents tab - Component will be created separately</div>
-}
-
-function ActivityTab({ company }) {
-  return <div>Activity tab - Component will be created separately</div>
 }
