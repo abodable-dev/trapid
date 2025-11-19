@@ -113,7 +113,10 @@ module Api
       def git_available?
         return @git_available unless @git_available.nil?
         @git_available = begin
-          `which git 2>/dev/null`.strip.present?
+          # Use File.exist? to check if git is in PATH
+          ENV['PATH'].split(':').any? do |dir|
+            File.executable?(File.join(dir, 'git'))
+          end
         rescue => e
           false
         end
