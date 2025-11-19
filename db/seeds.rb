@@ -478,3 +478,11 @@ end
 
 puts "Created #{GoldStandardItem.count} gold standard items"
 puts "Gold Standard Items seed complete!"
+
+# Meeting Types Seed Data
+puts "\n" + "="*50
+puts "Seeding Meeting Types..."
+
+load Rails.root.join('db', 'seeds', 'meeting_types.rb')
+
+puts "Meeting Types seed complete!"
