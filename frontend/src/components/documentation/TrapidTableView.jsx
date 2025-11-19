@@ -2526,11 +2526,32 @@ export default function TrapidTableView({
                                     </div>
                                   </div>
                                   <button
-                                    onClick={() => setEditingViewId(saved.id)}
+                                    onClick={() => {
+                                      // Load the view for editing
+                                      setCascadeFilters(saved.filters.map(f => ({
+                                        id: Date.now() + Math.random(),
+                                        column: f.column,
+                                        value: f.value,
+                                        operator: f.operator || '=',
+                                        label: f.label
+                                      })))
+                                      if (saved.visibleColumns) {
+                                        setVisibleColumns(saved.visibleColumns)
+                                      }
+                                      setActiveViewId(saved.id)
+                                      // Don't close dropdown - keep it open so user can see what they're editing
+                                    }}
                                     className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-xs"
-                                    title="Edit name"
+                                    title="Load view to edit filters and columns"
                                   >
                                     ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingViewId(saved.id)}
+                                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-xs"
+                                    title="Rename view"
+                                  >
+                                    📝
                                   </button>
                                   <button
                                     onClick={() => {
