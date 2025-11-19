@@ -11,7 +11,7 @@ import {
   PencilIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline'
-import api from '../api'
+import { api } from '../api'
 import CompanyFinancialTab from '../components/corporate/CompanyFinancialTab'
 import CompanyAssetsTab from '../components/corporate/CompanyAssetsTab'
 import CompanyComplianceTab from '../components/corporate/CompanyComplianceTab'

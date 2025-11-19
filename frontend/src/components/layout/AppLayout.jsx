@@ -43,6 +43,7 @@ import {
   BeakerIcon,
   ShieldCheckIcon,
   CalendarIcon,
+  BuildingOfficeIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
@@ -56,6 +57,7 @@ const navigation = [
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
   { name: 'Contacts', href: '/contacts', icon: UsersIcon },
   { name: 'Accounts', href: '/accounts', icon: BanknotesIcon },
+  { name: 'Corporate', href: '/corporate/companies', icon: BuildingOfficeIcon },
   { name: 'Documents', href: '/documents', icon: DocumentTextIcon },
   { name: 'Training', href: '/training', icon: AcademicCapIcon },
   { name: 'Outlook', href: '/outlook', icon: EnvelopeIcon },

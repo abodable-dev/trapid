@@ -6,7 +6,7 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon
 } from '@heroicons/react/24/outline'
-import api from '../api'
+import { api } from '../api'
 
 export default function CompaniesPage() {
   const navigate = useNavigate()
