@@ -19,6 +19,28 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
   const [previewData, setPreviewData] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
 
+  // Type-specific configuration
+  const [typeConfig, setTypeConfig] = useState({
+    // For choice/dropdown
+    choices: [],
+    allowMultiple: false,
+    // For text
+    maxLength: null,
+    minLength: null,
+    // For number/decimal
+    minValue: null,
+    maxValue: null,
+    decimalPlaces: 2,
+    // For date/datetime
+    dateFormat: 'YYYY-MM-DD',
+    includeTime: false,
+    // For computed
+    formula: '',
+    // For boolean
+    trueLabel: 'Yes',
+    falseLabel: 'No'
+  });
+
   const columnTypes = [
     { value: 'string', label: 'Text (Single Line)', icon: '📝' },
     { value: 'text', label: 'Text Area (Multi-line)', icon: '📄' },
@@ -52,22 +74,50 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
     try {
       setValidating(true);
       setValidationResult(null);
+      setPreviewData([]);
 
+      // First, fetch sample data from the table
+      const sampleResponse = await api.get(
+        `/api/v1/tables/${tableId}/rows?limit=10`
+      );
+
+      // Extract the column data from the sample rows
+      const columnName = column.column_name;
+      const sampleData = (sampleResponse.data?.rows || []).map(row => ({
+        current: row[columnName],
+        rowId: row.id
+      }));
+
+      // Then validate the conversion
       const response = await api.post(
         `/api/v1/tables/${tableId}/columns/${column.id}/validate_change`,
         {
           change_type: 'change_type',
           new_type: newType,
-          conversion_strategy: conversionStrategy
+          conversion_strategy: conversionStrategy,
+          sample_values: sampleData.map(d => d.current)
         }
       );
 
       setValidationResult(response.data);
 
-      // If validation passed, optionally load preview data
-      if (response.data.valid) {
-        // For now, just show validation result
-        // In a full implementation, you'd load sample data to show conversion preview
+      // If validation passed, show preview with converted values
+      if (response.data.valid && response.data.preview_conversions) {
+        const previewWithConversions = sampleData.map((sample, idx) => ({
+          ...sample,
+          converted: response.data.preview_conversions[idx]?.converted_value,
+          status: response.data.preview_conversions[idx]?.status || 'success'
+        }));
+        setPreviewData(previewWithConversions);
+        setShowPreview(true);
+      } else if (response.data.valid) {
+        // Fallback: simulate conversion for preview if backend doesn't provide it
+        const previewWithSimulated = sampleData.map(sample => ({
+          ...sample,
+          converted: simulateConversion(sample.current, column.column_type, newType),
+          status: 'simulated'
+        }));
+        setPreviewData(previewWithSimulated);
         setShowPreview(true);
       }
     } catch (error) {
@@ -75,6 +125,35 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
       alert('Validation failed: ' + (error.response?.data?.error || error.message));
     } finally {
       setValidating(false);
+    }
+  };
+
+  // Simulate conversion for preview (fallback if backend doesn't provide it)
+  const simulateConversion = (value, fromType, toType) => {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    try {
+      switch (toType) {
+        case 'integer':
+          return parseInt(value);
+        case 'float':
+        case 'decimal':
+          return parseFloat(value);
+        case 'boolean':
+          return Boolean(value);
+        case 'string':
+        case 'text':
+          return String(value);
+        case 'date':
+        case 'datetime':
+          return new Date(value).toISOString();
+        default:
+          return value;
+      }
+    } catch {
+      return conversionStrategy === 'clear_invalid' ? null : value;
     }
   };
 
@@ -118,186 +197,514 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
   const currentTypeLabel = columnTypes.find(t => t.value === column.column_type)?.label || column.column_type;
   const newTypeLabel = columnTypes.find(t => t.value === newType)?.label || newType;
 
-  return (
-    <div className="type-conversion-editor p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-      <div className="mb-4">
-        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-          Change Column Type
-        </h4>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          Convert "{column.name}" from <strong>{currentTypeLabel}</strong> to a new type
-        </p>
-      </div>
-
-      {/* Current Type */}
-      <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <div className="text-xs font-semibold text-blue-800 dark:text-blue-300 mb-1">
-          Current Type
-        </div>
-        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-          {columnTypes.find(t => t.value === column.column_type)?.icon} {currentTypeLabel}
-        </div>
-      </div>
-
-      {/* New Type Selection */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Convert To
-        </label>
-        <select
-          value={newType}
-          onChange={(e) => {
-            setNewType(e.target.value);
-            setValidationResult(null);
-            setShowPreview(false);
-          }}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                   bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
-                   focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {columnTypes.map(type => (
-            <option key={type.value} value={type.value}>
-              {type.icon} {type.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Conversion Strategy */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Conversion Strategy
-        </label>
-        <div className="space-y-2">
-          {conversionStrategies.map(strategy => (
-            <label
-              key={strategy.value}
-              className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded-lg
-                       cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
+  const renderTypeSpecificConfig = () => {
+    switch (newType) {
+      case 'choice':
+      case 'dropdown':
+      case 'select':
+        return (
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-xs text-blue-800 dark:text-blue-200">
+                <strong>Note:</strong> After converting to Choice type, use the "Manage Choices" button to configure the dropdown options.
+              </div>
+            </div>
+            <label className="flex items-center gap-2">
               <input
-                type="radio"
-                name="conversionStrategy"
-                value={strategy.value}
-                checked={conversionStrategy === strategy.value}
-                onChange={(e) => {
-                  setConversionStrategy(e.target.value);
-                  setValidationResult(null);
-                  setShowPreview(false);
-                }}
-                className="mt-1"
+                type="checkbox"
+                checked={typeConfig.allowMultiple}
+                onChange={(e) => setTypeConfig({ ...typeConfig, allowMultiple: e.target.checked })}
+                className="rounded"
               />
-              <div className="flex-1">
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {strategy.label}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {strategy.desc}
-                </div>
-              </div>
+              <span className="text-xs text-gray-700 dark:text-gray-300">Allow multiple selections</span>
             </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-3 mb-4">
-        <button
-          onClick={handleValidate}
-          disabled={validating || newType === column.column_type}
-          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium
-                   hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {validating ? 'Validating...' : 'Validate Conversion'}
-        </button>
-        {validationResult?.valid && (
-          <button
-            onClick={handleApply}
-            className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-medium
-                     hover:bg-green-600 transition-colors"
-          >
-            Apply Conversion
-          </button>
-        )}
-      </div>
-
-      {/* Validation Result */}
-      {validationResult && (
-        <div className={`p-4 rounded-lg border ${
-          validationResult.valid
-            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-        }`}>
-          <div className={`text-sm font-semibold mb-2 ${
-            validationResult.valid
-              ? 'text-green-800 dark:text-green-300'
-              : 'text-red-800 dark:text-red-300'
-          }`}>
-            {validationResult.valid ? '✓ Validation Passed' : '✗ Validation Failed'}
           </div>
+        );
 
-          {/* Errors */}
-          {validationResult.errors && validationResult.errors.length > 0 && (
-            <div className="mb-3">
-              <div className="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">
-                Errors:
+      case 'string':
+      case 'text':
+        return (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Min Length
+                </label>
+                <input
+                  type="number"
+                  value={typeConfig.minLength || ''}
+                  onChange={(e) => setTypeConfig({ ...typeConfig, minLength: e.target.value ? parseInt(e.target.value) : null })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                  placeholder="No limit"
+                />
               </div>
-              <ul className="list-disc list-inside space-y-1">
-                {validationResult.errors.map((error, idx) => (
-                  <li key={idx} className="text-xs text-red-600 dark:text-red-400">
-                    {error}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Warnings */}
-          {validationResult.warnings && validationResult.warnings.length > 0 && (
-            <div>
-              <div className="text-xs font-semibold text-yellow-700 dark:text-yellow-400 mb-1">
-                Warnings:
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Max Length
+                </label>
+                <input
+                  type="number"
+                  value={typeConfig.maxLength || ''}
+                  onChange={(e) => setTypeConfig({ ...typeConfig, maxLength: e.target.value ? parseInt(e.target.value) : null })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                  placeholder="No limit"
+                />
               </div>
-              <ul className="list-disc list-inside space-y-1">
-                {validationResult.warnings.map((warning, idx) => (
-                  <li key={idx} className="text-xs text-yellow-600 dark:text-yellow-400">
-                    {warning}
-                  </li>
-                ))}
-              </ul>
             </div>
-          )}
-
-          {/* Success message */}
-          {validationResult.valid && validationResult.errors.length === 0 && (
-            <div className="text-xs text-green-700 dark:text-green-400">
-              Conversion is safe to apply. Click "Apply Conversion" to proceed.
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Preview Table (Placeholder) */}
-      {showPreview && validationResult?.valid && (
-        <div className="mt-4 p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            Conversion Preview
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            <div className="mb-2">
-              <strong>Conversion Path:</strong> {currentTypeLabel} → {newTypeLabel}
+        );
+
+      case 'integer':
+      case 'float':
+      case 'decimal':
+        return (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Minimum Value
+                </label>
+                <input
+                  type="number"
+                  value={typeConfig.minValue || ''}
+                  onChange={(e) => setTypeConfig({ ...typeConfig, minValue: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                  placeholder="No limit"
+                  step={newType === 'integer' ? '1' : '0.01'}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Maximum Value
+                </label>
+                <input
+                  type="number"
+                  value={typeConfig.maxValue || ''}
+                  onChange={(e) => setTypeConfig({ ...typeConfig, maxValue: e.target.value ? parseFloat(e.target.value) : null })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                  placeholder="No limit"
+                  step={newType === 'integer' ? '1' : '0.01'}
+                />
+              </div>
             </div>
-            <div className="mb-2">
-              <strong>Strategy:</strong> {conversionStrategies.find(s => s.value === conversionStrategy)?.label}
-            </div>
-            {validationResult.warnings.length === 0 && (
-              <div className="text-green-600 dark:text-green-400 font-medium">
-                ✓ All data will convert successfully
+            {(newType === 'float' || newType === 'decimal') && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Decimal Places
+                </label>
+                <input
+                  type="number"
+                  value={typeConfig.decimalPlaces}
+                  onChange={(e) => setTypeConfig({ ...typeConfig, decimalPlaces: parseInt(e.target.value) || 2 })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                  min="0"
+                  max="10"
+                />
               </div>
             )}
           </div>
+        );
+
+      case 'date':
+      case 'datetime':
+        return (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Date Format
+              </label>
+              <select
+                value={typeConfig.dateFormat}
+                onChange={(e) => setTypeConfig({ ...typeConfig, dateFormat: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                         bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+              >
+                <option value="YYYY-MM-DD">YYYY-MM-DD (2025-01-15)</option>
+                <option value="DD/MM/YYYY">DD/MM/YYYY (15/01/2025)</option>
+                <option value="MM/DD/YYYY">MM/DD/YYYY (01/15/2025)</option>
+                <option value="DD-MMM-YYYY">DD-MMM-YYYY (15-Jan-2025)</option>
+              </select>
+            </div>
+            {newType === 'datetime' && (
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={typeConfig.includeTime}
+                  onChange={(e) => setTypeConfig({ ...typeConfig, includeTime: e.target.checked })}
+                  className="rounded"
+                />
+                <span className="text-xs text-gray-700 dark:text-gray-300">Include time (HH:MM)</span>
+              </label>
+            )}
+          </div>
+        );
+
+      case 'boolean':
+        return (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  True Label
+                </label>
+                <input
+                  type="text"
+                  value={typeConfig.trueLabel}
+                  onChange={(e) => setTypeConfig({ ...typeConfig, trueLabel: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                  placeholder="Yes"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  False Label
+                </label>
+                <input
+                  type="text"
+                  value={typeConfig.falseLabel}
+                  onChange={(e) => setTypeConfig({ ...typeConfig, falseLabel: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                  placeholder="No"
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'computed':
+        return (
+          <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <svg className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <div className="text-xs text-green-800 dark:text-green-200">
+              <strong>Note:</strong> After converting to Computed type, use the "Edit Formula" button to configure the calculation formula.
+            </div>
+          </div>
+        );
+
+      case 'email':
+        return (
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            Email validation will be automatically applied. Format: user@domain.com
+          </div>
+        );
+
+      case 'phone':
+        return (
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            Phone number validation will be automatically applied. Various formats accepted.
+          </div>
+        );
+
+      case 'url':
+        return (
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            URL validation will be automatically applied. Must start with http:// or https://
+          </div>
+        );
+
+      default:
+        return (
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            No additional configuration needed for this type.
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="type-conversion-editor bg-gray-50 dark:bg-gray-800 rounded-lg">
+      <div className="grid grid-cols-2 gap-6">
+        {/* Left Side - Conversion Form */}
+        <div className="p-4">
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Change Column Type
+            </h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Convert "{column.name}" from <strong>{currentTypeLabel}</strong> to a new type
+            </p>
+          </div>
+
+          {/* Current Type */}
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="text-xs font-semibold text-blue-800 dark:text-blue-300 mb-1">
+              Current Type
+            </div>
+            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {columnTypes.find(t => t.value === column.column_type)?.icon} {currentTypeLabel}
+            </div>
+          </div>
+
+          {/* New Type Selection */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Convert To
+            </label>
+            <select
+              value={newType}
+              onChange={(e) => {
+                setNewType(e.target.value);
+                setValidationResult(null);
+                setShowPreview(false);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                       bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {columnTypes.map(type => (
+                <option key={type.value} value={type.value}>
+                  {type.icon} {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Type-Specific Configuration */}
+          {newType !== column.column_type && (
+            <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+              <div className="text-sm font-semibold text-purple-800 dark:text-purple-300 mb-3">
+                Configure {newTypeLabel}
+              </div>
+              {renderTypeSpecificConfig()}
+            </div>
+          )}
+
+          {/* Conversion Strategy */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Conversion Strategy
+            </label>
+            <div className="space-y-2">
+              {conversionStrategies.map(strategy => (
+                <label
+                  key={strategy.value}
+                  className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded-lg
+                           cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <input
+                    type="radio"
+                    name="conversionStrategy"
+                    value={strategy.value}
+                    checked={conversionStrategy === strategy.value}
+                    onChange={(e) => {
+                      setConversionStrategy(e.target.value);
+                      setValidationResult(null);
+                      setShowPreview(false);
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {strategy.label}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {strategy.desc}
+                    </div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 mb-4">
+            <button
+              onClick={handleValidate}
+              disabled={validating || newType === column.column_type}
+              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium
+                       hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {validating ? 'Validating...' : 'Validate Conversion'}
+            </button>
+            {validationResult?.valid && (
+              <button
+                onClick={handleApply}
+                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-medium
+                         hover:bg-green-600 transition-colors"
+              >
+                Apply Conversion
+              </button>
+            )}
+          </div>
+
+          {/* Validation Result */}
+          {validationResult && (
+            <div className={`p-4 rounded-lg border ${
+              validationResult.valid
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+            }`}>
+              <div className={`text-sm font-semibold mb-2 ${
+                validationResult.valid
+                  ? 'text-green-800 dark:text-green-300'
+                  : 'text-red-800 dark:text-red-300'
+              }`}>
+                {validationResult.valid ? '✓ Validation Passed' : '✗ Validation Failed'}
+              </div>
+
+              {/* Errors */}
+              {validationResult.errors && validationResult.errors.length > 0 && (
+                <div className="mb-3">
+                  <div className="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">
+                    Errors:
+                  </div>
+                  <ul className="list-disc list-inside space-y-1">
+                    {validationResult.errors.map((error, idx) => (
+                      <li key={idx} className="text-xs text-red-600 dark:text-red-400">
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Warnings */}
+              {validationResult.warnings && validationResult.warnings.length > 0 && (
+                <div>
+                  <div className="text-xs font-semibold text-yellow-700 dark:text-yellow-400 mb-1">
+                    Warnings:
+                  </div>
+                  <ul className="list-disc list-inside space-y-1">
+                    {validationResult.warnings.map((warning, idx) => (
+                      <li key={idx} className="text-xs text-yellow-600 dark:text-yellow-400">
+                        {warning}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Success message */}
+              {validationResult.valid && validationResult.errors.length === 0 && (
+                <div className="text-xs text-green-700 dark:text-green-400">
+                  Conversion is safe to apply. Click "Apply Conversion" to proceed.
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
+        {/* End Left Side */}
+
+        {/* Right Side - Data Preview */}
+        <div className="p-4 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Data Preview
+            </h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {showPreview ? 'Showing how existing data will be converted' : 'Click "Validate Conversion" to preview'}
+            </p>
+          </div>
+
+          {!showPreview && (
+            <div className="flex items-center justify-center h-64 text-gray-400 dark:text-gray-600">
+              <div className="text-center">
+                <svg className="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <p className="text-sm">Preview will appear here</p>
+              </div>
+            </div>
+          )}
+
+          {showPreview && previewData.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                <div><strong>Conversion:</strong> {currentTypeLabel} → {newTypeLabel}</div>
+                <div><strong>Strategy:</strong> {conversionStrategies.find(s => s.value === conversionStrategy)?.label}</div>
+              </div>
+
+              {/* Data Preview Table */}
+              <div className="overflow-auto max-h-[500px] border border-gray-200 dark:border-gray-700 rounded-lg">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        <div>{column.name}</div>
+                        <div className="text-xs font-normal text-gray-500 dark:text-gray-400">({currentTypeLabel})</div>
+                      </th>
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        →
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        <div>{column.name}</div>
+                        <div className="text-xs font-normal text-gray-500 dark:text-gray-400">({newTypeLabel})</div>
+                      </th>
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    {previewData.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-3 py-2 text-xs text-gray-900 dark:text-gray-100 font-mono">
+                          {row.current === null || row.current === undefined ? (
+                            <span className="text-gray-400 italic">null</span>
+                          ) : (
+                            String(row.current)
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-400">
+                          →
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-900 dark:text-gray-100 font-mono">
+                          {row.converted === null || row.converted === undefined ? (
+                            <span className="text-gray-400 italic">null</span>
+                          ) : (
+                            String(row.converted)
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          {row.status === 'success' || row.status === 'simulated' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                              ✓
+                            </span>
+                          ) : row.status === 'warning' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">
+                              ⚠
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
+                              ✗
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {previewData.length === 0 && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
+                  No data to preview
+                </div>
+              )}
+            </div>
+          )}
+
+          {showPreview && previewData.length === 0 && (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
+              No existing data in this column
+            </div>
+          )}
+        </div>
+        {/* End Right Side */}
+      </div>
     </div>
   );
 };

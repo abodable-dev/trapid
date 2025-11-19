@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ChoiceEditor from './ChoiceEditor';
 import FormulaEditor from './FormulaEditor';
 import TypeConversionEditor from './TypeConversionEditor';
+import RenameEditor from './RenameEditor';
 
 /**
  * ColumnEditorModal - Modal for editing a single column's schema
@@ -19,6 +20,7 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
 
   const tabs = [
     { id: 'info', label: 'Column Info', icon: 'ℹ️' },
+    { id: 'rename', label: 'Rename', icon: '✏️' },
     { id: 'type', label: 'Change Type', icon: '🔄' },
   ];
 
@@ -168,10 +170,18 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
 
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Use the tabs above to change column type, manage choices, or edit formulas.
+                  Use the tabs above to rename, change column type, manage choices, or edit formulas.
                 </p>
               </div>
             </div>
+          )}
+
+          {activeTab === 'rename' && (
+            <RenameEditor
+              tableId={tableId}
+              column={column}
+              onUpdate={handleUpdate}
+            />
           )}
 
           {activeTab === 'type' && (

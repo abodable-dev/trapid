@@ -5,7 +5,7 @@ import TrapidTableView from '../documentation/TrapidTableView'
 // Define price book gold standard columns - showing unique column types only
 const GOLD_STANDARD_COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32, tooltip: 'Checkbox - select rows for bulk actions' },
-  { key: 'section', label: 'Single Line Text', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Single line text field - Item code' },
+  { key: 'item_code', label: 'Single Line Text', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Single line text field - Item code' },
   { key: 'email', label: 'Email', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 200, tooltip: 'Email field - Must contain @ symbol' },
   { key: 'phone', label: 'Phone', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Landline Phone - Format: (03) 9123 4567 or 1300 numbers' },
   { key: 'mobile', label: 'Mobile', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Mobile Phone - Format: 0407 397 541' },
@@ -19,7 +19,7 @@ const GOLD_STANDARD_COLUMNS = [
   { key: 'total_cost', label: 'Computed', resizable: true, sortable: true, filterable: false, width: 140, showSum: true, sumType: 'currency', tooltip: 'Computed - Formula: price × quantity. Can also do lookups to other tables and multiply/add values', isComputed: true, computeFunction: (entry) => (entry.price || 0) * (entry.quantity || 0) },
   { key: 'updated_at', label: 'Date', resizable: true, sortable: true, filterable: false, width: 140, tooltip: 'Date field - Last updated date' },
   { key: 'document_link', label: 'Document Link', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'Clickable link to external document or file' },
-  { key: 'content', label: 'Multi Line Text', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 300, tooltip: 'Multi-line text field - Notes and comments' }
+  { key: 'notes', label: 'Multi Line Text', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 300, tooltip: 'Multi-line text field - Notes and comments' }
 ]
 
 export default function GoldStandardTableTab() {
@@ -28,7 +28,7 @@ export default function GoldStandardTableTab() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showFeatures, setShowFeatures] = useState(false)
   const [newItem, setNewItem] = useState({
-    section: '',
+    item_code: '',
     email: '',
     phone: '',
     mobile: '',
@@ -39,7 +39,7 @@ export default function GoldStandardTableTab() {
     status: 'active',
     price: 0,
     quantity: 0,
-    content: '',
+    notes: '',
     document_link: ''
   })
 
@@ -110,7 +110,7 @@ export default function GoldStandardTableTab() {
 
   const handleAddNew = () => {
     setNewItem({
-      section: '',
+      item_code: '',
       email: '',
       phone: '',
       mobile: '',
@@ -121,7 +121,7 @@ export default function GoldStandardTableTab() {
       status: 'active',
       price: 0,
       quantity: 0,
-      content: '',
+      notes: '',
       document_link: ''
     })
     setShowAddModal(true)
@@ -221,12 +221,15 @@ export default function GoldStandardTableTab() {
 
       <TrapidTableView
         tableId="gold-standard-table"
+        tableIdNumeric={166}
+        tableName="Gold Standard Reference"
         entries={data}
         columns={GOLD_STANDARD_COLUMNS}
         onEdit={handleEdit}
         onDelete={handleDelete}
         enableImport={true}
         enableExport={true}
+        enableSchemaEditor={true}
         onImport={handleImport}
         onExport={handleExport}
         customActions={
@@ -262,8 +265,8 @@ export default function GoldStandardTableTab() {
                 </label>
                 <input
                   type="text"
-                  value={newItem.section}
-                  onChange={(e) => setNewItem({ ...newItem, section: e.target.value })}
+                  value={newItem.item_code}
+                  onChange={(e) => setNewItem({ ...newItem, item_code: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   placeholder="e.g., CONC-001"
                 />
@@ -458,8 +461,8 @@ export default function GoldStandardTableTab() {
                   Notes/Description (Multi Line Text)
                 </label>
                 <textarea
-                  value={newItem.content}
-                  onChange={(e) => setNewItem({ ...newItem, content: e.target.value })}
+                  value={newItem.notes}
+                  onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
                   placeholder="Enter any notes or description..."
