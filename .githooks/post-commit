@@ -1,42 +1,47 @@
 #!/bin/bash
 
-# Post-commit hook to automatically include package.json version changes
-# This hook runs after a commit and amends it with any package.json changes
+# Post-commit hook to automatically increment version and include package.json changes
+# This hook runs after a commit and amends it with version updates
+
+# Check authorship first - only proceed if last commit is by current user
+LAST_COMMIT_AUTHOR=$(git log -1 --format='%ae')
+CURRENT_USER_EMAIL=$(git config user.email)
+
+# Check if commit has been pushed
+if git branch -r --contains HEAD | grep -q "origin/$(git rev-parse --abbrev-ref HEAD)"; then
+  echo "⚠️  Commit already pushed, skipping version increment"
+  exit 0
+fi
+
+if [ "$LAST_COMMIT_AUTHOR" != "$CURRENT_USER_EMAIL" ]; then
+  echo "⚠️  Last commit author doesn't match current user, skipping version increment"
+  exit 0
+fi
+
+# Increment frontend version
+echo "📦 Incrementing frontend version..."
+cd frontend && node scripts/increment-version.js && cd ..
 
 # Check if there are unstaged changes to package files
 if git diff --name-only | grep -q "frontend/package.*\.json"; then
-  echo "📦 Detected package.json version changes, amending commit..."
+  echo "📦 Amending commit with version changes..."
 
-  # Check authorship - only amend if last commit is by current user
-  LAST_COMMIT_AUTHOR=$(git log -1 --format='%ae')
-  CURRENT_USER_EMAIL=$(git config user.email)
+  # Stage package.json changes
+  git add frontend/package.json frontend/package-lock.json 2>/dev/null
 
-  # Check if commit has been pushed
-  if git branch -r --contains HEAD | grep -q "origin/$(git rev-parse --abbrev-ref HEAD)"; then
-    echo "⚠️  Commit already pushed, skipping amend"
-    exit 0
-  fi
+  # Amend the commit without changing the message
+  git commit --amend --no-edit --no-verify
 
-  if [ "$LAST_COMMIT_AUTHOR" = "$CURRENT_USER_EMAIL" ]; then
-    # Stage package.json changes
-    git add frontend/package.json frontend/package-lock.json 2>/dev/null
+  echo "✅ Package version changes added to commit"
 
-    # Amend the commit without changing the message
-    git commit --amend --no-edit --no-verify
+  # Auto-push to remote branch
+  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  echo "🚀 Pushing to origin/$CURRENT_BRANCH..."
+  git push origin "$CURRENT_BRANCH" --force-with-lease
 
-    echo "✅ Package version changes added to commit"
-
-    # Auto-push to remote branch
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    echo "🚀 Pushing to origin/$CURRENT_BRANCH..."
-    git push origin "$CURRENT_BRANCH" --force-with-lease
-
-    if [ $? -eq 0 ]; then
-      echo "✅ Successfully pushed to remote"
-    else
-      echo "⚠️  Failed to push to remote"
-    fi
+  if [ $? -eq 0 ]; then
+    echo "✅ Successfully pushed to remote"
   else
-    echo "⚠️  Last commit author doesn't match current user, skipping amend"
+    echo "⚠️  Failed to push to remote"
   fi
 fi
