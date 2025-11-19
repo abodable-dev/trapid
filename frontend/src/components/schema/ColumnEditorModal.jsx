@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../api';
+import { COLUMN_TYPES } from '../../constants/columnTypes';
 import ChoiceEditor from './ChoiceEditor';
 import FormulaEditor from './FormulaEditor';
 import TypeConversionEditor from './TypeConversionEditor';
@@ -20,135 +21,7 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
   });
   const [saving, setSaving] = useState(false);
 
-  // Column type metadata for auto-population - matches Gold Standard exactly
-  const COLUMN_TYPE_METADATA = {
-    'single_line_text': {
-      sqlType: 'VARCHAR(255)',
-      validation: 'Optional text field, max 255 characters, alphanumeric',
-      usedFor: 'Short text entries like names, titles, codes, unique identifiers',
-      example: 'CONC-001, STL-042A, John Smith'
-    },
-    'email': {
-      sqlType: 'VARCHAR(255)',
-      validation: 'Must contain @ symbol, valid email format',
-      usedFor: 'Email addresses for contacts',
-      example: 'supplier@example.com, contact@business.com.au'
-    },
-    'phone': {
-      sqlType: 'VARCHAR(20)',
-      validation: 'Format: (03) 9123 4567 or 1300 numbers',
-      usedFor: 'Landline phone numbers',
-      example: '(03) 9123 4567, 1300 123 456'
-    },
-    'mobile': {
-      sqlType: 'VARCHAR(20)',
-      validation: 'Format: 0407 397 541, starts with 04',
-      usedFor: 'Mobile phone numbers',
-      example: '0407 397 541, 0412 345 678'
-    },
-    'url': {
-      sqlType: 'VARCHAR(500)',
-      validation: 'Valid URL format, clickable in table',
-      usedFor: 'Links to external documents or files',
-      example: 'https://example.com/doc.pdf'
-    },
-    'multiple_lines_text': {
-      sqlType: 'TEXT',
-      validation: 'Optional text field, supports line breaks',
-      usedFor: 'Notes, comments, multi-line descriptions',
-      example: 'Additional notes\\nSecond line\\nThird line'
-    },
-    'date': {
-      sqlType: 'DATE',
-      validation: 'Format: YYYY-MM-DD, no time component',
-      usedFor: 'Date values without time, for contracts, events, start dates',
-      example: '2025-11-19, 1990-01-15'
-    },
-    'date_and_time': {
-      sqlType: 'DATETIME',
-      validation: 'Auto-populated on creation/modification, not editable',
-      usedFor: 'Record creation and modification timestamps',
-      example: '2024-11-19 14:30:00, 2024-11-19 16:45:22'
-    },
-    'gps_coordinates': {
-      sqlType: 'VARCHAR(100)',
-      validation: 'Latitude, Longitude format',
-      usedFor: 'GPS coordinates for job sites, delivery addresses, asset tracking',
-      example: '-33.8688, 151.2093 (Sydney)'
-    },
-    'color_picker': {
-      sqlType: 'VARCHAR(7)',
-      validation: 'Hex color format (#RRGGBB)',
-      usedFor: 'Visual categorization, status indicators, UI customization',
-      example: '#FF5733, #3498DB, #000000'
-    },
-    'file_upload': {
-      sqlType: 'TEXT',
-      validation: 'File path or URL to uploaded file',
-      usedFor: 'File references, document links, image paths',
-      example: '/uploads/doc.pdf, https://example.com/file.png'
-    },
-    'number': {
-      sqlType: 'INTEGER',
-      validation: 'Positive integers, shows sum in footer',
-      usedFor: 'Quantity of items',
-      example: '10, 250, 15'
-    },
-    'percentage': {
-      sqlType: 'DECIMAL(5,2)',
-      validation: '0-100, displayed with % symbol',
-      usedFor: 'Discount percentage for pricing',
-      example: '10.5%, 25%, 0%'
-    },
-    'currency': {
-      sqlType: 'DECIMAL(10,2)',
-      validation: 'Positive numbers, 2 decimal places, shows sum in footer',
-      usedFor: 'Price in Australian dollars',
-      example: '$125.50, $1,234.99'
-    },
-    'whole_number': {
-      sqlType: 'INTEGER',
-      validation: 'Integers only (no decimals), shows sum',
-      usedFor: 'Counts, units, days - no fractional values',
-      example: '5, 100, 42'
-    },
-    'boolean': {
-      sqlType: 'BOOLEAN',
-      validation: 'True or False only',
-      usedFor: 'Active/inactive status flag',
-      example: 'true, false'
-    },
-    'lookup': {
-      sqlType: 'VARCHAR(255)',
-      validation: 'Must match predefined category list',
-      usedFor: 'Material type classification',
-      example: 'Concrete, Timber, Steel, Plasterboard'
-    },
-    'choice': {
-      sqlType: 'VARCHAR(50)',
-      validation: 'Limited options: active, inactive (with colored badges)',
-      usedFor: 'Status with visual indicators',
-      example: 'active (green), inactive (red)'
-    },
-    'computed': {
-      sqlType: 'COMPUTED',
-      validation: 'Formula: price × quantity, read-only, shows sum',
-      usedFor: 'Automatic calculations from other columns',
-      example: '$1,255.00 (from $125.50 × 10)'
-    },
-    'user': {
-      sqlType: 'INTEGER (Foreign Key to Users)',
-      validation: 'Must reference valid user ID',
-      usedFor: 'Assignment to users, ownership tracking',
-      example: 'Assigned To: User #7, Created By: User #1'
-    },
-    'multiple_lookups': {
-      sqlType: 'TEXT (JSON Array)',
-      validation: 'Array of IDs stored as JSON',
-      usedFor: 'Multiple relationships to other records',
-      example: '[1, 5, 12] - Links to multiple related items'
-    }
-  };
+  // REMOVED: Hardcoded COLUMN_TYPE_METADATA - now using COLUMN_TYPES from constants/columnTypes.js as single source of truth
 
   // Map database types to display types for metadata lookup
   const DB_TYPE_TO_COLUMN_TYPE = {
@@ -161,12 +34,25 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
     'datetime': 'date_and_time'
   };
 
-  // Get metadata for a column type
+  // Get metadata for a column type from COLUMN_TYPES constant (single source of truth)
   const getColumnMetadata = (columnType) => {
     // If it's a database type (string, text, etc), convert to display type first
     const displayType = DB_TYPE_TO_COLUMN_TYPE[columnType] || columnType;
 
-    return COLUMN_TYPE_METADATA[displayType] || {
+    // Find the column type in COLUMN_TYPES array
+    const columnTypeDef = COLUMN_TYPES.find(type => type.value === displayType);
+
+    if (columnTypeDef) {
+      return {
+        sqlType: columnTypeDef.sqlType || 'Unknown',
+        validation: columnTypeDef.validationRules || 'No validation rules defined',
+        usedFor: columnTypeDef.usedFor || 'No description available',
+        example: columnTypeDef.example || 'No example available'
+      };
+    }
+
+    // Fallback if not found
+    return {
       sqlType: 'Unknown',
       validation: 'No validation rules defined',
       usedFor: 'No description available',
