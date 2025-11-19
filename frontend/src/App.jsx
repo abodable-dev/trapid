@@ -56,6 +56,15 @@ const MeetingsPage = lazy(() => import('./pages/MeetingsPage')) // Meeting manag
 const MeetingTypesPage = lazy(() => import('./pages/MeetingTypesPage')) // Meeting types configuration
 const SamPage = lazy(() => import('./pages/SamPage')) // Sam page
 
+// Corporate pages
+const CorporateDashboardPage = lazy(() => import('./pages/CorporateDashboardPage'))
+const CompaniesPage = lazy(() => import('./pages/CompaniesPage'))
+const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
+const DirectorsRegistryPage = lazy(() => import('./pages/DirectorsRegistryPage'))
+const AssetsPage = lazy(() => import('./pages/AssetsPage'))
+const AssetDetailPage = lazy(() => import('./pages/AssetDetailPage'))
+const XeroDashboardPage = lazy(() => import('./pages/XeroDashboardPage'))
+
 // Designer pages (admin tools)
 const DesignerHome = lazy(() => import('./pages/designer/DesignerHome'))
 const TableSettings = lazy(() => import('./pages/designer/TableSettings'))
@@ -161,6 +170,20 @@ function App() {
         <Route path="/admin/public-holidays" element={<AppLayout><PublicHolidaysPage /></AppLayout>} />
         <Route path="/training" element={<AppLayout><TrainingPage /></AppLayout>} />
         <Route path="/training/:sessionId" element={<TrainingSessionPage />} />
+
+        {/* Corporate routes */}
+        <Route path="/corporate" element={<AppLayout><CorporateDashboardPage /></AppLayout>} />
+        <Route path="/corporate/dashboard" element={<AppLayout><CorporateDashboardPage /></AppLayout>} />
+        <Route path="/corporate/companies" element={<AppLayout><CompaniesPage /></AppLayout>} />
+        <Route path="/corporate/companies/new" element={<AppLayout><CompanyDetailPage /></AppLayout>} />
+        <Route path="/corporate/companies/:id" element={<AppLayout><CompanyDetailPage /></AppLayout>} />
+        <Route path="/corporate/companies/:id/edit" element={<AppLayout><CompanyDetailPage /></AppLayout>} />
+        <Route path="/corporate/directors" element={<AppLayout><DirectorsRegistryPage /></AppLayout>} />
+        <Route path="/corporate/assets" element={<AppLayout><AssetsPage /></AppLayout>} />
+        <Route path="/corporate/assets/new" element={<AppLayout><AssetDetailPage /></AppLayout>} />
+        <Route path="/corporate/assets/:id" element={<AppLayout><AssetDetailPage /></AppLayout>} />
+        <Route path="/corporate/assets/:id/edit" element={<AppLayout><AssetDetailPage /></AppLayout>} />
+        <Route path="/corporate/xero" element={<AppLayout><XeroDashboardPage /></AppLayout>} />
           </Routes>
         </Suspense>
       </BrowserRouter>
