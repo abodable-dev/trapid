@@ -1,8 +1,7 @@
 module Api
   module V1
     class PermissionsController < ApplicationController
-      before_action :authenticate_user!
-      before_action :require_admin!
+      before_action :require_admin
 
       # GET /api/v1/permissions
       def index
@@ -95,11 +94,7 @@ module Api
 
       private
 
-      def require_admin!
-        unless current_user.admin?
-          render json: { error: 'Unauthorized' }, status: :forbidden
-        end
-      end
+      # Note: require_admin is inherited from ApplicationController
 
       def get_role_permissions(role)
         # Create a temporary user instance to get permissions for a role
