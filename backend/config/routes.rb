@@ -348,6 +348,12 @@ Rails.application.routes.draw do
       # User roles
       resources :roles, only: [:index]
 
+      # Permissions management
+      get 'permissions', to: 'permissions#index'
+      get 'permissions/roles', to: 'permissions#roles'
+      get 'permissions/user/:id', to: 'permissions#user_permissions'
+      post 'permissions/grant', to: 'permissions#grant'
+
       # Contact types
       resources :contact_types, only: [:index]
 
