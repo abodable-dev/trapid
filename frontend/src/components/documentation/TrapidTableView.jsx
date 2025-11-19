@@ -2210,9 +2210,12 @@ export default function TrapidTableView({
                     {/* Save current view section - only show if there are active filters */}
                     {cascadeFilters.length > 0 && (
                       <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
                           Save Current View:
                         </label>
+                        <div className="text-[10px] text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-2 py-1.5 rounded mb-2">
+                          💡 Tip: Use the "Show/Hide Columns" button (top right) to select which columns to include in this view
+                        </div>
                         <div className="space-y-2">
                           <div className="flex gap-1">
                             <input
@@ -2229,6 +2232,9 @@ export default function TrapidTableView({
                               className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
                             />
                             <span className="text-[10px] text-gray-400 self-center">{filterName.length}/20</span>
+                          </div>
+                          <div className="text-[10px] text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1.5 rounded border border-blue-200 dark:border-blue-800">
+                            Will save: {cascadeFilters.length} filter{cascadeFilters.length !== 1 ? 's' : ''} + {Object.values(visibleColumns).filter(Boolean).length} visible column{Object.values(visibleColumns).filter(Boolean).length !== 1 ? 's' : ''}
                           </div>
                           <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
                             <input
