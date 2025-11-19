@@ -2308,26 +2308,31 @@ export default function TrapidTableView({
                                 </>
                               ) : (
                                 <>
-                                  <button
-                                    onClick={() => {
-                                      setCascadeFilters(saved.filters.map(f => ({
-                                        id: Date.now() + Math.random(),
-                                        column: f.column,
-                                        value: f.value,
-                                        label: f.label
-                                      })))
-                                      if (saved.visibleColumns) {
-                                        setVisibleColumns(saved.visibleColumns)
-                                      }
-                                      setActiveViewId(saved.id)
-                                      setShowCascadeDropdown(false)
-                                    }}
-                                    className="flex-1 text-left text-xs text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-medium truncate"
-                                    title={`${saved.name} (${saved.filters.length} filters)`}
-                                  >
-                                    {saved.isDefault && <span className="text-yellow-600 dark:text-yellow-400">⭐ </span>}
-                                    {saved.name}
-                                  </button>
+                                  <div className="flex-1 flex flex-col gap-0.5">
+                                    <button
+                                      onClick={() => {
+                                        setCascadeFilters(saved.filters.map(f => ({
+                                          id: Date.now() + Math.random(),
+                                          column: f.column,
+                                          value: f.value,
+                                          label: f.label
+                                        })))
+                                        if (saved.visibleColumns) {
+                                          setVisibleColumns(saved.visibleColumns)
+                                        }
+                                        setActiveViewId(saved.id)
+                                        setShowCascadeDropdown(false)
+                                      }}
+                                      className="text-left text-xs text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-medium truncate"
+                                      title={`${saved.name} - ${saved.filters.length} filters, ${saved.visibleColumns ? Object.values(saved.visibleColumns).filter(Boolean).length : 0} columns visible`}
+                                    >
+                                      {saved.isDefault && <span className="text-yellow-600 dark:text-yellow-400">⭐ </span>}
+                                      {saved.name}
+                                    </button>
+                                    <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                                      {saved.filters.length} filter{saved.filters.length !== 1 ? 's' : ''} • {saved.visibleColumns ? Object.values(saved.visibleColumns).filter(Boolean).length : 0} column{saved.visibleColumns && Object.values(saved.visibleColumns).filter(Boolean).length !== 1 ? 's' : ''}
+                                    </div>
+                                  </div>
                                   <button
                                     onClick={() => setEditingViewId(saved.id)}
                                     className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-xs"
