@@ -67,9 +67,7 @@ const navigation = [
 ]
 
 // Bottom navigation items
-const bottomNavigation = [
-  { name: 'Import Data', href: '/import', icon: ArrowUpTrayIcon },
-]
+const bottomNavigation = []
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
@@ -255,7 +253,7 @@ export default function AppLayout({ children }) {
         "hidden bg-gray-900 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col transition-all duration-300",
         sidebarCollapsed ? "lg:w-16" : "lg:w-72"
       )}>
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white pb-4 dark:border-white/10 dark:bg-black/10">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white pb-6 dark:border-white/10 dark:bg-black/10">
           <div className={classNames(
             "flex h-16 shrink-0 items-center relative",
             sidebarCollapsed ? "justify-center px-2" : "px-6"
@@ -365,11 +363,11 @@ export default function AppLayout({ children }) {
                   })}
                 </ul>
                 {!sidebarCollapsed && (
-                  <div className="px-2 pt-2">
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                  <div className="px-2 pt-3 pb-2">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
                       Frontend: v{frontendVersion}
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed mt-1">
                       Backend: {backendVersion}
                     </p>
                   </div>
