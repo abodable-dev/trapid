@@ -53,6 +53,7 @@ const TrainingPage = lazy(() => import('./pages/TrainingPage')) // Jitsi video
 const TrainingSessionPage = lazy(() => import('./pages/TrainingSessionPage')) // Jitsi video
 const MeetingsPage = lazy(() => import('./pages/MeetingsPage')) // Meeting management
 const MeetingTypesPage = lazy(() => import('./pages/MeetingTypesPage')) // Meeting types configuration
+const SamPage = lazy(() => import('./pages/SamPage')) // Sam page
 
 // Designer pages (admin tools)
 const DesignerHome = lazy(() => import('./pages/designer/DesignerHome'))
@@ -116,6 +117,7 @@ function App() {
         <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
         <Route path="/meetings" element={<AppLayout><MeetingsPage /></AppLayout>} />
         <Route path="/meeting-types" element={<AppLayout><MeetingTypesPage /></AppLayout>} />
+        <Route path="/sam" element={<AppLayout><SamPage /></AppLayout>} />
         <Route path="/price-books" element={<AppLayout><PriceBooksPageWithTabs /></AppLayout>} />
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
         <Route path="/contacts" element={<AppLayout><ContactsPage /></AppLayout>} />

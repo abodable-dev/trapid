@@ -33,6 +33,10 @@ const GoldStandardTableTab = lazy(() => import('../components/settings/GoldStand
 const SystemPerformancePage = lazy(() => import('./SystemPerformancePage'))
 const PermissionsPage = lazy(() => import('./PermissionsPage'))
 const MeetingTypesPage = lazy(() => import('./MeetingTypesPage'))
+const TablesTab = lazy(() => import('../components/settings/TablesTab'))
+const SchemaPage = lazy(() => import('./SchemaPage'))
+const GitBranchVisualization = lazy(() => import('../components/settings/GitBranchVisualization'))
+const AgentStatus = lazy(() => import('../components/settings/AgentStatus'))
 
 // Loading fallback component for lazy-loaded tabs
 function TabLoadingFallback() {
