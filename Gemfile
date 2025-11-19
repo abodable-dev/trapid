@@ -16,7 +16,7 @@ gem "bcrypt", "~> 3.1.7"
 gem "jwt", "~> 2.7"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem "tzinfo-data", platforms: %i[ windows jruby ]
+gem "tzinfo-data", platforms: [:windows, :jruby]
 
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
@@ -55,7 +55,7 @@ gem "mini_magick", "~> 4.12"  # Image processing
 # OAuth2 for Xero integration
 gem "oauth2", "~> 2.0"  # OAuth2 authentication for Xero API
 gem "fuzzy_match", "~> 2.1"  # Fuzzy string matching for contact sync
-gem "rexml"  # XML parsing for ABN lookup service
+gem "rexml"  # XML parsing (required for ABN lookup service, removed from Ruby 3.0+ stdlib)
 
 # SMS integration
 gem "twilio-ruby", "~> 7.3"  # Twilio SDK for SMS messaging
@@ -65,7 +65,7 @@ gem "anthropic", "~> 0.1.0"  # Claude API for AI-powered plan review
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
+  gem "debug", platforms: [:mri, :windows], require: "debug/prelude"
 
   # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
   gem "brakeman", require: false
