@@ -7,6 +7,7 @@ import {
   BuildingOfficeIcon,
   ShieldCheckIcon,
   CalendarDaysIcon,
+  CalendarIcon,
   DocumentTextIcon,
   ClipboardDocumentCheckIcon,
   StarIcon,
@@ -31,6 +32,7 @@ const InspiringQuotesTab = lazy(() => import('../components/settings/InspiringQu
 const GoldStandardTableTab = lazy(() => import('../components/settings/GoldStandardTableTab'))
 const SystemPerformancePage = lazy(() => import('./SystemPerformancePage'))
 const PermissionsPage = lazy(() => import('./PermissionsPage'))
+const MeetingTypesPage = lazy(() => import('./MeetingTypesPage'))
 
 // Loading fallback component for lazy-loaded tabs
 function TabLoadingFallback() {
@@ -217,11 +219,12 @@ export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Map tab names to indices - REORGANIZED: 13 tabs (operational moved to Company)
+  // Map tab names to indices - REORGANIZED: 14 tabs (operational moved to Company)
   const tabs = [
     'company',
     'security',
     'schedule-master',
+    'meeting-types',
     'documentation',
     'supervisor-checklist',
     'gold-standard',
@@ -384,6 +387,19 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <CalendarIcon className="h-5 w-5" />
+              Meeting Types
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
               <DocumentTextIcon className="h-5 w-5" />
               Documentation
             </Tab>
@@ -529,70 +545,77 @@ export default function SettingsPage() {
             </Suspense>
           </TabPanel>
 
-          {/* 4. Documentation Categories Tab */}
+          {/* 4. Meeting Types Tab */}
+          <TabPanel>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <MeetingTypesPage />
+            </Suspense>
+          </TabPanel>
+
+          {/* 5. Documentation Categories Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <DocumentationCategoriesTab />
             </Suspense>
           </TabPanel>
 
-          {/* 5. Supervisor Checklist Tab */}
+          {/* 6. Supervisor Checklist Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <SupervisorChecklistTab />
             </Suspense>
           </TabPanel>
 
-          {/* 6. Gold Standard View Tab */}
+          {/* 7. Gold Standard View Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <GoldStandardTableTab />
             </Suspense>
           </TabPanel>
 
-          {/* 7. Developer Tools Tab with nested sub-tabs */}
+          {/* 8. Developer Tools Tab with nested sub-tabs */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <DeveloperToolsTab />
             </Suspense>
           </TabPanel>
 
-          {/* 8. Claude Shortcuts Tab */}
+          {/* 9. Claude Shortcuts Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <AgentShortcutsTab />
             </Suspense>
           </TabPanel>
 
-          {/* 9. User Manual Tab */}
+          {/* 10. User Manual Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <UserManualTab />
             </Suspense>
           </TabPanel>
 
-          {/* 10. Inspiring Quotes Tab */}
+          {/* 11. Inspiring Quotes Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <InspiringQuotesTab />
             </Suspense>
           </TabPanel>
 
-          {/* 11. Performance Tab */}
+          {/* 12. Performance Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <SystemPerformancePage />
             </Suspense>
           </TabPanel>
 
-          {/* 12. Permissions Tab */}
+          {/* 13. Permissions Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <PermissionsPage />
             </Suspense>
           </TabPanel>
 
-          {/* 13. Deployment Tab */}
+          {/* 14. Deployment Tab */}
           <TabPanel>
             <div className="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-3">
               <div>
