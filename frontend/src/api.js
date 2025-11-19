@@ -186,3 +186,5 @@ export const api = {
     disconnect: () => api.delete('/api/v1/xero/disconnect'),
   },
 };
+
+export default api;
