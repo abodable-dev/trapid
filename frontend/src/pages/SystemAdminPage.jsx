@@ -29,7 +29,7 @@ const CompanySettingsTab = lazy(() => import('../components/settings/CompanySett
 const AgentShortcutsTab = lazy(() => import('../components/settings/AgentShortcutsTab'))
 const UserManualTab = lazy(() => import('../components/settings/UserManualTab'))
 const InspiringQuotesTab = lazy(() => import('../components/settings/InspiringQuotesTab'))
-const GoldStandardTableTab = lazy(() => import('../components/settings/GoldStandardTableTab'))
+const GoldStandardTabs = lazy(() => import('../components/settings/GoldStandardTabs'))
 const SystemPerformancePage = lazy(() => import('./SystemPerformancePage'))
 const PermissionsPage = lazy(() => import('./PermissionsPage'))
 const MeetingTypesPage = lazy(() => import('./MeetingTypesPage'))
@@ -573,7 +573,7 @@ export default function SettingsPage() {
           {/* 7. Gold Standard View Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
-              <GoldStandardTableTab />
+              <GoldStandardTabs />
             </Suspense>
           </TabPanel>
 

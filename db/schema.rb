@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_19_164012) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_19_164013) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -760,24 +760,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_164012) do
   end
 
   create_table "gold_standard_items", force: :cascade do |t|
-    t.string "category"
-    t.string "section"
     t.string "email"
     t.string "phone"
     t.boolean "is_active"
     t.decimal "discount"
     t.decimal "price"
     t.integer "quantity"
-    t.text "content"
-    t.string "component"
     t.string "status"
-    t.string "updated_by"
-    t.jsonb "metadata"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "whole_number"
     t.string "mobile"
-    t.string "title"
     t.string "category_type"
     t.string "document_link"
   end

@@ -2,22 +2,28 @@ import { useState, useEffect } from 'react'
 import { PlusIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
 import TrapidTableView from '../documentation/TrapidTableView'
 
-// Define price book gold standard columns - showing unique column types only
+// Define price book gold standard columns - showing ALL column types from database
 const GOLD_STANDARD_COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32, tooltip: 'Checkbox - select rows for bulk actions' },
+  { key: 'id', label: 'ID', resizable: true, sortable: true, filterable: false, width: 80, tooltip: 'Primary Key - Auto-increment ID' },
   { key: 'item_code', label: 'Single Line Text', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Single line text field - Item code' },
   { key: 'email', label: 'Email', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 200, tooltip: 'Email field - Must contain @ symbol' },
   { key: 'phone', label: 'Phone', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Landline Phone - Format: (03) 9123 4567 or 1300 numbers' },
   { key: 'mobile', label: 'Mobile', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Mobile Phone - Format: 0407 397 541' },
+  { key: 'start_date', label: 'Date', resizable: true, sortable: true, filterable: false, width: 140, tooltip: 'Date field - Date without time component (YYYY-MM-DD)' },
+  { key: 'location_coords', label: 'GPS Coordinates', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'GPS Coordinates - Latitude, Longitude for mapping' },
+  { key: 'color_code', label: 'Color Picker', resizable: true, sortable: false, filterable: false, width: 130, tooltip: 'Color Code - Hex color value for visual categorization' },
+  { key: 'file_attachment', label: 'File Upload', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'File Attachment - Path or reference to uploaded file' },
+  { key: 'category_type', label: 'Category Type', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 150, tooltip: 'Category Type - Lookup field for material categories' },
   { key: 'is_active', label: 'Boolean', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 100, tooltip: 'Boolean - True/False checkbox' },
   { key: 'discount', label: 'Percentage', resizable: true, sortable: true, filterable: false, width: 120, tooltip: 'Percentage - Displayed with % symbol' },
   { key: 'status', label: 'Choice', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 140, tooltip: 'Choice - Hardcoded options (active/inactive) with colored badges' },
-  { key: 'component', label: 'Multi Lookup (Table)', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 220, tooltip: 'Multi Lookup - Multiple selections from another table (e.g., Suppliers table)' },
   { key: 'price', label: 'Currency', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'currency', tooltip: 'Currency field with sum - Price in AUD' },
   { key: 'quantity', label: 'Number', resizable: true, sortable: true, filterable: false, width: 100, showSum: true, sumType: 'number', tooltip: 'Number field with sum - Quantity' },
   { key: 'whole_number', label: 'Whole Number', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'number', tooltip: 'Whole Number - Integers only (no decimals). Example: Units, Count, Days' },
   { key: 'total_cost', label: 'Computed', resizable: true, sortable: true, filterable: false, width: 140, showSum: true, sumType: 'currency', tooltip: 'Computed - Formula: price × quantity. Can also do lookups to other tables and multiply/add values', isComputed: true, computeFunction: (entry) => (entry.price || 0) * (entry.quantity || 0) },
-  { key: 'updated_at', label: 'Date', resizable: true, sortable: true, filterable: false, width: 140, tooltip: 'Date field - Last updated date' },
+  { key: 'created_at', label: 'Created At', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Created At - When the record was created' },
+  { key: 'updated_at', label: 'Updated At', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Updated At - When the record was last modified' },
   { key: 'document_link', label: 'Document Link', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'Clickable link to external document or file' },
   { key: 'notes', label: 'Multi Line Text', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 300, tooltip: 'Multi-line text field - Notes and comments' }
 ]
@@ -32,13 +38,17 @@ export default function GoldStandardTableTab() {
     email: '',
     phone: '',
     mobile: '',
+    start_date: '',
+    location_coords: '',
+    color_code: '#000000',
+    file_attachment: '',
     category_type: '',
     is_active: true,
     discount: 0,
-    component: '',
     status: 'active',
     price: 0,
     quantity: 0,
+    whole_number: 0,
     notes: '',
     document_link: ''
   })
@@ -114,13 +124,17 @@ export default function GoldStandardTableTab() {
       email: '',
       phone: '',
       mobile: '',
+      start_date: '',
+      location_coords: '',
+      color_code: '#000000',
+      file_attachment: '',
       category_type: '',
       is_active: true,
       discount: 0,
-      component: '',
       status: 'active',
       price: 0,
       quantity: 0,
+      whole_number: 0,
       notes: '',
       document_link: ''
     })
@@ -314,6 +328,69 @@ export default function GoldStandardTableTab() {
                 </div>
               </div>
 
+              {/* Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Start Date (Date only)
+                </label>
+                <input
+                  type="date"
+                  value={newItem.start_date}
+                  onChange={(e) => setNewItem({ ...newItem, start_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              {/* GPS Coordinates */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  GPS Coordinates (Lat, Long)
+                </label>
+                <input
+                  type="text"
+                  value={newItem.location_coords}
+                  onChange={(e) => setNewItem({ ...newItem, location_coords: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="-33.8688, 151.2093"
+                />
+              </div>
+
+              {/* Color Picker */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Color Code
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={newItem.color_code}
+                    onChange={(e) => setNewItem({ ...newItem, color_code: e.target.value })}
+                    className="h-10 w-20 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={newItem.color_code}
+                    onChange={(e) => setNewItem({ ...newItem, color_code: e.target.value })}
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white font-mono"
+                    placeholder="#000000"
+                  />
+                </div>
+              </div>
+
+              {/* File Attachment */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  File Attachment (Path/URL)
+                </label>
+                <input
+                  type="text"
+                  value={newItem.file_attachment}
+                  onChange={(e) => setNewItem({ ...newItem, file_attachment: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="/uploads/document.pdf"
+                />
+              </div>
+
               {/* Category Dropdown */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -354,31 +431,6 @@ export default function GoldStandardTableTab() {
                 </select>
               </div>
 
-              {/* Suppliers Multi-Select */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Supplier (Multi Lookup)
-                </label>
-                <select
-                  value={newItem.component}
-                  onChange={(e) => setNewItem({ ...newItem, component: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="">Select a supplier...</option>
-                  <option value="Boral">Boral</option>
-                  <option value="Bunnings">Bunnings</option>
-                  <option value="OneSteel">OneSteel</option>
-                  <option value="CSR">CSR</option>
-                  <option value="Beaumont">Beaumont</option>
-                  <option value="Dulux">Dulux</option>
-                  <option value="BlueScope">BlueScope</option>
-                  <option value="Monier">Monier</option>
-                  <option value="Clipsal">Clipsal</option>
-                  <option value="Reece">Reece</option>
-                  <option value="Local Quarry">Local Quarry</option>
-                </select>
-              </div>
-
               {/* Boolean */}
               <div className="flex items-center gap-2">
                 <input
@@ -409,8 +461,8 @@ export default function GoldStandardTableTab() {
                 />
               </div>
 
-              {/* Price and Quantity */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Price, Quantity, and Whole Number */}
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Price (Currency - AUD)
@@ -433,6 +485,20 @@ export default function GoldStandardTableTab() {
                     type="number"
                     value={newItem.quantity}
                     onChange={(e) => setNewItem({ ...newItem, quantity: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="0"
+                    min="0"
+                    step="1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Whole Number
+                  </label>
+                  <input
+                    type="number"
+                    value={newItem.whole_number}
+                    onChange={(e) => setNewItem({ ...newItem, whole_number: parseInt(e.target.value) || 0 })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder="0"
                     min="0"
@@ -471,7 +537,7 @@ export default function GoldStandardTableTab() {
 
               {/* Auto-populated timestamp note */}
               <div className="text-sm text-gray-500 dark:text-gray-400 italic">
-                Date will be auto-populated when the item is created
+                ID, Created At, and Updated At will be auto-populated when the item is created
               </div>
             </div>
 
