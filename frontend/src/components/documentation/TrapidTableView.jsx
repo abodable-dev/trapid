@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import RichTextEditor from '../common/RichTextEditor'
+import ColumnEditorFullView from '../schema/ColumnEditorFullView'
+import ColumnEditorModal from '../schema/ColumnEditorModal'
 import {
   MagnifyingGlassIcon,
   XMarkIcon,
@@ -18,7 +20,9 @@ import {
   EllipsisVerticalIcon,
   ArrowUpTrayIcon,
   ArrowDownTrayIcon,
-  ViewColumnsIcon
+  ViewColumnsIcon,
+  Cog8ToothIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline'
 
 const CHAPTER_NAMES = {
@@ -96,7 +100,10 @@ export default function TrapidTableView({
   onImport = null,
   onExport = null,
   columns = null,  // NEW: Custom columns definition (if not provided, uses DEFAULT_TRINITY_COLUMNS)
-  tableId = 'default'  // NEW: Unique identifier for this table (for saving filters per table)
+  tableId = 'default',  // NEW: Unique identifier for this table (for saving filters per table)
+  enableSchemaEditor = false,  // NEW: Enable schema editor menu items
+  tableIdNumeric = null,  // NEW: Numeric table ID for schema editor API calls
+  tableName = 'Table'  // NEW: Human-readable table name for schema editor
 }) {
   // Use custom columns if provided, otherwise use default Trinity columns
   const COLUMNS = columns || DEFAULT_TRINITY_COLUMNS
@@ -228,6 +235,11 @@ export default function TrapidTableView({
   // Editable modal state (for double-click row editing)
   const [showEditableModal, setShowEditableModal] = useState(false)
   const [modalEditData, setModalEditData] = useState(null)
+
+  // Column schema editor state
+  const [showColumnEditorFull, setShowColumnEditorFull] = useState(false)
+  const [editIndividualMode, setEditIndividualMode] = useState(false)
+  const [selectedColumnForEdit, setSelectedColumnForEdit] = useState(null)
 
   // Chapter 19 compliance: Column state management
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
@@ -1699,6 +1711,43 @@ export default function TrapidTableView({
                 </MenuItem>
               </div>
 
+              {/* Schema Editor - only show if enableSchemaEditor prop is true */}
+              {enableSchemaEditor && (
+                <div className="py-1">
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Schema
+                  </div>
+                  <MenuItem>
+                    {({ focus }) => (
+                      <button
+                        onClick={() => setShowColumnEditorFull(true)}
+                        className={`${
+                          focus ? 'bg-gray-100 dark:bg-gray-700' : ''
+                        } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                      >
+                        <WrenchScrewdriverIcon className="h-5 w-5 mr-3 text-purple-600 dark:text-purple-400" />
+                        <span>Edit Columns</span>
+                      </button>
+                    )}
+                  </MenuItem>
+                  <MenuItem>
+                    {({ focus }) => (
+                      <button
+                        onClick={() => {
+                          setEditIndividualMode(!editIndividualMode)
+                        }}
+                        className={`${
+                          focus ? 'bg-gray-100 dark:bg-gray-700' : ''
+                        } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                      >
+                        <Cog8ToothIcon className={`h-5 w-5 mr-3 ${editIndividualMode ? 'text-orange-600 dark:text-orange-400' : 'text-gray-600 dark:text-gray-400'}`} />
+                        <span>{editIndividualMode ? 'Exit Edit Individual' : 'Edit Individual'}</span>
+                      </button>
+                    )}
+                  </MenuItem>
+                </div>
+              )}
+
               {/* Import/Export options - only show if enabled */}
               {(enableImport || enableExport) && (
                 <div className="py-1">
@@ -2068,9 +2117,9 @@ export default function TrapidTableView({
               <>
                 {/* Backdrop */}
                 <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowCascadeDropdown(false)} />
-                {/* Dropdown positioned below button */}
+                {/* Dropdown positioned in center like a modal */}
                 <div
-                  className="absolute left-0 top-full mt-2 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto z-[60]"
+                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto z-[60]"
                   onClick={(e) => e.stopPropagation()}
                 >
                 <div className="p-3 space-y-3">
@@ -2461,6 +2510,27 @@ export default function TrapidTableView({
                           )}
                           <span>{column.label}</span>
                           {column.sortable && <SortIcon column={colKey} />}
+                          {/* Schema Editor Cog Icon - only show in Edit Individual mode */}
+                          {editIndividualMode && enableSchemaEditor && colKey !== 'select' && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                // Create a column object to pass to the editor
+                                setSelectedColumnForEdit({
+                                  id: colKey,
+                                  name: column.label,
+                                  column_name: colKey,
+                                  column_type: 'string', // TODO: Determine actual type
+                                  required: false
+                                })
+                              }}
+                              className="ml-2 p-1 rounded hover:bg-blue-500 dark:hover:bg-blue-700 transition-colors"
+                              title="Edit column schema"
+                            >
+                              <Cog8ToothIcon className="h-4 w-4 text-orange-300 hover:text-white" />
+                            </button>
+                          )}
                         </div>
 
                         {/* Column Resize Handle */}
@@ -3365,6 +3435,33 @@ export default function TrapidTableView({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Column Editor Full View */}
+      {showColumnEditorFull && tableIdNumeric && (
+        <ColumnEditorFullView
+          tableId={tableIdNumeric}
+          tableName={tableName}
+          onClose={() => {
+            setShowColumnEditorFull(false)
+            // Optionally reload data here if needed
+          }}
+        />
+      )}
+
+      {/* Column Editor Individual Modal */}
+      {selectedColumnForEdit && (
+        <ColumnEditorModal
+          isOpen={!!selectedColumnForEdit}
+          column={selectedColumnForEdit}
+          table={null} // TODO: Pass table data if needed
+          tableId={tableIdNumeric}
+          onClose={() => setSelectedColumnForEdit(null)}
+          onUpdate={() => {
+            // Optionally reload data here if needed
+            setSelectedColumnForEdit(null)
+          }}
+        />
       )}
     </>
   )
