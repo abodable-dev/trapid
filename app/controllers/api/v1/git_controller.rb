@@ -4,6 +4,21 @@ module Api
       # GET /api/v1/git/branch_status
       def branch_status
         begin
+          # Check if git is available
+          unless git_available?
+            return render json: {
+              git_available: false,
+              current_branch: 'unknown',
+              branches: [],
+              commit_stats: {
+                total_branches: 0,
+                local_branches: 0,
+                remote_branches: 0
+              },
+              message: 'Git is not available in this environment'
+            }
+          end
+
           # Get current branch
           current_branch = `git branch --show-current`.strip
 
@@ -90,6 +105,13 @@ module Api
         rescue => e
           render json: { error: "Failed to fetch git branch status: #{e.message}" }, status: :internal_server_error
         end
+      end
+
+      private
+
+      # Check if git command is available
+      def git_available?
+        @git_available ||= system('which git > /dev/null 2>&1')
       end
     end
   end
