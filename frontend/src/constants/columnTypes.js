@@ -313,3 +313,152 @@ export const getColumnTypesByCategory = (category) => {
 export const getColumnCategories = () => {
   return [...new Set(COLUMN_TYPES.map(t => t.category))]
 }
+
+/**
+ * Get emoji icon for a column type
+ * SINGLE SOURCE OF TRUTH for all column type icons
+ * @param {string} columnType - The column type value (e.g., 'single_line_text')
+ * @returns {string} The emoji icon
+ */
+export const getColumnTypeEmoji = (columnType) => {
+  const iconMap = {
+    'single_line_text': '📝',
+    'multiple_lines_text': '📄',
+    'email': '📧',
+    'phone': '📞',
+    'mobile': '📱',
+    'url': '🔗',
+    'number': '#️⃣',
+    'whole_number': '🔢',
+    'currency': '💵',
+    'percentage': '%',
+    'date': '📅',
+    'date_and_time': '🕐',
+    'gps_coordinates': '📍',
+    'color_picker': '🎨',
+    'file_upload': '📎',
+    'boolean': '☑️',
+    'choice': '📋',
+    'lookup': '🔗',
+    'multiple_lookups': '🔗',
+    'user': '👤',
+    'computed': '🧮',
+    'id': '🔑'
+  }
+  return iconMap[columnType] || '📝'
+}
+
+// ============================================================================
+// API INTEGRATION - Single Source of Truth from Gold Standard Table
+// ============================================================================
+
+const CACHE_KEY = 'trapid_column_types_cache'
+const CACHE_TIMESTAMP_KEY = 'trapid_column_types_timestamp'
+const CACHE_TTL = 3600000 // 1 hour in milliseconds
+
+/**
+ * Fetch column types from the API (Gold Standard Reference table)
+ * @returns {Promise<Array>} Array of column type definitions
+ */
+export const fetchColumnTypesFromAPI = async () => {
+  try {
+    const response = await fetch('/api/v1/column_types')
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data.success && data.data) {
+      return data.data
+    } else {
+      throw new Error('Invalid API response format')
+    }
+  } catch (error) {
+    console.error('Failed to fetch column types from API:', error)
+    throw error
+  }
+}
+
+/**
+ * Get column types with caching
+ * Fetches from API and caches in localStorage for 1 hour
+ * Falls back to COLUMN_TYPES constant if API fails
+ * @param {boolean} forceRefresh - Force refresh from API (skip cache)
+ * @returns {Promise<Array>} Array of column type definitions
+ */
+export const getColumnTypesWithCache = async (forceRefresh = false) => {
+  // Check cache first (unless force refresh)
+  if (!forceRefresh) {
+    try {
+      const cachedData = localStorage.getItem(CACHE_KEY)
+      const cachedTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY)
+
+      if (cachedData && cachedTimestamp) {
+        const age = Date.now() - parseInt(cachedTimestamp)
+
+        if (age < CACHE_TTL) {
+          console.log('✅ Using cached column types (age:', Math.round(age / 1000), 'seconds)')
+          return JSON.parse(cachedData)
+        } else {
+          console.log('⏰ Cache expired (age:', Math.round(age / 1000), 'seconds)')
+        }
+      }
+    } catch (error) {
+      console.warn('Cache read error:', error)
+    }
+  }
+
+  // Fetch from API
+  try {
+    console.log('🔄 Fetching column types from API...')
+    const columnTypes = await fetchColumnTypesFromAPI()
+
+    // Cache the result
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(columnTypes))
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString())
+      console.log('💾 Column types cached successfully')
+    } catch (error) {
+      console.warn('Cache write error:', error)
+    }
+
+    return columnTypes
+  } catch (error) {
+    console.warn('⚠️ API fetch failed, using fallback COLUMN_TYPES constant')
+    // Return fallback data (COLUMN_TYPES constant)
+    return COLUMN_TYPES
+  }
+}
+
+/**
+ * Clear the column types cache
+ * Useful when you want to force a refresh
+ */
+export const clearColumnTypesCache = () => {
+  try {
+    localStorage.removeItem(CACHE_KEY)
+    localStorage.removeItem(CACHE_TIMESTAMP_KEY)
+    console.log('🗑️ Column types cache cleared')
+  } catch (error) {
+    console.warn('Cache clear error:', error)
+  }
+}
+
+/**
+ * Get cache age in seconds
+ * @returns {number|null} Age in seconds, or null if no cache
+ */
+export const getColumnTypesCacheAge = () => {
+  try {
+    const cachedTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY)
+    if (cachedTimestamp) {
+      const age = Date.now() - parseInt(cachedTimestamp)
+      return Math.round(age / 1000)
+    }
+  } catch (error) {
+    console.warn('Cache age check error:', error)
+  }
+  return null
+}

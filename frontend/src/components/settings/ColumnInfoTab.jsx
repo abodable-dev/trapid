@@ -1,15 +1,17 @@
+import { useState, useEffect } from 'react'
 import { CheckCircleIcon, InformationCircleIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
-import { COLUMN_TYPES } from '../../constants/columnTypes'
+import { COLUMN_TYPES, getColumnTypeEmoji, clearColumnTypesCache } from '../../constants/columnTypes'
 
-// Convert COLUMN_TYPES to column info format - this is now LIVE and always up-to-date
-// Matches the exact columns shown in Gold Standard Table
-const getInitialColumns = () => {
+// Fallback function - Convert COLUMN_TYPES to column info format
+// Used if API call fails
+const getFallbackColumns = () => {
   // Start with ID column (not in COLUMN_TYPES, but always present in tables)
   const columns = [
     {
       columnName: 'id',
       sqlType: 'INTEGER',
       displayType: 'ID / Primary Key',
+      icon: getColumnTypeEmoji('id'),
       validationRules: 'Auto-increment, unique, not null',
       example: '1, 2, 3, 100',
       usedFor: 'Primary key for identifying records'
@@ -24,6 +26,7 @@ const getInitialColumns = () => {
         columnName: 'created_at',
         sqlType: type.sqlType || 'UNKNOWN',
         displayType: 'Date & Time (Created)',
+        icon: getColumnTypeEmoji('date_and_time'),
         validationRules: type.validationRules || 'No validation rules defined',
         example: type.example || 'No example provided',
         usedFor: type.usedFor || 'No usage description'
@@ -36,6 +39,7 @@ const getInitialColumns = () => {
         columnName: 'checkbox',
         sqlType: type.sqlType || 'UNKNOWN',
         displayType: 'Checkbox',
+        icon: getColumnTypeEmoji('boolean'),
         validationRules: type.validationRules || 'No validation rules defined',
         example: type.example || 'No example provided',
         usedFor: type.usedFor || 'No usage description'
@@ -48,6 +52,7 @@ const getInitialColumns = () => {
         columnName: 'choice',
         sqlType: type.sqlType || 'UNKNOWN',
         displayType: 'Choice',
+        icon: getColumnTypeEmoji('choice'),
         validationRules: type.validationRules || 'No validation rules defined',
         example: type.example || 'No example provided',
         usedFor: type.usedFor || 'No usage description'
@@ -58,6 +63,7 @@ const getInitialColumns = () => {
       columnName: type.value,
       sqlType: type.sqlType || 'UNKNOWN',
       displayType: type.label || type.value,
+      icon: getColumnTypeEmoji(type.value),
       validationRules: type.validationRules || 'No validation rules defined',
       example: type.example || 'No example provided',
       usedFor: type.usedFor || 'No usage description'
@@ -73,6 +79,7 @@ const getInitialColumns = () => {
       columnName: 'updated_at',
       sqlType: dateTimeType.sqlType,
       displayType: 'Date & Time (Updated)',
+      icon: getColumnTypeEmoji('date_and_time'),
       validationRules: 'Auto-updated on any modification',
       example: dateTimeType.example,
       usedFor: 'Last modification timestamp'
@@ -256,8 +263,176 @@ const LEGACY_COLUMNS = [
 
 
 export default function ColumnInfoTab() {
-  // Always pull fresh from COLUMN_TYPES - no state needed, always live
-  const columns = getInitialColumns()
+  // State for column types from API
+  const [columns, setColumns] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [dataSource, setDataSource] = useState('Loading...')
+
+  // Editing state
+  const [editingCell, setEditingCell] = useState(null) // { rowIndex, field }
+  const [editValue, setEditValue] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  // Fetch column types from API on mount
+  useEffect(() => {
+    const fetchColumnTypes = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/v1/column_types')
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        if (data.success && data.data) {
+          // Transform API response to column info format
+          const columnTypes = data.data.map(type => ({
+            columnName: type.columnName || type.value,
+            sqlType: type.sqlType || 'UNKNOWN',
+            displayType: type.label || type.value,
+            icon: getColumnTypeEmoji(type.value),
+            validationRules: type.validationRules || 'No validation rules defined',
+            example: type.example || 'No example provided',
+            usedFor: type.usedFor || 'No usage description'
+          }))
+
+          // Add system columns (id, created_at, updated_at)
+          const systemColumns = [
+            {
+              columnName: 'id',
+              sqlType: 'INTEGER',
+              displayType: 'ID / Primary Key',
+              icon: getColumnTypeEmoji('id'),
+              validationRules: 'Auto-increment, unique, not null',
+              example: '1, 2, 3, 100',
+              usedFor: 'Primary key for identifying records'
+            },
+            ...columnTypes,
+            {
+              columnName: 'updated_at',
+              sqlType: 'TIMESTAMP',
+              displayType: 'Date & Time (Updated)',
+              icon: getColumnTypeEmoji('date_and_time'),
+              validationRules: 'Auto-updated on any modification',
+              example: '19/11/2024 16:45',
+              usedFor: 'Last modification timestamp'
+            }
+          ]
+
+          setColumns(systemColumns)
+          setDataSource(`Gold Standard Reference Table (ID: ${data.table_id})`)
+          setError(null)
+        } else {
+          throw new Error('Invalid API response')
+        }
+      } catch (err) {
+        console.error('Failed to fetch column types from API, using fallback:', err)
+        setColumns(getFallbackColumns())
+        setDataSource('Local Fallback (COLUMN_TYPES constant)')
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchColumnTypes()
+  }, [])
+
+  // Handle starting to edit a cell
+  const handleStartEdit = (rowIndex, field, currentValue) => {
+    // Don't allow editing system columns (id, updated_at) or read-only fields
+    const column = columns[rowIndex]
+    if (column.columnName === 'id' || column.columnName === 'updated_at') {
+      return
+    }
+
+    setEditingCell({ rowIndex, field })
+    setEditValue(currentValue)
+  }
+
+  // Handle saving an edit
+  const handleSaveEdit = async () => {
+    if (!editingCell) return
+
+    const { rowIndex, field } = editingCell
+    const column = columns[rowIndex]
+
+    // Don't save if value hasn't changed
+    if (editValue === column[field]) {
+      setEditingCell(null)
+      return
+    }
+
+    try {
+      setSaving(true)
+
+      // Update local state optimistically
+      const updatedColumns = [...columns]
+      updatedColumns[rowIndex] = {
+        ...updatedColumns[rowIndex],
+        [field]: editValue
+      }
+      setColumns(updatedColumns)
+
+      // Update via API
+      const response = await fetch(`/api/v1/column_types/${column.columnName}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          [field]: editValue
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        console.log('✅ Saved to Gold Standard table:', data.message)
+        // Clear cache to force refresh on next load
+        clearColumnTypesCache()
+      } else {
+        throw new Error(data.error || 'Failed to save')
+      }
+
+      setEditingCell(null)
+    } catch (err) {
+      console.error('Failed to save edit:', err)
+      // Revert optimistic update on error
+      const revertedColumns = [...columns]
+      revertedColumns[rowIndex] = {
+        ...revertedColumns[rowIndex],
+        [field]: column[field] // Restore original value
+      }
+      setColumns(revertedColumns)
+      alert('Failed to save changes: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Handle canceling an edit
+  const handleCancelEdit = () => {
+    setEditingCell(null)
+    setEditValue('')
+  }
+
+  // Handle key press in edit input
+  const handleEditKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSaveEdit()
+    } else if (e.key === 'Escape') {
+      handleCancelEdit()
+    }
+  }
 
   // Export to CSV
   const exportToCSV = () => {
@@ -321,6 +496,23 @@ export default function ColumnInfoTab() {
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
               Complete reference of all column types with validation rules and usage guidelines
             </p>
+            <div className="mt-2 flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                error
+                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200'
+                  : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200'
+              }`}>
+                <span className={`inline-block w-2 h-2 rounded-full ${
+                  error ? 'bg-yellow-500' : 'bg-green-500 animate-pulse'
+                }`} />
+                {dataSource}
+              </span>
+              {loading && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Loading...
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -457,18 +649,84 @@ export default function ColumnInfoTab() {
                         </span>
                       </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                      {column.displayType}
+                      <span className="inline-flex items-center gap-2">
+                        <span>{column.icon}</span>
+                        <span>{column.displayType}</span>
+                      </span>
                     </td>
+                    {/* Validation Rules - Editable */}
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                      {column.validationRules}
+                      {editingCell?.rowIndex === index && editingCell?.field === 'validationRules' ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={handleEditKeyDown}
+                            onBlur={handleSaveEdit}
+                            autoFocus
+                            className="flex-1 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-700"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => !isSystemGenerated && handleStartEdit(index, 'validationRules', column.validationRules)}
+                          className={`${!isSystemGenerated ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1' : ''}`}
+                          title={!isSystemGenerated ? 'Click to edit' : 'System column - not editable'}
+                        >
+                          {column.validationRules}
+                        </div>
+                      )}
                     </td>
+
+                    {/* Example - Editable */}
                     <td className="px-6 py-4 text-xs text-gray-500 dark:text-gray-500">
-                      <code className="bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
-                        {column.example}
-                      </code>
+                      {editingCell?.rowIndex === index && editingCell?.field === 'example' ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={handleEditKeyDown}
+                            onBlur={handleSaveEdit}
+                            autoFocus
+                            className="flex-1 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs font-mono bg-white dark:bg-gray-700"
+                          />
+                        </div>
+                      ) : (
+                        <code
+                          onClick={() => !isSystemGenerated && handleStartEdit(index, 'example', column.example)}
+                          className={`bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded ${!isSystemGenerated ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600' : ''}`}
+                          title={!isSystemGenerated ? 'Click to edit' : 'System column - not editable'}
+                        >
+                          {column.example}
+                        </code>
+                      )}
                     </td>
+
+                    {/* Used For - Editable */}
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                      {column.usedFor}
+                      {editingCell?.rowIndex === index && editingCell?.field === 'usedFor' ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={handleEditKeyDown}
+                            onBlur={handleSaveEdit}
+                            autoFocus
+                            className="flex-1 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-700"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => !isSystemGenerated && handleStartEdit(index, 'usedFor', column.usedFor)}
+                          className={`${!isSystemGenerated ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1' : ''}`}
+                          title={!isSystemGenerated ? 'Click to edit' : 'System column - not editable'}
+                        >
+                          {column.usedFor}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 )})}
