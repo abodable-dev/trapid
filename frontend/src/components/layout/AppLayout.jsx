@@ -31,6 +31,7 @@ import {
   BookOpenIcon,
   UserGroupIcon,
   UsersIcon,
+  UserIcon,
   PlusIcon,
   EnvelopeIcon,
   DocumentTextIcon,
@@ -49,6 +50,7 @@ import { ChevronDownIcon } from '@heroicons/react/20/solid'
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
+  { name: 'Sam', href: '/sam', icon: UserIcon },
   { name: 'Meetings', href: '/meetings', icon: CalendarIcon },
   { name: 'Xest', href: '/xest', icon: BeakerIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },

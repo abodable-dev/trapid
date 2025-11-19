@@ -180,22 +180,6 @@ export default function ExplorerSidebar({ onUploadClick }) {
           </Link>
         </div>
 
-        {/* Sam */}
-        <div className={sidebarCollapsed ? 'px-2 pb-2' : 'px-4 pb-4'}>
-          <Link
-            to="/sam"
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2'} rounded-lg transition-colors ${
-              isActiveRoute('/sam')
-                ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-            title={sidebarCollapsed ? 'Sam' : ''}
-          >
-            <UserIcon className="h-5 w-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="font-medium text-sm">Sam</span>}
-          </Link>
-        </div>
-
         {/* Settings Header */}
         {!sidebarCollapsed && (
           <div className="border-t border-gray-200 dark:border-gray-800 pt-4 pb-2 px-4">
@@ -297,6 +281,43 @@ export default function ExplorerSidebar({ onUploadClick }) {
                 </div>
               )}
             </>
+          )}
+        </div>
+
+        {/* Sam */}
+        <div>
+          {sidebarCollapsed ? (
+            <Link
+              to="/sam"
+              className={`flex items-center justify-center p-2.5 mx-2 mb-2 rounded-lg transition-colors ${
+                isActiveRoute('/sam')
+                  ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              title="Sam"
+            >
+              <UserIcon className="h-5 w-5 flex-shrink-0" />
+            </Link>
+          ) : (
+            <div className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800">
+              <Link
+                to="/sam"
+                className={`flex items-center gap-3 flex-1 ${
+                  isActiveRoute('/sam')
+                    ? 'text-indigo-700 dark:text-indigo-400'
+                    : 'text-gray-900 dark:text-white'
+                }`}
+              >
+                <UserIcon className={`h-5 w-5 ${
+                  isActiveRoute('/sam')
+                    ? 'text-indigo-600 dark:text-indigo-400'
+                    : 'text-gray-500 dark:text-gray-400'
+                }`} />
+                <span className="font-medium text-sm">
+                  Sam
+                </span>
+              </Link>
+            </div>
           )}
         </div>
 
