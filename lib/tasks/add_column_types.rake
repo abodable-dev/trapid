@@ -5,6 +5,7 @@ namespace :trinity do
     puts ""
 
     # Column types from frontend/src/constants/columnTypes.js
+    # UPDATED 2025-11-19: Synced with frontend single source of truth
     column_types = [
       # Text Fields
       {
@@ -24,7 +25,7 @@ namespace :trinity do
         description: 'Multi-line text field',
         sql_type: 'TEXT',
         validation_rules: 'Optional text field, supports line breaks',
-        example: 'Additional notes, second line, third line',
+        example: 'Additional notes\nSecond line\nThird line',
         used_for: 'Notes, comments, multi-line descriptions'
       },
       {
@@ -72,11 +73,11 @@ namespace :trinity do
         value: 'number',
         label: 'Number',
         category: 'Numbers',
-        description: 'Decimal number',
+        description: 'Integer number',
         sql_type: 'INTEGER',
-        validation_rules: 'Positive integers, shows sum in footer',
-        example: '10, 250, 15',
-        used_for: 'Quantity of items'
+        validation_rules: 'Integers (positive or negative), shows sum in footer',
+        example: '10, 250, 15, -5',
+        used_for: 'Quantity of items, counts, or any integer value'
       },
       {
         value: 'whole_number',
@@ -93,7 +94,7 @@ namespace :trinity do
         label: 'Currency',
         category: 'Numbers',
         description: 'Money amount',
-        sql_type: 'DECIMAL(10,2)',
+        sql_type: 'NUMERIC(10,2)',
         validation_rules: 'Positive numbers, 2 decimal places, shows sum in footer',
         example: '$125.50, $1,234.99',
         used_for: 'Price in Australian dollars'
@@ -103,9 +104,9 @@ namespace :trinity do
         label: 'Percent',
         category: 'Numbers',
         description: 'Percentage value',
-        sql_type: 'DECIMAL(5,2)',
-        validation_rules: '0-100, displayed with % symbol',
-        example: '10.5%, 25%, 0%',
+        sql_type: 'NUMERIC(5,2)',
+        validation_rules: '0-100, input as number (e.g., 11), displayed with % symbol (e.g., 11%)',
+        example: 'Input: 11 → Display: 11%, Input: 25.5 → Display: 25.5%',
         used_for: 'Discount percentage for pricing'
       },
       # Date & Time
@@ -115,8 +116,8 @@ namespace :trinity do
         category: 'Date & Time',
         description: 'Date only',
         sql_type: 'DATE',
-        validation_rules: 'Format: YYYY-MM-DD, no time component',
-        example: '2025-11-19, 1990-01-15',
+        validation_rules: 'Stored as YYYY-MM-DD (sortable), displayed as DD-MM-YYYY (Australian format)',
+        example: 'Display: 19-11-2025, Stored: 2025-11-19',
         used_for: 'Date values without time, for contracts, events, start dates'
       },
       {
@@ -124,10 +125,10 @@ namespace :trinity do
         label: 'Date & Time',
         category: 'Date & Time',
         description: 'Date and time',
-        sql_type: 'DATETIME',
-        validation_rules: 'Auto-populated on creation, not editable',
-        example: '19/11/2024 14:30',
-        used_for: 'Record creation timestamp'
+        sql_type: 'TIMESTAMP',
+        validation_rules: 'Stored as YYYY-MM-DD HH:MM:SS (sortable), displayed as DD-MM-YYYY HH:MM (Australian format)',
+        example: 'Display: 19-11-2025 14:30, Stored: 2025-11-19 14:30:00',
+        used_for: 'Timestamps, event times, scheduled dates with time'
       },
       # Special Types
       {
@@ -177,9 +178,9 @@ namespace :trinity do
         category: 'Selection',
         description: 'Select one option from a list',
         sql_type: 'VARCHAR(50)',
-        validation_rules: 'Limited options: active, inactive (with colored badges)',
-        example: 'active (green), inactive (red)',
-        used_for: 'Status with visual indicators'
+        validation_rules: 'Must be one of predefined options, displayed with colored badges',
+        example: 'active, pending, completed, cancelled',
+        used_for: 'Status fields, workflow states, categories with visual indicators'
       },
       # Relationships
       {
@@ -188,9 +189,9 @@ namespace :trinity do
         category: 'Relationships',
         description: 'Link to records in another table',
         sql_type: 'VARCHAR(255)',
-        validation_rules: 'Must match predefined category list',
-        example: 'Concrete, Timber, Steel, Plasterboard',
-        used_for: 'Material type classification'
+        validation_rules: 'Must reference a valid value from the linked table/list',
+        example: 'Product #123, Category: Materials, Customer: ACME Corp',
+        used_for: 'Foreign key relationships, dropdown selections from other tables'
       },
       {
         value: 'multiple_lookups',
@@ -218,10 +219,10 @@ namespace :trinity do
         label: 'Formula',
         category: 'Computed',
         description: 'Calculated value based on other fields',
-        sql_type: 'COMPUTED',
-        validation_rules: 'Formula: price × quantity, read-only, shows sum',
-        example: '$1,255.00 (from $125.50 × 10)',
-        used_for: 'Automatic calculations from other columns'
+        sql_type: 'VIRTUAL/COMPUTED',
+        validation_rules: 'Read-only, calculated from formula (e.g., A × B, SUM(C), LOOKUP(D))',
+        example: '$1,255.00 (price × quantity), Total: $15,000 (SUM of all rows)',
+        used_for: 'Automatic calculations, aggregations, cross-table lookups'
       }
     ]
 
