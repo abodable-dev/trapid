@@ -16,8 +16,9 @@ class ConditionalOmniAuth
   end
 
   def call(env)
-    # Only pass to OmniAuth if the request path starts with the auth prefix
-    if env['PATH_INFO'].to_s.start_with?(@path_prefix)
+    # Only pass to OmniAuth if the request path is for OAuth providers (not regular auth endpoints)
+    path = env['PATH_INFO'].to_s
+    if path.start_with?('/api/v1/auth/microsoft_office365') || path.start_with?('/api/v1/auth/failure')
       @omniauth_app.call(env)
     else
       @app.call(env)
@@ -25,7 +26,7 @@ class ConditionalOmniAuth
   end
 end
 
-Rails.application.config.middleware.use ConditionalOmniAuth, '/api/v1/auth'
+Rails.application.config.middleware.use ConditionalOmniAuth, '/api/v1/auth/microsoft_office365'
 
 # Configure OmniAuth to handle missing sessions gracefully for API-only apps
 OmniAuth.config.allowed_request_methods = [:post, :get]

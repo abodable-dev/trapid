@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../api';
+import { api } from '../../api';
 
 /**
  * FormulaEditor - Component for creating and editing Excel-like formulas for computed columns

@@ -319,6 +319,14 @@ Rails.application.routes.draw do
         end
       end
 
+      # Inspiring Quotes
+      resources :inspiring_quotes do
+        collection do
+          get :daily
+          get :random
+        end
+      end
+
       # Xero integration
       resources :xero, only: [] do
         collection do

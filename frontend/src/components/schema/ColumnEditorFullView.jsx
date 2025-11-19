@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../api';
+import { api } from '../../api';
 import ChoiceEditor from './ChoiceEditor';
 import FormulaEditor from './FormulaEditor';
 import TypeConversionEditor from './TypeConversionEditor';
@@ -67,7 +67,7 @@ const ColumnEditorFullView = ({ tableId, tableName, onClose }) => {
   };
 
   const handlePreviewChanges = async () => {
-    if (pending Changes.length === 0) {
+    if (pendingChanges.length === 0) {
       alert('No changes to preview');
       return;
     }

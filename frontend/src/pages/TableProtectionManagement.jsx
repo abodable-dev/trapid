@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api';
+import { api } from '../api';
 
 /**
  * TableProtectionManagement - Settings page for managing which tables are protected from schema editing
