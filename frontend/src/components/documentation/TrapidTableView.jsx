@@ -2335,7 +2335,11 @@ export default function TrapidTableView({
                                         if (newValue) {
                                           setCascadeFilters(cascadeFilters.map(f =>
                                             f.id === filter.id
-                                              ? { ...f, value: newValue, label: `${COLUMNS.find(col => col.key === f.column)?.label || f.column}: ${newValue}` }
+                                              ? {
+                                                  ...f,
+                                                  value: newValue,
+                                                  label: `${COLUMNS.find(col => col.key === f.column)?.label || f.column}${f.operator && f.operator !== '=' ? ' ' + f.operator : ''}: ${newValue}`
+                                                }
                                               : f
                                           ))
                                         }
