@@ -191,6 +191,7 @@ export default function TrapidTableView({
   const [columnSearchQuery, setColumnSearchQuery] = useState('') // Search query for filtering column list
   const [activeViewId, setActiveViewId] = useState(null) // Track which saved view is currently active
   const [editingViewId, setEditingViewId] = useState(null) // Track which view is being edited
+  const [editingFilterId, setEditingFilterId] = useState(null) // Track which filter is being edited
 
   // Save filters to localStorage whenever they change (per table)
   useEffect(() => {
@@ -2325,10 +2326,38 @@ export default function TrapidTableView({
                                   <span className="font-medium text-blue-600 dark:text-blue-400">
                                     {COLUMNS.find(col => col.key === filter.column)?.label || filter.column}:
                                   </span>
-                                  <span className="font-semibold">
-                                    {filter.operator && filter.operator !== '=' && <span className="text-orange-600 dark:text-orange-400">{filter.operator} </span>}
-                                    {filter.value}
-                                  </span>
+                                  {editingFilterId === filter.id ? (
+                                    <input
+                                      type="text"
+                                      defaultValue={filter.value}
+                                      onBlur={(e) => {
+                                        const newValue = e.target.value.trim()
+                                        if (newValue) {
+                                          setCascadeFilters(cascadeFilters.map(f =>
+                                            f.id === filter.id
+                                              ? { ...f, value: newValue, label: `${COLUMNS.find(col => col.key === f.column)?.label || f.column}: ${newValue}` }
+                                              : f
+                                          ))
+                                        }
+                                        setEditingFilterId(null)
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') e.target.blur()
+                                        if (e.key === 'Escape') setEditingFilterId(null)
+                                      }}
+                                      autoFocus
+                                      className="flex-1 px-1 py-0.5 border border-blue-400 rounded bg-white dark:bg-gray-700 dark:text-white text-[11px] font-semibold min-w-[60px]"
+                                    />
+                                  ) : (
+                                    <span
+                                      className="font-semibold cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 px-1 rounded"
+                                      onClick={() => setEditingFilterId(filter.id)}
+                                      title="Click to edit value"
+                                    >
+                                      {filter.operator && filter.operator !== '=' && <span className="text-orange-600 dark:text-orange-400">{filter.operator} </span>}
+                                      {filter.value}
+                                    </span>
+                                  )}
                                 </span>
                                 <button
                                   onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.id !== filter.id))}
