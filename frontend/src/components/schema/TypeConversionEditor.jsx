@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../api';
+import { COLUMN_TYPES } from '../../constants/columnTypes';
 
 /**
  * TypeConversionEditor - Component for changing column types with data conversion preview
@@ -41,19 +42,41 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
     falseLabel: 'No'
   });
 
-  const columnTypes = [
-    { value: 'string', label: 'Text (Single Line)', icon: '📝' },
-    { value: 'text', label: 'Text Area (Multi-line)', icon: '📄' },
-    { value: 'integer', label: 'Number (Integer)', icon: '🔢' },
-    { value: 'float', label: 'Number (Decimal)', icon: '🔢' },
-    { value: 'decimal', label: 'Currency/Decimal', icon: '💰' },
-    { value: 'boolean', label: 'Yes/No (Boolean)', icon: '✓' },
-    { value: 'date', label: 'Date', icon: '📅' },
-    { value: 'datetime', label: 'Date & Time', icon: '🕐' },
-    { value: 'email', label: 'Email', icon: '📧' },
-    { value: 'phone', label: 'Phone', icon: '📞' },
-    { value: 'url', label: 'URL', icon: '🔗' }
-  ];
+  // Use COLUMN_TYPES as single source of truth (20 types - excludes id, created_at, updated_at which are system-generated)
+  const columnTypes = COLUMN_TYPES.map(type => ({
+    value: type.value,
+    label: type.label,
+    icon: getIconEmoji(type.value),
+    category: type.category
+  }));
+
+  // Helper to get emoji icons for column types
+  function getIconEmoji(value) {
+    const iconMap = {
+      'single_line_text': '📝',
+      'multiple_lines_text': '📄',
+      'email': '📧',
+      'phone': '📞',
+      'mobile': '📱',
+      'url': '🔗',
+      'number': '🔢',
+      'whole_number': '🔢',
+      'currency': '💰',
+      'percentage': '📊',
+      'date': '📅',
+      'date_and_time': '🕐',
+      'gps_coordinates': '📍',
+      'color_picker': '🎨',
+      'file_upload': '📎',
+      'boolean': '✓',
+      'choice': '📋',
+      'lookup': '🔗',
+      'multiple_lookups': '🔗',
+      'user': '👤',
+      'computed': '🔢'
+    };
+    return iconMap[value] || '📝';
+  }
 
   const conversionStrategies = [
     { value: 'clear_invalid', label: 'Clear Invalid Values', desc: 'Set incompatible values to NULL' },
@@ -407,10 +430,59 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
           </div>
         );
 
+      case 'mobile':
+        return (
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            Mobile phone validation will be automatically applied. Format: 04XX XXX XXX
+          </div>
+        );
+
       case 'url':
         return (
           <div className="text-xs text-gray-600 dark:text-gray-400">
             URL validation will be automatically applied. Must start with http:// or https://
+          </div>
+        );
+
+      case 'gps_coordinates':
+        return (
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            GPS coordinates format: latitude, longitude (e.g., -33.8688, 151.2093)
+          </div>
+        );
+
+      case 'color_picker':
+        return (
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            Hex color code format: #RRGGBB (e.g., #FF5733, #3498DB)
+          </div>
+        );
+
+      case 'file_upload':
+        return (
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            File path or URL to uploaded file will be stored as text
+          </div>
+        );
+
+      case 'lookup':
+      case 'multiple_lookups':
+        return (
+          <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="text-xs text-blue-800 dark:text-blue-200">
+              <strong>Note:</strong> Lookup columns require additional configuration (target table and display column).
+              Configure these in the Column Info tab after conversion.
+            </div>
+          </div>
+        );
+
+      case 'user':
+        return (
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            User column stores references to user IDs in the system
           </div>
         );
 
@@ -463,11 +535,21 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
                        bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {columnTypes.map(type => (
-                <option key={type.value} value={type.value}>
-                  {type.icon} {type.label}
-                </option>
-              ))}
+              {/* Dynamically build options from COLUMN_TYPES (single source of truth) - 20 types */}
+              {['Text', 'Numbers', 'Date & Time', 'Special', 'Selection', 'Relationships', 'Computed'].map(category => {
+                const typesInCategory = columnTypes.filter(t => t.category === category);
+                if (typesInCategory.length === 0) return null;
+
+                return (
+                  <optgroup key={category} label={category}>
+                    {typesInCategory.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.icon} {type.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              })}
             </select>
           </div>
 
