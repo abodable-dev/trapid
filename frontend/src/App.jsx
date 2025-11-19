@@ -34,6 +34,7 @@ const ImportPage = lazy(() => import('./pages/ImportPage'))
 const TablePage = lazy(() => import('./pages/TablePage'))
 const SchemaPage = lazy(() => import('./pages/SchemaPage'))
 const TableStandardTest = lazy(() => import('./pages/TableStandardTest'))
+const ColumnEditorPage = lazy(() => import('./pages/ColumnEditorPage'))
 const XeroCallbackPage = lazy(() => import('./pages/XeroCallbackPage'))
 const XeroSyncPage = lazy(() => import('./pages/XeroSyncPage'))
 const OutlookPage = lazy(() => import('./pages/OutlookPage'))
@@ -136,6 +137,7 @@ function App() {
         <Route path="/purchase-orders/:id" element={<AppLayout><PurchaseOrderDetailPage /></AppLayout>} />
         <Route path="/import" element={<AppLayout><ImportPage /></AppLayout>} />
         <Route path="/tables/:id" element={<AppLayout><TablePage /></AppLayout>} />
+        <Route path="/tables/:tableId/columns" element={<ColumnEditorPage />} />
         <Route path="/designer" element={<AppLayout><DesignerHome /></AppLayout>} />
         <Route path="/designer/tables/new" element={<AppLayout><TableBuilder /></AppLayout>} />
         <Route path="/designer/tables/:id" element={<AppLayout><TableSettings /></AppLayout>} />

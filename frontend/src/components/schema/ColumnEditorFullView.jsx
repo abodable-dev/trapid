@@ -3,6 +3,7 @@ import { api } from '../../api';
 import ChoiceEditor from './ChoiceEditor';
 import FormulaEditor from './FormulaEditor';
 import TypeConversionEditor from './TypeConversionEditor';
+import RenameEditor from './RenameEditor';
 import PreviewChangesModal from './PreviewChangesModal';
 
 /**
@@ -27,6 +28,7 @@ const ColumnEditorFullView = ({ tableId, tableName, onClose }) => {
   const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedColumn, setExpandedColumn] = useState(null);
+  const [editorMode, setEditorMode] = useState({}); // Track editor mode per column: { [columnId]: 'rename' | 'typeConversion' | 'choices' | 'formula' }
   const [pendingChanges, setPendingChanges] = useState([]);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [validationResults, setValidationResults] = useState([]);
@@ -40,9 +42,17 @@ const ColumnEditorFullView = ({ tableId, tableName, onClose }) => {
       setLoading(true);
       const response = await api.get(`/api/v1/tables/${tableId}`);
 
-      if (response.data.success) {
+      // Handle different response formats
+      if (response && response.success) {
+        // Direct format: { success: true, table: {...} }
+        setTable(response.table);
+        setColumns(response.table.columns || []);
+      } else if (response && response.data && response.data.success) {
+        // Nested format: { data: { success: true, table: {...} } }
         setTable(response.data.table);
         setColumns(response.data.table.columns || []);
+      } else {
+        throw new Error('Invalid response format from API');
       }
     } catch (error) {
       console.error('Error loading table:', error);
@@ -134,7 +144,7 @@ const ColumnEditorFullView = ({ tableId, tableName, onClose }) => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white dark:bg-gray-900 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-white dark:bg-gray-900 flex items-center justify-center z-[100]">
         <div className="text-center">
           <div className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Loading table columns...
@@ -146,7 +156,7 @@ const ColumnEditorFullView = ({ tableId, tableName, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-100 dark:bg-gray-900 z-50 flex flex-col">
+    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-[100] flex flex-col">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700">
         <div className="px-6 py-4">
@@ -312,39 +322,83 @@ const ColumnEditorFullView = ({ tableId, tableName, onClose }) => {
                                     dark:bg-gray-900/50 p-6">
                         <div className="flex gap-4 mb-4">
                           <button
-                            className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400
-                                     bg-blue-50 dark:bg-blue-900/30 rounded-lg hover:bg-blue-100
-                                     dark:hover:bg-blue-900/50 transition-colors"
+                            onClick={() => setEditorMode({ ...editorMode, [column.id]: 'rename' })}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                              editorMode[column.id] === 'rename'
+                                ? 'text-white bg-orange-600 dark:bg-orange-500'
+                                : 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50'
+                            }`}
+                          >
+                            Rename Column
+                          </button>
+                          <button
+                            onClick={() => setEditorMode({ ...editorMode, [column.id]: 'typeConversion' })}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                              editorMode[column.id] === 'typeConversion'
+                                ? 'text-white bg-blue-600 dark:bg-blue-500'
+                                : 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50'
+                            }`}
                           >
                             Change Type
                           </button>
                           {isChoiceColumn && (
                             <button
-                              className="px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400
-                                       bg-purple-50 dark:bg-purple-900/30 rounded-lg hover:bg-purple-100
-                                       dark:hover:bg-purple-900/50 transition-colors"
+                              onClick={() => setEditorMode({ ...editorMode, [column.id]: 'choices' })}
+                              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                editorMode[column.id] === 'choices'
+                                  ? 'text-white bg-purple-600 dark:bg-purple-500'
+                                  : 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50'
+                              }`}
                             >
                               Manage Choices
                             </button>
                           )}
                           {isComputedColumn && (
                             <button
-                              className="px-4 py-2 text-sm font-medium text-green-600 dark:text-green-400
-                                       bg-green-50 dark:bg-green-900/30 rounded-lg hover:bg-green-100
-                                       dark:hover:bg-green-900/50 transition-colors"
+                              onClick={() => setEditorMode({ ...editorMode, [column.id]: 'formula' })}
+                              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                editorMode[column.id] === 'formula'
+                                  ? 'text-white bg-green-600 dark:bg-green-500'
+                                  : 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50'
+                              }`}
                             >
                               Edit Formula
                             </button>
                           )}
                         </div>
 
-                        {/* Working Sheet Area - Shows appropriate editor */}
+                        {/* Working Sheet Area - Shows appropriate editor based on mode */}
                         <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-                          <TypeConversionEditor
-                            tableId={tableId}
-                            column={column}
-                            onUpdate={loadTableData}
-                          />
+                          {editorMode[column.id] === 'rename' ? (
+                            <RenameEditor
+                              tableId={tableId}
+                              column={column}
+                              onUpdate={loadTableData}
+                            />
+                          ) : editorMode[column.id] === 'typeConversion' ? (
+                            <TypeConversionEditor
+                              tableId={tableId}
+                              column={column}
+                              onUpdate={loadTableData}
+                            />
+                          ) : editorMode[column.id] === 'choices' ? (
+                            <ChoiceEditor
+                              tableId={tableId}
+                              column={column}
+                              onUpdate={loadTableData}
+                            />
+                          ) : editorMode[column.id] === 'formula' ? (
+                            <FormulaEditor
+                              tableId={tableId}
+                              column={column}
+                              onUpdate={loadTableData}
+                            />
+                          ) : (
+                            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                              <p className="mb-2">Select an action to edit this column</p>
+                              <p className="text-sm">Choose "Rename Column" or "Change Type" to get started</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
