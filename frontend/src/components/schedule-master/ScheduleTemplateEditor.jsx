@@ -1773,10 +1773,6 @@ export default function ScheduleTemplateEditor() {
             aVal = a.start_date || 0
             bVal = b.start_date || 0
             break
-          case 'lock':
-            aVal = a.manually_positioned ? 1 : 0
-            bVal = b.manually_positioned ? 1 : 0
-            break
           case 'priceItems':
             aVal = a.price_book_item_ids?.length || 0
             bVal = b.price_book_item_ids?.length || 0
