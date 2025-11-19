@@ -28,25 +28,15 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           HEROKU_APP_NAME: trapid-backend
         run: |
-          # Configure git to use Heroku API key for authentication
-          cat > ~/.netrc <<EOF
-          machine api.heroku.com
-            login $HEROKU_API_KEY
-            password $HEROKU_API_KEY
-          machine git.heroku.com
-            login $HEROKU_API_KEY
-            password $HEROKU_API_KEY
-          EOF
-          chmod 600 ~/.netrc
-
-          # Add Heroku remote
-          git remote add heroku https://git.heroku.com/$HEROKU_APP_NAME.git || true
+          # Configure git user (required for subtree split)
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "GitHub Actions Bot"
 
           # Create backend-only branch using subtree split
           git subtree split --prefix backend -b backend-deploy
 
-          # Push to Heroku
-          git push heroku backend-deploy:main --force
+          # Push to Heroku with API key in URL
+          git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME.git backend-deploy:main --force
 
           # Clean up temporary branch
           git branch -D backend-deploy
