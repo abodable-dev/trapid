@@ -1905,8 +1905,16 @@ export default function TrapidTableView({
             if (!activeView) return null
 
             // Check if filters or columns have changed
-            const filtersChanged = JSON.stringify(cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label })))
-              !== JSON.stringify(activeView.filters)
+            // Normalize both current and saved filters to include default operator
+            const normalizeFilter = (f) => ({
+              column: f.column,
+              value: f.value,
+              operator: f.operator || '=',
+              label: f.label
+            })
+            const currentFilters = JSON.stringify(cascadeFilters.map(normalizeFilter))
+            const savedFiltersStr = JSON.stringify(activeView.filters.map(normalizeFilter))
+            const filtersChanged = currentFilters !== savedFiltersStr
             const columnsChanged = activeView.visibleColumns && JSON.stringify(visibleColumns) !== JSON.stringify(activeView.visibleColumns)
 
             if (!filtersChanged && !columnsChanged) return null
