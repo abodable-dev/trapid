@@ -319,7 +319,7 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
                 </p>
               </div>
 
-              {/* SQL Type (Editable) */}
+              {/* SQL Type (Editable) - Built dynamically from COLUMN_TYPES */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   SQL Type
@@ -337,41 +337,21 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
                            dark:border-purple-600 text-base text-gray-900 dark:text-gray-100 font-medium
                            focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
-                  <optgroup label="Text Types">
-                    <option value="single_line_text">Single Line Text (VARCHAR 255)</option>
-                    <option value="email">Email (VARCHAR 255)</option>
-                    <option value="phone">Phone - Landline (VARCHAR 20)</option>
-                    <option value="mobile">Mobile Phone (VARCHAR 20)</option>
-                    <option value="url">URL / Link (VARCHAR 500)</option>
-                    <option value="multiple_lines_text">Multi-Line Text (TEXT)</option>
-                  </optgroup>
-                  <optgroup label="Number Types">
-                    <option value="number">Number / Quantity (INTEGER)</option>
-                    <option value="currency">Currency / AUD (DECIMAL 10,2)</option>
-                    <option value="percentage">Percentage (DECIMAL 5,2)</option>
-                    <option value="whole_number">Whole Number (INTEGER)</option>
-                  </optgroup>
-                  <optgroup label="Date & Time Types">
-                    <option value="date">Date Only (DATE)</option>
-                    <option value="date_and_time">Date & Time (DATETIME)</option>
-                  </optgroup>
-                  <optgroup label="Special Types">
-                    <option value="gps_coordinates">GPS Coordinates (VARCHAR 100)</option>
-                    <option value="color_picker">Color Picker (VARCHAR 7)</option>
-                    <option value="file_upload">File Upload (TEXT)</option>
-                  </optgroup>
-                  <optgroup label="Boolean & Choice Types">
-                    <option value="boolean">Boolean / Checkbox (BOOLEAN)</option>
-                    <option value="choice">Choice / Badge (VARCHAR 50)</option>
-                  </optgroup>
-                  <optgroup label="Relationship Types">
-                    <option value="lookup">Lookup / Dropdown (VARCHAR 255)</option>
-                    <option value="multiple_lookups">Multiple Lookups (JSON Array)</option>
-                    <option value="user">User (Foreign Key)</option>
-                  </optgroup>
-                  <optgroup label="Advanced Types">
-                    <option value="computed">Computed / Formula (COMPUTED)</option>
-                  </optgroup>
+                  {/* Dynamically build options from COLUMN_TYPES (single source of truth) */}
+                  {['Text', 'Numbers', 'Date & Time', 'Special', 'Selection', 'Relationships', 'Computed'].map(category => {
+                    const typesInCategory = COLUMN_TYPES.filter(t => t.category === category)
+                    if (typesInCategory.length === 0) return null
+
+                    return (
+                      <optgroup key={category} label={category}>
+                        {typesInCategory.map(type => (
+                          <option key={type.value} value={type.value}>
+                            {type.label} ({type.sqlType})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )
+                  })}
                 </select>
                 <div className={`mt-2 p-3 rounded-lg border ${
                   isSystemGenerated
@@ -407,45 +387,45 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
                 </p>
               </div>
 
-              {/* Validation Rules - Auto-populated from COLUMN_TYPES */}
+              {/* Validation Rules - ALWAYS from COLUMN_TYPES (single source of truth) */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Validation Rules
                 </label>
                 <div className="w-full px-4 py-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border-2 border-orange-200
                              dark:border-orange-700 text-sm text-orange-900 dark:text-orange-100 min-h-[2.5rem]">
-                  {getColumnMetadata(editedColumn.data_type).validation || column.validation_rules || 'No validation rules defined'}
+                  {getColumnMetadata(editedColumn.data_type).validation}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Validation rules applied to this column (auto-populated from column type)
+                  Validation rules from COLUMN_TYPES (single source of truth)
                 </p>
               </div>
 
-              {/* Example - Auto-populated from COLUMN_TYPES */}
+              {/* Example - ALWAYS from COLUMN_TYPES (single source of truth) */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Example
                 </label>
                 <div className="w-full px-4 py-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-2 border-purple-200
                              dark:border-purple-700 text-sm font-mono text-purple-900 dark:text-purple-100 min-h-[2.5rem]">
-                  {getColumnMetadata(editedColumn.data_type).example || column.example || 'No example provided'}
+                  {getColumnMetadata(editedColumn.data_type).example}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Example values for this column (auto-populated from column type)
+                  Example values from COLUMN_TYPES (single source of truth)
                 </p>
               </div>
 
-              {/* Used For - Auto-populated from COLUMN_TYPES */}
+              {/* Used For - ALWAYS from COLUMN_TYPES (single source of truth) */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Used For
                 </label>
                 <div className="w-full px-4 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200
                              dark:border-blue-700 text-sm text-blue-900 dark:text-blue-100 min-h-[2.5rem]">
-                  {getColumnMetadata(editedColumn.data_type).usedFor || 'No usage description'}
+                  {getColumnMetadata(editedColumn.data_type).usedFor}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  What this column is used for (auto-populated from column type)
+                  Usage description from COLUMN_TYPES (single source of truth)
                 </p>
               </div>
 
