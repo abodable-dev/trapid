@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../api';
-import { COLUMN_TYPES } from '../../constants/columnTypes';
+import { COLUMN_TYPES, getColumnTypeEmoji } from '../../constants/columnTypes';
 import ChoiceEditor from './ChoiceEditor';
 import FormulaEditor from './FormulaEditor';
 import TypeConversionEditor from './TypeConversionEditor';
@@ -47,7 +47,9 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
         sqlType: columnTypeDef.sqlType || 'Unknown',
         validation: columnTypeDef.validationRules || 'No validation rules defined',
         usedFor: columnTypeDef.usedFor || 'No description available',
-        example: columnTypeDef.example || 'No example available'
+        example: columnTypeDef.example || 'No example available',
+        label: columnTypeDef.label || displayType,
+        icon: getColumnTypeEmoji(displayType)
       };
     }
 
@@ -56,7 +58,9 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
       sqlType: 'Unknown',
       validation: 'No validation rules defined',
       usedFor: 'No description available',
-      example: 'No example available'
+      example: 'No example available',
+      label: columnType,
+      icon: getColumnTypeEmoji(columnType)
     };
   };
 
@@ -219,7 +223,7 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
                 )}
               </div>
               <p className={`text-sm mt-1 ${isSystemGenerated ? 'text-red-100' : 'text-purple-100'}`}>
-                {column.column_type} • {column.required ? 'Required' : 'Optional'}
+                {getColumnMetadata(column.column_type).icon} {getColumnMetadata(column.column_type).label} • {column.required ? 'Required' : 'Optional'}
                 {isSystemGenerated && ' • Auto-managed by database'}
               </p>
             </div>
@@ -282,109 +286,153 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
                 </div>
               )}
 
-              {/* Display Name */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Display Name
-                </label>
-                <input
-                  type="text"
-                  value={editedColumn.name}
-                  onChange={(e) => {
-                    const newName = e.target.value;
-                    const updates = { name: newName };
+              {/* SECTION 1: Column Name */}
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-700">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="text-3xl">✏️</div>
+                  <div>
+                    <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100">Column Name</h3>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">Display name and database identifier</p>
+                  </div>
+                </div>
 
-                    // Auto-copy to column_name unless it contains "ratetime"
-                    if (!column.column_name?.includes('ratetime')) {
-                      // Convert to snake_case
-                      const snakeCaseName = newName
-                        .toLowerCase()
-                        .replace(/[^\w\s]/g, '') // Remove special chars
-                        .replace(/\s+/g, '_')     // Replace spaces with underscores
-                        .replace(/_+/g, '_')      // Remove duplicate underscores
-                        .replace(/^_|_$/g, '');   // Remove leading/trailing underscores
+                {/* Display Name */}
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Display Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editedColumn.name}
+                    onChange={(e) => {
+                      const newName = e.target.value;
+                      const updates = { name: newName };
 
-                      updates.column_name = snakeCaseName;
-                    }
+                      // Auto-copy to column_name unless it contains "ratetime"
+                      if (!column.column_name?.includes('ratetime')) {
+                        // Convert to snake_case
+                        const snakeCaseName = newName
+                          .toLowerCase()
+                          .replace(/[^\w\s]/g, '') // Remove special chars
+                          .replace(/\s+/g, '_')     // Replace spaces with underscores
+                          .replace(/_+/g, '_')      // Remove duplicate underscores
+                          .replace(/^_|_$/g, '');   // Remove leading/trailing underscores
 
-                    setEditedColumn({ ...editedColumn, ...updates });
-                  }}
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 rounded-lg border-2 border-gray-300
-                           dark:border-gray-600 text-base text-gray-900 dark:text-gray-100
-                           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Column display name"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  The name shown to users in the interface
-                </p>
-              </div>
+                        updates.column_name = snakeCaseName;
+                      }
 
-              {/* SQL Type (Editable) - Built dynamically from COLUMN_TYPES */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  SQL Type
-                </label>
-                <select
-                  value={editedColumn.data_type}
-                  onChange={(e) => {
-                    const newType = e.target.value
-                    setEditedColumn({
-                      ...editedColumn,
-                      data_type: newType
-                    })
-                  }}
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 rounded-lg border-2 border-purple-300
-                           dark:border-purple-600 text-base text-gray-900 dark:text-gray-100 font-medium
-                           focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  {/* Dynamically build options from COLUMN_TYPES (single source of truth) */}
-                  {['Text', 'Numbers', 'Date & Time', 'Special', 'Selection', 'Relationships', 'Computed'].map(category => {
-                    const typesInCategory = COLUMN_TYPES.filter(t => t.category === category)
-                    if (typesInCategory.length === 0) return null
+                      setEditedColumn({ ...editedColumn, ...updates });
+                    }}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 rounded-lg border-2 border-gray-300
+                             dark:border-gray-600 text-base text-gray-900 dark:text-gray-100
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Column display name"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    The name shown to users in the interface
+                  </p>
+                </div>
 
-                    return (
-                      <optgroup key={category} label={category}>
-                        {typesInCategory.map(type => (
-                          <option key={type.value} value={type.value}>
-                            {type.label} ({type.sqlType})
-                          </option>
-                        ))}
-                      </optgroup>
-                    )
-                  })}
-                </select>
-                <div className={`mt-2 p-3 rounded-lg border ${
-                  isSystemGenerated
-                    ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
-                    : 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
-                }`}>
-                  <p className={`text-xs font-mono font-semibold ${
-                    isSystemGenerated
-                      ? 'text-red-800 dark:text-red-200'
-                      : 'text-purple-800 dark:text-purple-200'
-                  }`}>
-                    Database Type: {getColumnMetadata(editedColumn.data_type).sqlType}
+                {/* Database Column Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Column Name (Database)
+                  </label>
+                  <input
+                    type="text"
+                    value={editedColumn.column_name}
+                    onChange={(e) => setEditedColumn({ ...editedColumn, column_name: e.target.value })}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 rounded-lg border-2 border-green-300
+                             dark:border-green-600 text-base font-mono text-gray-900 dark:text-gray-100
+                             focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="column_name"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    The actual database column name (snake_case recommended)
                   </p>
                 </div>
               </div>
 
-              {/* Column Name (Editable) */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Column Name (Database)
-                </label>
-                <input
-                  type="text"
-                  value={editedColumn.column_name}
-                  onChange={(e) => setEditedColumn({ ...editedColumn, column_name: e.target.value })}
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 rounded-lg border-2 border-green-300
-                           dark:border-green-600 text-base font-mono text-gray-900 dark:text-gray-100
-                           focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="column_name"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  The actual database column name (snake_case recommended)
-                </p>
+              {/* SECTION 2: Column Type */}
+              <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-6 border-2 border-purple-200 dark:border-purple-700">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="text-3xl">🎯</div>
+                  <div>
+                    <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100">Column Type</h3>
+                    <p className="text-xs text-purple-700 dark:text-purple-300">Data type and validation rules</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Select Type
+                  </label>
+                  <select
+                    value={editedColumn.data_type}
+                    onChange={(e) => {
+                      const newType = e.target.value
+                      setEditedColumn({
+                        ...editedColumn,
+                        data_type: newType
+                      })
+                    }}
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 rounded-lg border-2 border-purple-300
+                             dark:border-purple-600 text-base text-gray-900 dark:text-gray-100 font-medium
+                             focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    {/* Dynamically build options from COLUMN_TYPES (single source of truth) */}
+                    {['Text', 'Numbers', 'Date & Time', 'Special', 'Selection', 'Relationships', 'Computed'].map(category => {
+                      const typesInCategory = COLUMN_TYPES.filter(t => t.category === category)
+                      if (typesInCategory.length === 0) return null
+
+                      return (
+                        <optgroup key={category} label={category}>
+                          {typesInCategory.map(type => (
+                            <option key={type.value} value={type.value}>
+                              {getColumnTypeEmoji(type.value)} {type.label}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              {/* SECTION 3: SQL Type & Metadata */}
+              <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-6 border-2 border-green-200 dark:border-green-700">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="text-3xl">🗄️</div>
+                  <div>
+                    <h3 className="text-lg font-bold text-green-900 dark:text-green-100">SQL Type & Metadata</h3>
+                    <p className="text-xs text-green-700 dark:text-green-300">Database implementation details</p>
+                  </div>
+                </div>
+
+                {/* Current Type Display */}
+                <div className={`p-4 rounded-lg border-2 mb-4 ${
+                  isSystemGenerated
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
+                    : 'bg-white dark:bg-gray-700 border-green-300 dark:border-green-600'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">{getColumnTypeEmoji(editedColumn.data_type)}</span>
+                    <span className={`text-base font-bold ${
+                      isSystemGenerated
+                        ? 'text-red-900 dark:text-red-100'
+                        : 'text-green-900 dark:text-green-100'
+                    }`}>
+                      {getColumnMetadata(editedColumn.data_type).label}
+                    </span>
+                  </div>
+                  <p className={`text-sm font-mono ${
+                    isSystemGenerated
+                      ? 'text-red-700 dark:text-red-300'
+                      : 'text-green-700 dark:text-green-300'
+                  }`}>
+                    SQL Type: {getColumnMetadata(editedColumn.data_type).sqlType}
+                  </p>
+                </div>
               </div>
 
               {/* Validation Rules - ALWAYS from COLUMN_TYPES (single source of truth) */}

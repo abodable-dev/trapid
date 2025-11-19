@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../api';
-import { COLUMN_TYPES } from '../../constants/columnTypes';
+import { COLUMN_TYPES, getColumnTypeEmoji } from '../../constants/columnTypes';
 
 /**
  * TypeConversionEditor - Component for changing column types with data conversion preview
@@ -47,37 +47,9 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
   const columnTypes = COLUMN_TYPES.map(type => ({
     value: type.value,
     label: type.label,
-    icon: getIconEmoji(type.value),
+    icon: getColumnTypeEmoji(type.value),
     category: type.category
   }));
-
-  // Helper to get emoji icons for column types
-  function getIconEmoji(value) {
-    const iconMap = {
-      'single_line_text': '📝',
-      'multiple_lines_text': '📄',
-      'email': '📧',
-      'phone': '📞',
-      'mobile': '📱',
-      'url': '🔗',
-      'number': '🔢',
-      'whole_number': '🔢',
-      'currency': '💰',
-      'percentage': '📊',
-      'date': '📅',
-      'date_and_time': '🕐',
-      'gps_coordinates': '📍',
-      'color_picker': '🎨',
-      'file_upload': '📎',
-      'boolean': '✓',
-      'choice': '📋',
-      'lookup': '🔗',
-      'multiple_lookups': '🔗',
-      'user': '👤',
-      'computed': '🔢'
-    };
-    return iconMap[value] || '📝';
-  }
 
   const conversionStrategies = [
     { value: 'clear_invalid', label: 'Clear Invalid Values', desc: 'Set incompatible values to NULL' },

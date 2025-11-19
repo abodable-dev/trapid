@@ -187,6 +187,7 @@ export default function TrapidTableView({
   const [filterName, setFilterName] = useState('') // Name for saving current filter combo
   const [selectedCascadeColumn, setSelectedCascadeColumn] = useState('') // Currently selected column in cascade filter
   const [cascadeInputValue, setCascadeInputValue] = useState('') // Input value for text-based filters
+  const [cascadeOperator, setCascadeOperator] = useState('=') // Operator for numeric comparisons (=, >, <, >=, <=, !=)
   const [columnSearchQuery, setColumnSearchQuery] = useState('') // Search query for filtering column list
   const [activeViewId, setActiveViewId] = useState(null) // Track which saved view is currently active
   const [editingViewId, setEditingViewId] = useState(null) // Track which view is being edited
@@ -209,6 +210,7 @@ export default function TrapidTableView({
         id: Date.now() + Math.random(),
         column: f.column,
         value: f.value,
+        operator: f.operator || '=',
         label: f.label
       })))
       // Load default view's column visibility if available
@@ -607,23 +609,39 @@ export default function TrapidTableView({
 
     // Apply cascade filters - Excel-style filters applied in order
     cascadeFilters.forEach(filter => {
-      if (!filter.value) return
+      if (!filter.value && filter.value !== 0) return
 
       const key = filter.column
       const value = filter.value
+      const operator = filter.operator || '='
 
       // Generic filter that works for any column
       result = result.filter(entry => {
         const entryValue = entry[key]
+
         // Handle different value types
         if (typeof value === 'boolean') {
           return entryValue === value
         }
-        // Handle numeric comparison
+
+        // Handle numeric comparison with operators
         if (typeof entryValue === 'number' && !isNaN(parseFloat(value))) {
-          return entryValue === parseFloat(value)
+          const numValue = parseFloat(value)
+          switch (operator) {
+            case '>': return entryValue > numValue
+            case '<': return entryValue < numValue
+            case '>=': return entryValue >= numValue
+            case '<=': return entryValue <= numValue
+            case '!=': return entryValue !== numValue
+            case '=':
+            default: return entryValue === numValue
+          }
         }
+
         // Handle string comparison (case-insensitive)
+        if (operator === '!=') {
+          return String(entryValue).toLowerCase() !== String(value).toLowerCase()
+        }
         return String(entryValue).toLowerCase() === String(value).toLowerCase()
       })
     })
@@ -1869,6 +1887,11 @@ export default function TrapidTableView({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
                   {activeView.name}
+                  {cascadeFilters.length > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[16px] h-[16px] bg-gray-500 dark:bg-gray-600 text-white rounded-full text-[9px] font-bold ml-0.5">
+                      {cascadeFilters.length}
+                    </span>
+                  )}
                 </span>
               ) : null
             })()}
@@ -1915,12 +1938,12 @@ export default function TrapidTableView({
                 <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowCascadeDropdown(false)} />
                 {/* Dropdown positioned in center like a modal */}
                 <div
-                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto z-[60]"
+                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl overflow-y-auto z-[60]"
                   onClick={(e) => e.stopPropagation()}
                 >
-                <div className="p-3 space-y-3">
+                <div className="p-3">
                   {/* Header */}
-                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2 mb-3">
                     <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Cascade Filters
                     </span>
@@ -1932,51 +1955,67 @@ export default function TrapidTableView({
                     </button>
                   </div>
 
-                  {/* Add filter with different input types */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      Select Column & Values:
-                    </label>
-                    {/* Column search box */}
-                    <input
-                      type="text"
-                      value={columnSearchQuery}
-                      onChange={(e) => setColumnSearchQuery(e.target.value)}
-                      placeholder="Search columns..."
-                      className="w-full text-xs px-2 py-1.5 mb-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
-                    />
-                    <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 mb-2">
-                      {(() => {
-                        const filteredColumns = COLUMNS
-                          .filter(col => col.key !== 'select')
-                          .filter(col => col.label.toLowerCase().includes(columnSearchQuery.toLowerCase()))
+                  {/* Main content: 4 columns - Column Select | Value Select | Column Visibility | Saved Views */}
+                  <div className="grid grid-cols-[1.5fr,1fr,250px,280px] gap-4 h-[calc(90vh-4rem)]">
+                    {/* LEFT COLUMN: Column Selection */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        Select Column:
+                      </label>
+                      {/* Column search box */}
+                      <input
+                        type="text"
+                        value={columnSearchQuery}
+                        onChange={(e) => setColumnSearchQuery(e.target.value)}
+                        placeholder="Search columns..."
+                        className="w-full text-xs px-2 py-1.5 mb-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
+                      />
+                      <div className="h-[calc(100%-3rem)] overflow-y-auto border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800">
+                        {(() => {
+                          const filteredColumns = COLUMNS
+                            .filter(col => col.key !== 'select')
+                            .filter(col => col.label.toLowerCase().includes(columnSearchQuery.toLowerCase()))
 
-                        return filteredColumns.length > 0 ? filteredColumns.map(col => (
-                          <button
-                            key={`cascade-${col.key}`}
-                            onClick={() => {
-                              setSelectedCascadeColumn(col.key === selectedCascadeColumn ? '' : col.key)
-                              setColumnSearchQuery('') // Clear search after selection
-                            }}
-                            className={`w-full text-left text-xs px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                              selectedCascadeColumn === col.key
-                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
-                                : 'text-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            {col.label}
-                          </button>
-                        )) : (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3">
-                            No matching columns
-                          </div>
-                        )
-                      })()}
+                          return filteredColumns.length > 0 ? filteredColumns.map((col, index) => (
+                            <button
+                              key={`cascade-${col.key}`}
+                              onClick={() => {
+                                setSelectedCascadeColumn(col.key === selectedCascadeColumn ? '' : col.key)
+                                setColumnSearchQuery('') // Clear search after selection
+                                setCascadeOperator('=') // Reset operator to default
+                                setCascadeInputValue('') // Clear input value
+                              }}
+                              className={`w-full text-left text-xs px-3 py-0.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors ${
+                                selectedCascadeColumn === col.key
+                                  ? 'bg-blue-200 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-medium'
+                                  : index % 2 === 0
+                                    ? 'bg-blue-50 dark:bg-blue-900/10 text-gray-700 dark:text-gray-300'
+                                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {col.label}
+                            </button>
+                          )) : (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3">
+                              No matching columns
+                            </div>
+                          )
+                        })()}
+                      </div>
                     </div>
 
-                    {/* Show appropriate input based on column type */}
-                    {selectedCascadeColumn && (() => {
-                      const column = COLUMNS.find(c => c.key === selectedCascadeColumn)
+                    {/* RIGHT COLUMN: Value Selection */}
+                    <div className="flex flex-col h-full">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        Select Values:
+                      </label>
+                      <div className="h-[40%] overflow-y-auto">
+                      {!selectedCascadeColumn ? (
+                        <div className="h-full flex items-center justify-center border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/30 text-xs text-gray-500 dark:text-gray-400 text-center p-4">
+                          Select a column from the left to choose values
+                        </div>
+                      ) : (() => {
+                        const column = COLUMNS.find(c => c.key === selectedCascadeColumn)
                       const columnLabel = column?.label || selectedCascadeColumn
 
                       // Boolean type - show sliding toggle switch
@@ -2031,6 +2070,98 @@ export default function TrapidTableView({
                                 Clear filter
                               </button>
                             )}
+                          </div>
+                        )
+                      }
+
+                      // Numeric fields - show operator buttons and number input
+                      // Check if this is a numeric column based on key name or if the data is numeric
+                      const numericKeywords = ['price', 'quantity', 'qty', 'amount', 'count', 'number', 'currency', 'percent', 'cost', 'total', 'sum', 'value']
+                      const isNumericColumn = numericKeywords.some(keyword =>
+                        selectedCascadeColumn.toLowerCase().includes(keyword) ||
+                        column?.label?.toLowerCase().includes(keyword)
+                      ) || column?.sumType === 'number' || column?.sumType === 'currency'
+
+                      if (isNumericColumn) {
+                        const operators = [
+                          { value: '=', label: '=' },
+                          { value: '!=', label: '≠' },
+                          { value: '>', label: '>' },
+                          { value: '<', label: '<' },
+                          { value: '>=', label: '≥' },
+                          { value: '<=', label: '≤' }
+                        ]
+
+                        return (
+                          <div className="space-y-2">
+                            {/* Operator buttons */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                Operator:
+                              </label>
+                              <div className="grid grid-cols-6 gap-1">
+                                {operators.map(op => (
+                                  <button
+                                    key={op.value}
+                                    onClick={() => setCascadeOperator(op.value)}
+                                    className={`px-2 py-1.5 text-xs font-medium rounded transition-colors ${
+                                      cascadeOperator === op.value
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                    }`}
+                                  >
+                                    {op.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Number input */}
+                            <div className="flex gap-1">
+                              <input
+                                type="number"
+                                value={cascadeInputValue}
+                                onChange={(e) => setCascadeInputValue(e.target.value)}
+                                placeholder={`Enter ${columnLabel.toLowerCase()}...`}
+                                className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && cascadeInputValue.trim()) {
+                                    const operatorLabel = operators.find(op => op.value === cascadeOperator)?.label || '='
+                                    setCascadeFilters([...cascadeFilters, {
+                                      id: Date.now(),
+                                      column: selectedCascadeColumn,
+                                      value: cascadeInputValue.trim(),
+                                      operator: cascadeOperator,
+                                      label: `${columnLabel} ${operatorLabel} ${cascadeInputValue.trim()}`
+                                    }])
+                                    setCascadeInputValue('')
+                                    setCascadeOperator('=')
+                                    setSelectedCascadeColumn('')
+                                  }
+                                }}
+                              />
+                              <button
+                                onClick={() => {
+                                  if (cascadeInputValue.trim()) {
+                                    const operatorLabel = operators.find(op => op.value === cascadeOperator)?.label || '='
+                                    setCascadeFilters([...cascadeFilters, {
+                                      id: Date.now(),
+                                      column: selectedCascadeColumn,
+                                      value: cascadeInputValue.trim(),
+                                      operator: cascadeOperator,
+                                      label: `${columnLabel} ${operatorLabel} ${cascadeInputValue.trim()}`
+                                    }])
+                                    setCascadeInputValue('')
+                                    setCascadeOperator('=')
+                                    setSelectedCascadeColumn('')
+                                  }
+                                }}
+                                disabled={!cascadeInputValue.trim()}
+                                className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Add
+                              </button>
+                            </div>
                           </div>
                         )
                       }
@@ -2118,87 +2249,127 @@ export default function TrapidTableView({
                                 <span className="text-xs text-gray-700 dark:text-gray-300">{val}</span>
                               </label>
                             )) : (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
-                                No matches found
+                              <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3 space-y-1">
+                                <div className="font-medium">No matches found</div>
+                                {uniqueValues.length === 0 ? (
+                                  <div className="text-xs">
+                                    No values available in this column for the currently filtered rows.
+                                    {cascadeFilters.length > 0 && ' Try removing or adjusting previous filters.'}
+                                  </div>
+                                ) : cascadeInputValue && (
+                                  <div className="text-xs">
+                                    No values match "{cascadeInputValue}". Try a different search term.
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
                         </div>
                       )
                     })()}
-                  </div>
-
-                  {/* Active filters list */}
-                  {cascadeFilters.length > 0 ? (
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                        Active Filters ({cascadeFilters.length}):
-                      </label>
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                        {cascadeFilters.map((filter, index) => (
-                          <div
-                            key={filter.id}
-                            className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-2.5 py-1.5 rounded border border-gray-200 dark:border-gray-600"
-                          >
-                            <div className="flex flex-col gap-0.5">
-                              <button
-                                onClick={() => {
-                                  if (index === 0) return
-                                  const newFilters = [...cascadeFilters]
-                                  const temp = newFilters[index]
-                                  newFilters[index] = newFilters[index - 1]
-                                  newFilters[index - 1] = temp
-                                  setCascadeFilters(newFilters)
-                                }}
-                                disabled={index === 0}
-                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
-                              >
-                                ▲
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (index === cascadeFilters.length - 1) return
-                                  const newFilters = [...cascadeFilters]
-                                  const temp = newFilters[index]
-                                  newFilters[index] = newFilters[index + 1]
-                                  newFilters[index + 1] = temp
-                                  setCascadeFilters(newFilters)
-                                }}
-                                disabled={index === cascadeFilters.length - 1}
-                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
-                              >
-                                ▼
-                              </button>
-                            </div>
-                            <span className="flex-1 text-xs text-gray-700 dark:text-gray-300">
-                              <span className="font-semibold text-purple-600 dark:text-purple-400">{index + 1}.</span> {filter.label}
-                            </span>
-                            <button
-                              onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.id !== filter.id))}
-                              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-bold"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
                       </div>
 
-                      {/* Clear all button */}
-                      <button
-                        onClick={() => setCascadeFilters([])}
-                        className="w-full mt-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-xs font-medium rounded transition-colors"
-                      >
-                        Clear All Filters
-                      </button>
+                      {/* Active filters list - moved under Select Values */}
+                      <div className="flex-1 mt-2 overflow-y-auto">
+                      {cascadeFilters.length > 0 ? (
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                              Active Filters ({cascadeFilters.length}):
+                            </label>
+                            <button
+                              onClick={() => setCascadeFilters([])}
+                              className="px-2 py-0.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-[10px] font-medium rounded transition-colors"
+                            >
+                              Clear All
+                            </button>
+                          </div>
+                          <div className="space-y-1 max-h-48 overflow-y-auto">
+                            {cascadeFilters.map((filter, index) => (
+                              <div
+                                key={filter.id}
+                                className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded border border-gray-200 dark:border-gray-600"
+                              >
+                                <div className="flex flex-col gap-0.5">
+                                  <button
+                                    onClick={() => {
+                                      if (index === 0) return
+                                      const newFilters = [...cascadeFilters]
+                                      const temp = newFilters[index]
+                                      newFilters[index] = newFilters[index - 1]
+                                      newFilters[index - 1] = temp
+                                      setCascadeFilters(newFilters)
+                                    }}
+                                    disabled={index === 0}
+                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none"
+                                  >
+                                    ▲
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (index === cascadeFilters.length - 1) return
+                                      const newFilters = [...cascadeFilters]
+                                      const temp = newFilters[index]
+                                      newFilters[index] = newFilters[index + 1]
+                                      newFilters[index + 1] = temp
+                                      setCascadeFilters(newFilters)
+                                    }}
+                                    disabled={index === cascadeFilters.length - 1}
+                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none"
+                                  >
+                                    ▼
+                                  </button>
+                                </div>
+                                <span className="flex-1 text-[11px] text-gray-700 dark:text-gray-300">
+                                  <span className="font-semibold text-purple-600 dark:text-purple-400">{index + 1}.</span> {filter.label}
+                                </span>
+                                <button
+                                  onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.id !== filter.id))}
+                                  className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs font-bold"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-2 bg-gray-50 dark:bg-gray-700/30 rounded">
+                          No filters applied
+                        </div>
+                      )}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3 bg-gray-50 dark:bg-gray-700/30 rounded">
-                      No filters applied
-                    </div>
-                  )}
 
-                  {/* Saved Views Section */}
-                  <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                    {/* COLUMN 3: Column Visibility */}
+                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 h-full overflow-y-auto">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        Show/Hide Columns:
+                      </label>
+                      <div className="space-y-0.5">
+                        {COLUMNS.filter(col => col.key !== 'select').map((column, index) => (
+                          <label key={column.key} className={`flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 px-2 py-0.5 cursor-pointer ${
+                            index % 2 === 0 ? 'bg-blue-50 dark:bg-blue-900/10' : 'bg-white dark:bg-gray-800'
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns[column.key] !== false}
+                              onChange={(e) => {
+                                setVisibleColumns({
+                                  ...visibleColumns,
+                                  [column.key]: e.target.checked
+                                })
+                              }}
+                              className="rounded border-gray-300"
+                            />
+                            <span className="flex-1">{column.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* COLUMN 4: Saved Views Section */}
+                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 space-y-3 h-full overflow-y-auto">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                         Saved Views
@@ -2213,11 +2384,22 @@ export default function TrapidTableView({
                     {/* Save current view section - only show if there are active filters */}
                     {cascadeFilters.length > 0 && (
                       <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                          Save Current View:
-                        </label>
-                        <div className="text-[10px] text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-2 py-1.5 rounded mb-2">
-                          💡 Tip: Use the "Show/Hide Columns" button (top right) to select which columns to include in this view
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
+                            Save Current View:
+                          </label>
+                          <button
+                            onClick={() => setShowColumnsDropdown(!showColumnsDropdown)}
+                            className="px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-[10px] font-medium rounded transition-colors flex items-center gap-1"
+                            title="Choose which columns to include in this view"
+                          >
+                            <ViewColumnsIcon className="w-3 h-3" />
+                            Columns
+                          </button>
+                        </div>
+                        <div className="text-[10px] text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1.5 rounded mb-2 flex items-start gap-1">
+                          <span>💡</span>
+                          <span>Click "Columns" above to select which columns to include in this view</span>
                         </div>
                         <div className="space-y-2">
                           <div className="flex gap-1">
@@ -2259,7 +2441,7 @@ export default function TrapidTableView({
                               setSavedFilters([...updatedFilters, {
                                 id: newViewId,
                                 name: filterName.trim(),
-                                filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, label: f.label })),
+                                filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label })),
                                 visibleColumns: { ...visibleColumns },
                                 isDefault: isDefault
                               }])
@@ -2324,6 +2506,7 @@ export default function TrapidTableView({
                                           id: Date.now() + Math.random(),
                                           column: f.column,
                                           value: f.value,
+                                          operator: f.operator || '=',
                                           label: f.label
                                         })))
                                         if (saved.visibleColumns) {
@@ -2383,9 +2566,14 @@ export default function TrapidTableView({
                         No saved views yet. Apply some filters and save them as a view!
                       </div>
                     )}
+                    </div>
+                    {/* END RIGHT SIDE */}
                   </div>
+                  {/* END MAIN GRID */}
                 </div>
+                {/* END PADDING WRAPPER */}
                 </div>
+                {/* END MODAL WRAPPER */}
               </>
             )}
           </div>

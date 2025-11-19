@@ -636,8 +636,29 @@ export default function ColumnInfoTab() {
                           {isSystemGenerated && <span className="text-sm">🔒</span>}
                         </div>
                       </td>
+                      {/* Display Name - Editable */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {column.displayName || column.displayType}
+                        {editingCell?.rowIndex === index && editingCell?.field === 'displayName' ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={handleEditKeyDown}
+                              onBlur={handleSaveEdit}
+                              autoFocus
+                              className="flex-1 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium bg-white dark:bg-gray-700"
+                            />
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => !isSystemGenerated && handleStartEdit(index, 'displayName', column.displayName || column.displayType)}
+                            className={`${!isSystemGenerated ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1' : ''}`}
+                            title={!isSystemGenerated ? 'Click to edit' : 'System column - not editable'}
+                          >
+                            {column.displayName || column.displayType}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`text-xs font-mono px-2 py-1 rounded ${
@@ -654,79 +675,21 @@ export default function ColumnInfoTab() {
                         <span>{column.displayType}</span>
                       </span>
                     </td>
-                    {/* Validation Rules - Editable */}
+                    {/* Validation Rules - Auto-Generated (Read-Only) */}
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                      {editingCell?.rowIndex === index && editingCell?.field === 'validationRules' ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={handleEditKeyDown}
-                            onBlur={handleSaveEdit}
-                            autoFocus
-                            className="flex-1 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-700"
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          onClick={() => !isSystemGenerated && handleStartEdit(index, 'validationRules', column.validationRules)}
-                          className={`${!isSystemGenerated ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1' : ''}`}
-                          title={!isSystemGenerated ? 'Click to edit' : 'System column - not editable'}
-                        >
-                          {column.validationRules}
-                        </div>
-                      )}
+                      {column.validationRules}
                     </td>
 
-                    {/* Example - Editable */}
+                    {/* Example - Auto-Generated (Read-Only) */}
                     <td className="px-6 py-4 text-xs text-gray-500 dark:text-gray-500">
-                      {editingCell?.rowIndex === index && editingCell?.field === 'example' ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={handleEditKeyDown}
-                            onBlur={handleSaveEdit}
-                            autoFocus
-                            className="flex-1 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs font-mono bg-white dark:bg-gray-700"
-                          />
-                        </div>
-                      ) : (
-                        <code
-                          onClick={() => !isSystemGenerated && handleStartEdit(index, 'example', column.example)}
-                          className={`bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded ${!isSystemGenerated ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600' : ''}`}
-                          title={!isSystemGenerated ? 'Click to edit' : 'System column - not editable'}
-                        >
-                          {column.example}
-                        </code>
-                      )}
+                      <code className="bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
+                        {column.example}
+                      </code>
                     </td>
 
-                    {/* Used For - Editable */}
+                    {/* Used For - Auto-Generated (Read-Only) */}
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                      {editingCell?.rowIndex === index && editingCell?.field === 'usedFor' ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={handleEditKeyDown}
-                            onBlur={handleSaveEdit}
-                            autoFocus
-                            className="flex-1 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-700"
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          onClick={() => !isSystemGenerated && handleStartEdit(index, 'usedFor', column.usedFor)}
-                          className={`${!isSystemGenerated ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1' : ''}`}
-                          title={!isSystemGenerated ? 'Click to edit' : 'System column - not editable'}
-                        >
-                          {column.usedFor}
-                        </div>
-                      )}
+                      {column.usedFor}
                     </td>
                   </tr>
                 )})}
