@@ -2384,22 +2384,10 @@ export default function TrapidTableView({
                     {/* Save current view section - only show if there are active filters */}
                     {cascadeFilters.length > 0 && (
                       <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="mb-2">
                           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
                             Save Current View:
                           </label>
-                          <button
-                            onClick={() => setShowColumnsDropdown(!showColumnsDropdown)}
-                            className="px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-[10px] font-medium rounded transition-colors flex items-center gap-1"
-                            title="Choose which columns to include in this view"
-                          >
-                            <ViewColumnsIcon className="w-3 h-3" />
-                            Columns
-                          </button>
-                        </div>
-                        <div className="text-[10px] text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1.5 rounded mb-2 flex items-start gap-1">
-                          <span>💡</span>
-                          <span>Click "Columns" above to select which columns to include in this view</span>
                         </div>
                         <div className="space-y-2">
                           <div className="flex gap-1">
