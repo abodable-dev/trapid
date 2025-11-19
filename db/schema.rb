@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_19_001311) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_19_164012) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -74,6 +74,85 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_001311) do
     t.index ["agent_type"], name: "index_agent_definitions_on_agent_type"
   end
 
+  create_table "asset_insurance", force: :cascade do |t|
+    t.bigint "asset_id", null: false
+    t.string "insurance_company", null: false
+    t.string "policy_number", null: false
+    t.string "insurance_type"
+    t.date "start_date", null: false
+    t.date "expiry_date", null: false
+    t.decimal "premium_amount", precision: 10, scale: 2
+    t.string "premium_frequency"
+    t.decimal "coverage_amount", precision: 12, scale: 2
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_asset_insurance_on_asset_id"
+    t.index ["expiry_date"], name: "index_asset_insurance_on_expiry_date"
+    t.index ["policy_number"], name: "index_asset_insurance_on_policy_number"
+  end
+
+  create_table "asset_service_history", force: :cascade do |t|
+    t.bigint "asset_id", null: false
+    t.string "service_type", null: false
+    t.date "service_date", null: false
+    t.string "service_provider"
+    t.text "description"
+    t.decimal "cost", precision: 10, scale: 2
+    t.integer "odometer_reading"
+    t.date "next_service_date"
+    t.integer "next_service_odometer"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_asset_service_history_on_asset_id"
+    t.index ["next_service_date"], name: "index_asset_service_history_on_next_service_date"
+    t.index ["service_date"], name: "index_asset_service_history_on_service_date"
+  end
+
+  create_table "assets", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "description", null: false
+    t.string "asset_type", null: false
+    t.string "make"
+    t.string "model"
+    t.integer "year"
+    t.string "vin"
+    t.string "registration"
+    t.date "purchase_date"
+    t.decimal "purchase_price", precision: 12, scale: 2
+    t.decimal "current_value", precision: 12, scale: 2
+    t.decimal "depreciation_rate", precision: 5, scale: 2
+    t.string "status", default: "active"
+    t.date "disposal_date"
+    t.decimal "disposal_value", precision: 12, scale: 2
+    t.text "notes"
+    t.string "photo_url"
+    t.boolean "needs_attention", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_type"], name: "index_assets_on_asset_type"
+    t.index ["company_id"], name: "index_assets_on_company_id"
+    t.index ["needs_attention"], name: "index_assets_on_needs_attention"
+    t.index ["registration"], name: "index_assets_on_registration", unique: true, where: "(registration IS NOT NULL)"
+    t.index ["status"], name: "index_assets_on_status"
+  end
+
+  create_table "bank_accounts", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "account_name", null: false
+    t.string "bank_name", null: false
+    t.string "bsb", null: false
+    t.string "account_number", null: false
+    t.string "account_type"
+    t.boolean "is_primary", default: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "is_primary"], name: "index_bank_accounts_on_company_id_and_is_primary", unique: true, where: "(is_primary = true)"
+    t.index ["company_id"], name: "index_bank_accounts_on_company_id"
+  end
+
   create_table "bug_hunter_test_runs", force: :cascade do |t|
     t.string "test_id", null: false
     t.string "status", null: false
@@ -135,6 +214,104 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_001311) do
     t.index ["table_id"], name: "index_columns_on_table_id"
   end
 
+  create_table "companies", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "company_group"
+    t.string "acn"
+    t.string "abn"
+    t.string "tfn"
+    t.string "status", default: "active"
+    t.date "date_incorporated"
+    t.text "registered_office_address"
+    t.text "principal_place_of_business"
+    t.boolean "is_trustee", default: false
+    t.string "trust_name"
+    t.string "gst_registration_status"
+    t.string "asic_username"
+    t.string "asic_password"
+    t.string "asic_recovery_question"
+    t.string "asic_recovery_answer"
+    t.date "asic_last_review_date"
+    t.date "asic_next_review_date"
+    t.text "notes"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["abn"], name: "index_companies_on_abn", unique: true, where: "(abn IS NOT NULL)"
+    t.index ["acn"], name: "index_companies_on_acn", unique: true, where: "(acn IS NOT NULL)"
+    t.index ["company_group"], name: "index_companies_on_company_group"
+    t.index ["name"], name: "index_companies_on_name"
+    t.index ["status"], name: "index_companies_on_status"
+  end
+
+  create_table "company_activities", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.bigint "user_id"
+    t.string "activity_type", null: false
+    t.text "description"
+    t.jsonb "changes", default: {}
+    t.string "related_type"
+    t.bigint "related_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["activity_type"], name: "index_company_activities_on_activity_type"
+    t.index ["company_id"], name: "index_company_activities_on_company_id"
+    t.index ["created_at"], name: "index_company_activities_on_created_at"
+    t.index ["related_type", "related_id"], name: "index_company_activities_on_related_type_and_related_id"
+    t.index ["user_id"], name: "index_company_activities_on_user_id"
+  end
+
+  create_table "company_compliance_items", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.string "item_type", null: false
+    t.date "due_date", null: false
+    t.boolean "completed", default: false
+    t.datetime "completed_at"
+    t.string "reminder_days"
+    t.datetime "last_reminder_sent_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "due_date", "completed"], name: "idx_on_company_id_due_date_completed_3b39c7e9ad"
+    t.index ["company_id"], name: "index_company_compliance_items_on_company_id"
+    t.index ["completed"], name: "index_company_compliance_items_on_completed"
+    t.index ["due_date"], name: "index_company_compliance_items_on_due_date"
+    t.index ["item_type"], name: "index_company_compliance_items_on_item_type"
+  end
+
+  create_table "company_directors", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "position"
+    t.date "appointment_date"
+    t.date "resignation_date"
+    t.boolean "is_current", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "contact_id"], name: "index_company_directors_on_company_id_and_contact_id", unique: true, where: "(is_current = true)"
+    t.index ["company_id"], name: "index_company_directors_on_company_id"
+    t.index ["contact_id"], name: "index_company_directors_on_contact_id"
+    t.index ["is_current"], name: "index_company_directors_on_is_current"
+  end
+
+  create_table "company_documents", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.string "document_type", null: false
+    t.date "document_date"
+    t.string "file_url"
+    t.string "file_name"
+    t.integer "file_size"
+    t.datetime "uploaded_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_company_documents_on_company_id"
+    t.index ["document_date"], name: "index_company_documents_on_document_date"
+    t.index ["document_type"], name: "index_company_documents_on_document_type"
+  end
+
   create_table "company_settings", force: :cascade do |t|
     t.string "company_name"
     t.string "abn"
@@ -151,6 +328,40 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_001311) do
     t.boolean "twilio_enabled", default: false
     t.string "timezone", default: "Australia/Brisbane"
     t.jsonb "working_days"
+  end
+
+  create_table "company_xero_accounts", force: :cascade do |t|
+    t.bigint "company_xero_connection_id", null: false
+    t.string "xero_account_id", null: false
+    t.string "account_code"
+    t.string "account_name"
+    t.string "account_type"
+    t.string "tax_type"
+    t.string "description"
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_code"], name: "index_company_xero_accounts_on_account_code"
+    t.index ["company_xero_connection_id"], name: "index_company_xero_accounts_on_company_xero_connection_id"
+    t.index ["company_xero_connection_id"], name: "index_xero_accounts_on_connection_id"
+    t.index ["is_active"], name: "index_company_xero_accounts_on_is_active"
+    t.index ["xero_account_id"], name: "index_company_xero_accounts_on_xero_account_id"
+  end
+
+  create_table "company_xero_connections", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "tenant_id", null: false
+    t.string "tenant_name"
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "token_expires_at"
+    t.datetime "last_sync_at"
+    t.boolean "connected", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_company_xero_connections_on_company_id", unique: true
+    t.index ["connected"], name: "index_company_xero_connections_on_connected"
+    t.index ["tenant_id"], name: "index_company_xero_connections_on_tenant_id"
   end
 
   create_table "construction_contacts", force: :cascade do |t|
@@ -377,9 +588,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_001311) do
     t.datetime "portal_welcome_sent_at"
     t.decimal "trapid_rating", precision: 3, scale: 2
     t.integer "total_ratings_count", default: 0
+    t.boolean "is_director", default: false
+    t.string "director_tfn"
+    t.date "director_date_of_birth"
+    t.string "director_position"
+    t.boolean "is_beneficial_owner", default: false
+    t.decimal "shareholding_percentage", precision: 5, scale: 2
     t.index ["contact_types"], name: "index_contacts_on_contact_types", using: :gin
     t.index ["email"], name: "index_contacts_on_email"
     t.index ["is_active"], name: "index_contacts_on_is_active"
+    t.index ["is_beneficial_owner"], name: "index_contacts_on_is_beneficial_owner"
+    t.index ["is_director"], name: "index_contacts_on_is_director"
     t.index ["portal_enabled"], name: "index_contacts_on_portal_enabled"
     t.index ["primary_contact_type"], name: "index_contacts_on_primary_contact_type"
     t.index ["rating"], name: "index_contacts_on_rating"
@@ -1909,10 +2128,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_19_001311) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "asset_insurance", "assets"
+  add_foreign_key "asset_service_history", "assets"
+  add_foreign_key "assets", "companies"
+  add_foreign_key "bank_accounts", "companies"
   add_foreign_key "chat_messages", "constructions"
   add_foreign_key "chat_messages", "projects"
   add_foreign_key "chat_messages", "users"
   add_foreign_key "columns", "tables"
+  add_foreign_key "company_activities", "companies"
+  add_foreign_key "company_activities", "users"
+  add_foreign_key "company_compliance_items", "companies"
+  add_foreign_key "company_directors", "companies"
+  add_foreign_key "company_directors", "contacts"
+  add_foreign_key "company_documents", "companies"
+  add_foreign_key "company_xero_accounts", "company_xero_connections"
+  add_foreign_key "company_xero_connections", "companies"
   add_foreign_key "construction_contacts", "constructions"
   add_foreign_key "construction_contacts", "contacts"
   add_foreign_key "construction_documentation_tabs", "constructions"

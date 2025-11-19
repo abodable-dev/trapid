@@ -425,6 +425,50 @@ Rails.application.routes.draw do
       # Estimate Reviews (AI Plan Analysis)
       resources :estimate_reviews, only: [:show, :destroy]
 
+      # Corporate Entity Management
+      resources :companies do
+        member do
+          get :directors
+          post :add_director
+          delete 'directors/:director_id', action: :remove_director, as: :remove_director
+          get :bank_accounts
+          get :compliance_items
+          get :documents
+          get :activities
+        end
+      end
+
+      resources :assets do
+        member do
+          get :insurance
+          post :add_insurance
+          get :service_history
+          post :add_service
+        end
+      end
+
+      resources :bank_accounts
+
+      resources :company_compliance_items do
+        member do
+          post :mark_complete
+        end
+      end
+
+      resources :company_documents
+      resources :asset_insurance
+      resources :asset_service_history
+
+      resources :company_xero_connections do
+        member do
+          post :sync
+        end
+      end
+
+      # Xero OAuth routes
+      get 'xero/auth_url', to: 'company_xero_connections#auth_url'
+      post 'xero/callback', to: 'company_xero_connections#callback'
+
       # External integrations (API endpoints for third-party systems)
       namespace :external do
         post 'unreal_estimates', to: 'unreal_estimates#create'
