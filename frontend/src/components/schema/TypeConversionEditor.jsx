@@ -17,6 +17,7 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
   const [conversionStrategy, setConversionStrategy] = useState('clear_invalid');
   const [validationResult, setValidationResult] = useState(null);
   const [validating, setValidating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [previewData, setPreviewData] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -94,61 +95,43 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
       return;
     }
 
-    try {
-      setValidating(true);
-      setValidationResult(null);
-      setPreviewData([]);
-
-      // First, fetch sample data from the table
-      const sampleResponse = await api.get(
-        `/api/v1/tables/${tableId}/rows?limit=10`
+    // For computed type, check if settings column exists
+    if (newType === 'computed') {
+      const proceed = window.confirm(
+        '⚠️ Converting to Formula/Computed type requires additional configuration.\n\n' +
+        'After conversion, you will need to:\n' +
+        '1. Configure the formula in the Formula tab\n' +
+        '2. Set up any cross-table references if needed\n\n' +
+        'Note: Computed columns require a database schema update that may not be available yet.\n\n' +
+        'Do you want to proceed?'
       );
-
-      // Extract the column data from the sample rows
-      const columnName = column.column_name;
-      const sampleData = (sampleResponse.data?.rows || []).map(row => ({
-        current: row[columnName],
-        rowId: row.id
-      }));
-
-      // Then validate the conversion
-      const response = await api.post(
-        `/api/v1/tables/${tableId}/columns/${column.id}/validate_change`,
-        {
-          change_type: 'change_type',
-          new_type: newType,
-          conversion_strategy: conversionStrategy,
-          sample_values: sampleData.map(d => d.current)
-        }
-      );
-
-      setValidationResult(response.data);
-
-      // If validation passed, show preview with converted values
-      if (response.data.valid && response.data.preview_conversions) {
-        const previewWithConversions = sampleData.map((sample, idx) => ({
-          ...sample,
-          converted: response.data.preview_conversions[idx]?.converted_value,
-          status: response.data.preview_conversions[idx]?.status || 'success'
-        }));
-        setPreviewData(previewWithConversions);
-        setShowPreview(true);
-      } else if (response.data.valid) {
-        // Fallback: simulate conversion for preview if backend doesn't provide it
-        const previewWithSimulated = sampleData.map(sample => ({
-          ...sample,
-          converted: simulateConversion(sample.current, column.column_type, newType),
-          status: 'simulated'
-        }));
-        setPreviewData(previewWithSimulated);
-        setShowPreview(true);
+      if (!proceed) {
+        return;
       }
-    } catch (error) {
-      console.error('Error validating conversion:', error);
-      alert('Validation failed: ' + (error.response?.data?.error || error.message));
-    } finally {
-      setValidating(false);
     }
+
+    // For lookup types, warn about additional configuration
+    if (['lookup', 'multiple_lookups'].includes(newType)) {
+      const proceed = window.confirm(
+        '⚠️ Converting to Lookup type requires additional configuration.\n\n' +
+        'After conversion, you will need to:\n' +
+        '1. Set the target table (lookup_table_id)\n' +
+        '2. Set the display column (lookup_display_column)\n' +
+        '3. Configure these in the Column Info tab\n\n' +
+        'Do you want to proceed?'
+      );
+      if (!proceed) {
+        return;
+      }
+    }
+
+    // Direct conversion - no validation endpoint exists
+    setValidationResult({
+      valid: true,
+      warnings: ['Type conversion will rebuild the database table. Existing data will be converted if possible.'],
+      errors: []
+    });
+    setShowPreview(true);
   };
 
   // Simulate conversion for preview (fallback if backend doesn't provide it)
@@ -182,38 +165,53 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
 
   const handleApply = async () => {
     if (!validationResult || !validationResult.valid) {
-      alert('Please validate the conversion first');
+      alert('Please click "Validate Conversion" first');
       return;
     }
 
     const confirmed = window.confirm(
       `Are you sure you want to convert column "${column.name}" from ${column.column_type} to ${newType}?\n\n` +
       (validationResult.warnings.length > 0
-        ? 'Warnings:\n' + validationResult.warnings.join('\n')
-        : 'This operation cannot be undone.')
+        ? 'Warning:\n' + validationResult.warnings.join('\n') + '\n\n'
+        : '') +
+      'This will rebuild the database table. This operation cannot be undone.'
     );
 
     if (!confirmed) return;
 
     try {
-      const response = await api.post(
-        `/api/v1/tables/${tableId}/columns/${column.id}/apply_change`,
+      setSaving(true);
+
+      // Use the existing PATCH endpoint to update the column type
+      const response = await api.patch(
+        `/api/v1/tables/${tableId}/columns/${column.id}`,
         {
-          change_type: 'change_type',
-          new_type: newType,
-          conversion_strategy: conversionStrategy
+          column: {
+            column_type: newType
+          }
         }
       );
 
       if (response.data.success) {
-        alert('Column type successfully changed!');
+        alert('✅ Column type successfully changed to ' + newType + '!\n\n' +
+          (newType === 'computed' ? 'Next step: Configure the formula in the Formula tab.' : '') +
+          (['lookup', 'multiple_lookups'].includes(newType) ? 'Next step: Configure lookup settings in Column Info tab.' : '')
+        );
         if (onUpdate) {
           onUpdate();
         }
+      } else {
+        alert('❌ Failed to change column type: ' + (response.data.errors?.join(', ') || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error applying conversion:', error);
-      alert('Conversion failed: ' + (error.response?.data?.error || error.message));
+      const errorMsg = error.response?.data?.errors?.join(', ') ||
+                       error.response?.data?.error ||
+                       error.message ||
+                       'Unknown error occurred';
+      alert('❌ Conversion failed: ' + errorMsg);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -613,10 +611,11 @@ const TypeConversionEditor = ({ tableId, column, onUpdate }) => {
             {validationResult?.valid && (
               <button
                 onClick={handleApply}
+                disabled={saving}
                 className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-medium
-                         hover:bg-green-600 transition-colors"
+                         hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Apply Conversion
+                {saving ? 'Applying...' : 'Apply Conversion'}
               </button>
             )}
           </div>
