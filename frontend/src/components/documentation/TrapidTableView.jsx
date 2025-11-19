@@ -2333,13 +2333,17 @@ export default function TrapidTableView({
                                       onBlur={(e) => {
                                         const newValue = e.target.value.trim()
                                         if (newValue) {
+                                          const columnLabel = COLUMNS.find(col => col.key === filter.column)?.label || filter.column
+                                          // Match the original label format
+                                          const operatorMap = { '=': '=', '!=': '≠', '>': '>', '<': '<', '>=': '≥', '<=': '≤' }
+                                          const operatorLabel = operatorMap[filter.operator] || filter.operator
+                                          const newLabel = filter.operator && filter.operator !== '='
+                                            ? `${columnLabel} ${operatorLabel} ${newValue}`
+                                            : `${columnLabel}: ${newValue}`
+
                                           setCascadeFilters(cascadeFilters.map(f =>
                                             f.id === filter.id
-                                              ? {
-                                                  ...f,
-                                                  value: newValue,
-                                                  label: `${COLUMNS.find(col => col.key === f.column)?.label || f.column}${f.operator && f.operator !== '=' ? ' ' + f.operator : ''}: ${newValue}`
-                                                }
+                                              ? { ...f, value: newValue, label: newLabel }
                                               : f
                                           ))
                                         }
