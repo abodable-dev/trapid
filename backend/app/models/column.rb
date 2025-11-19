@@ -9,6 +9,7 @@ class Column < ApplicationRecord
       single_line_text
       email
       phone
+      mobile
       url
       multiple_lines_text
       date
@@ -23,6 +24,9 @@ class Column < ApplicationRecord
       computed
       user
       multiple_lookups
+      gps_coordinates
+      color_picker
+      file_upload
     ]
   }
 
@@ -35,6 +39,7 @@ class Column < ApplicationRecord
     'single_line_text' => :string,
     'email' => :string,
     'phone' => :string,
+    'mobile' => :string,
     'url' => :string,
     'multiple_lines_text' => :text,
     'date' => :date,
@@ -48,7 +53,10 @@ class Column < ApplicationRecord
     'choice' => :string,
     'computed' => :string,  # stored as string
     'user' => :integer,  # foreign key to users
-    'multiple_lookups' => :text  # stored as JSON array
+    'multiple_lookups' => :text,  # stored as JSON array
+    'gps_coordinates' => :string,  # stored as "lat,lng"
+    'color_picker' => :string,  # stored as hex color #RRGGBB
+    'file_upload' => :text  # stored as file path or URL
   }.freeze
 
   def db_type
