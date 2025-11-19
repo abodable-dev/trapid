@@ -513,6 +513,63 @@ Rails.application.routes.draw do
       # Unreal Variables management
       resources :unreal_variables
 
+      # Corporate Entity Management
+      resources :companies do
+        collection do
+          post :import
+        end
+        member do
+          get :directors
+          post :add_director
+          delete 'directors/:director_id', to: 'companies#remove_director'
+          get :compliance_items
+          get :activities
+          get :documents
+          get :assets
+        end
+      end
+
+      # Bank Accounts
+      resources :bank_accounts
+
+      # Assets
+      resources :assets do
+        member do
+          get :service_history
+          post :add_service
+          get :insurance
+          post :insurance, to: 'assets#update_insurance'
+          put :insurance, to: 'assets#update_insurance'
+        end
+      end
+
+      # Company Documents
+      resources :company_documents do
+        member do
+          get :download
+        end
+      end
+
+      # Company Xero Connections
+      resources :company_xero_connections, only: [:index, :show, :destroy] do
+        collection do
+          get :auth_url
+          post :callback
+        end
+        member do
+          post :sync_accounts
+          get :status
+          delete :disconnect, to: 'company_xero_connections#disconnect'
+        end
+      end
+
+      # Company Compliance Items
+      resources :company_compliance_items, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :mark_completed
+        end
+      end
+
       # External integrations (API endpoints for third-party systems)
       namespace :external do
         post 'unreal_estimates', to: 'unreal_estimates#create'
