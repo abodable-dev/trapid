@@ -365,13 +365,15 @@ class SchemaValidationService
       ").to_i
     when 'string_to_date', 'text_to_date'
       # Count rows where value cannot be cast to date
-      connection.select_value("
-        SELECT COUNT(*) FROM #{quoted_table}
-        WHERE #{quoted_column} IS NOT NULL
-        AND #{quoted_column}::date IS NULL
-      ").to_i
-    rescue
-      0
+      begin
+        connection.select_value("
+          SELECT COUNT(*) FROM #{quoted_table}
+          WHERE #{quoted_column} IS NOT NULL
+          AND #{quoted_column}::date IS NULL
+        ").to_i
+      rescue
+        0
+      end
     else
       0
     end
