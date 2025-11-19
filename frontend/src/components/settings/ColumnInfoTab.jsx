@@ -1,8 +1,21 @@
 import { useState, useEffect } from 'react'
 import { CheckCircleIcon, InformationCircleIcon, ArrowDownTrayIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { COLUMN_TYPES } from '../../constants/columnTypes'
 
-// Initial Gold Standard columns with their types and validation rules
-const INITIAL_COLUMNS = [
+// Convert COLUMN_TYPES to column info format - this is now LIVE and always up-to-date
+const getInitialColumns = () => {
+  return COLUMN_TYPES.map(type => ({
+    columnName: type.value,
+    sqlType: type.sqlType || 'UNKNOWN',
+    displayType: type.label || type.value,
+    validationRules: type.validationRules || 'No validation rules defined',
+    example: type.example || 'No example provided',
+    usedFor: type.usedFor || 'No usage description'
+  }))
+}
+
+// Legacy static columns for reference (kept for backwards compatibility)
+const LEGACY_COLUMNS = [
   {
     columnName: 'id',
     sqlType: 'INTEGER',
@@ -144,7 +157,7 @@ const INITIAL_COLUMNS = [
     sqlType: 'DATETIME',
     displayType: 'Date & Time',
     validationRules: 'Auto-populated on creation, not editable',
-    example: '2024-11-19 14:30:00',
+    example: '19/11/2024 14:30',
     usedFor: 'Record creation timestamp'
   },
   {
@@ -152,7 +165,7 @@ const INITIAL_COLUMNS = [
     sqlType: 'DATETIME',
     displayType: 'Date & Time',
     validationRules: 'Auto-updated on any modification',
-    example: '2024-11-19 16:45:22',
+    example: '19/11/2024 16:45',
     usedFor: 'Last modification timestamp'
   },
   {
@@ -175,33 +188,23 @@ const INITIAL_COLUMNS = [
 
 
 export default function ColumnInfoTab() {
-  const [columns, setColumns] = useState(INITIAL_COLUMNS)
+  const [columns, setColumns] = useState(getInitialColumns())
   const [loading, setLoading] = useState(false)
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
 
-  // Fetch columns from API
-  const fetchColumns = async () => {
+  // Refresh columns from COLUMN_TYPES constant
+  const handleRefresh = () => {
     setLoading(true)
-    try {
-      const response = await fetch('https://trapid-backend-447058022b51.herokuapp.com/api/v1/gold_standard_items')
-      if (response.ok) {
-        const data = await response.json()
-        // If API returns column metadata, use it; otherwise keep initial columns
-        if (data.columns) {
-          setColumns(data.columns)
-        }
-        setLastRefreshed(new Date())
-      }
-    } catch (error) {
-      console.error('Failed to fetch columns:', error)
-    } finally {
+    setTimeout(() => {
+      setColumns(getInitialColumns())
+      setLastRefreshed(new Date())
       setLoading(false)
-    }
+    }, 300)
   }
 
-  // Fetch on mount
+  // Auto-refresh on mount to get latest from COLUMN_TYPES
   useEffect(() => {
-    fetchColumns()
+    handleRefresh()
   }, [])
 
   // Export to CSV
@@ -271,7 +274,7 @@ export default function ColumnInfoTab() {
           {/* Action Buttons */}
           <div className="flex gap-2">
             <button
-              onClick={fetchColumns}
+              onClick={handleRefresh}
               disabled={loading}
               className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white text-sm font-medium rounded-lg transition-colors"
             >
@@ -324,6 +327,12 @@ export default function ColumnInfoTab() {
               <CheckCircleIcon className="h-5 w-5 text-green-600" />
               Column Types ({columns.length})
             </h3>
+            <div className="mt-2 flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded"></div>
+                <span className="text-gray-600 dark:text-gray-400">🔒 System-Generated Columns (Auto-managed by database)</span>
+              </div>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -354,24 +363,47 @@ export default function ColumnInfoTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {columns.map((column, index) => (
-                  <tr
-                    key={index}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <code className="text-sm font-mono font-semibold text-indigo-600 dark:text-indigo-400">
-                        {column.columnName}
-                      </code>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {column.displayName || column.displayType}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-700 dark:text-gray-300">
-                        {column.sqlType}
-                      </span>
-                    </td>
+                {columns.map((column, index) => {
+                  // Check if this is a system-generated column
+                  const isSystemGenerated = ['date_and_time'].includes(column.columnName) ||
+                    (column.validationRules && (
+                      column.validationRules.includes('Auto-populated') ||
+                      column.validationRules.includes('Auto-updated')
+                    ))
+
+                  return (
+                    <tr
+                      key={index}
+                      className={`transition-colors ${
+                        isSystemGenerated
+                          ? 'bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                      }`}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <code className={`text-sm font-mono font-semibold ${
+                            isSystemGenerated
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-indigo-600 dark:text-indigo-400'
+                          }`}>
+                            {column.columnName}
+                          </code>
+                          {isSystemGenerated && <span className="text-sm">🔒</span>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {column.displayName || column.displayType}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`text-xs font-mono px-2 py-1 rounded ${
+                          isSystemGenerated
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}>
+                          {column.sqlType}
+                        </span>
+                      </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                       {column.displayType}
                     </td>
@@ -387,7 +419,7 @@ export default function ColumnInfoTab() {
                       {column.usedFor}
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>

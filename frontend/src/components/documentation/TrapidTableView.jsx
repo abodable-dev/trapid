@@ -250,6 +250,7 @@ export default function TrapidTableView({
   const [resizingColumn, setResizingColumn] = useState(null)
   const [resizeStartX, setResizeStartX] = useState(0)
   const [resizeStartWidth, setResizeStartWidth] = useState(0)
+  const [forceUpdate, setForceUpdate] = useState(0) // Force re-render after resize
 
   // Column reordering state
   const [draggedColumn, setDraggedColumn] = useState(null)
@@ -315,6 +316,8 @@ export default function TrapidTableView({
 
   const handleResizeEnd = () => {
     setResizingColumn(null)
+    // Force re-render to update column display
+    setForceUpdate(prev => prev + 1)
   }
 
   useEffect(() => {
@@ -2413,6 +2416,9 @@ export default function TrapidTableView({
                 const column = COLUMNS.find(c => c.key === colKey)
                 if (!column) return null
 
+                // Check if this is a system-generated column
+                const isSystemGenerated = ['id', 'created_at', 'updated_at'].includes(colKey)
+
                 return (
                   <th
                     key={colKey}
@@ -2436,10 +2442,14 @@ export default function TrapidTableView({
                       // Visual drop indicator - green border when this is the drop target
                       borderLeft: dropTargetColumn === colKey ? '4px solid #10b981' : undefined,
                       borderRight: dropTargetColumn === colKey ? '4px solid #10b981' : undefined,
+                      // System-generated columns get red background
+                      backgroundColor: isSystemGenerated ? (dropTargetColumn === colKey ? '#059669' : '#dc2626') : undefined,
                     }}
                     className={`group align-top ${colKey === 'select' ? 'px-1 py-4' : 'px-6 pt-4 pb-2'} ${colKey === 'select' ? 'text-center' : 'text-left'} text-white tracking-wide transition-colors ${
-                      column.sortable ? 'cursor-pointer hover:bg-blue-700 dark:hover:bg-blue-900' : ''
-                    } ${draggedColumn === colKey ? 'bg-blue-700 dark:bg-blue-900 opacity-50' : ''} ${
+                      column.sortable && !isSystemGenerated ? 'cursor-pointer hover:bg-blue-700 dark:hover:bg-blue-900' : ''
+                    } ${column.sortable && isSystemGenerated ? 'cursor-pointer hover:bg-red-700 dark:hover:bg-red-800' : ''} ${
+                      draggedColumn === colKey && !isSystemGenerated ? 'bg-blue-700 dark:bg-blue-900 opacity-50' : ''
+                    } ${draggedColumn === colKey && isSystemGenerated ? 'bg-red-700 dark:bg-red-800 opacity-50' : ''} ${
                       dropTargetColumn === colKey ? 'bg-green-600 dark:bg-green-700' : ''
                     }`}
                   >
@@ -2481,6 +2491,7 @@ export default function TrapidTableView({
                             </div>
                           )}
                           <span>{column.label}</span>
+                          {isSystemGenerated && <span className="ml-1 text-sm">🔒</span>}
                           {column.sortable && <SortIcon column={colKey} />}
                           {/* Schema Editor Cog Icon - only show in Edit Individual mode */}
                           {editIndividualMode && enableSchemaEditor && colKey !== 'select' && (
@@ -2497,8 +2508,12 @@ export default function TrapidTableView({
                                   required: false
                                 })
                               }}
-                              className="ml-2 p-1 rounded hover:bg-blue-500 dark:hover:bg-blue-700 transition-colors"
-                              title="Edit column schema"
+                              className={`ml-2 p-1 rounded transition-colors ${
+                                isSystemGenerated
+                                  ? 'hover:bg-red-500 dark:hover:bg-red-700'
+                                  : 'hover:bg-blue-500 dark:hover:bg-blue-700'
+                              }`}
+                              title={isSystemGenerated ? 'Edit system-generated column schema' : 'Edit column schema'}
                             >
                               <Cog8ToothIcon className="h-4 w-4 text-orange-300 hover:text-white" />
                             </button>

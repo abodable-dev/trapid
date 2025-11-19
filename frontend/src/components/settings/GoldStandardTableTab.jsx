@@ -5,27 +5,27 @@ import TrapidTableView from '../documentation/TrapidTableView'
 // Define price book gold standard columns - showing ALL column types from database
 const GOLD_STANDARD_COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32, tooltip: 'Checkbox - select rows for bulk actions' },
-  { key: 'id', label: 'ID', resizable: true, sortable: true, filterable: false, width: 80, tooltip: 'Primary Key - Auto-increment ID' },
+  { key: 'id', label: 'ID / Primary Key', resizable: true, sortable: true, filterable: false, width: 80, tooltip: 'Primary Key - Auto-increment ID' },
   { key: 'item_code', label: 'Single Line Text', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Single line text field - Item code' },
   { key: 'email', label: 'Email', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 200, tooltip: 'Email field - Must contain @ symbol' },
-  { key: 'phone', label: 'Phone', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Landline Phone - Format: (03) 9123 4567 or 1300 numbers' },
-  { key: 'mobile', label: 'Mobile', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Mobile Phone - Format: 0407 397 541' },
-  { key: 'start_date', label: 'Date', resizable: true, sortable: true, filterable: false, width: 140, tooltip: 'Date field - Date without time component (YYYY-MM-DD)' },
+  { key: 'phone', label: 'Phone (Landline)', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Landline Phone - Format: (03) 9123 4567 or 1300 numbers' },
+  { key: 'mobile', label: 'Phone (Mobile)', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Mobile Phone - Format: 0407 397 541' },
+  { key: 'start_date', label: 'Date Only', resizable: true, sortable: true, filterable: false, width: 140, tooltip: 'Date field - Date without time component (YYYY-MM-DD)' },
   { key: 'location_coords', label: 'GPS Coordinates', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'GPS Coordinates - Latitude, Longitude for mapping' },
   { key: 'color_code', label: 'Color Picker', resizable: true, sortable: false, filterable: false, width: 130, tooltip: 'Color Code - Hex color value for visual categorization' },
   { key: 'file_attachment', label: 'File Upload', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'File Attachment - Path or reference to uploaded file' },
-  { key: 'category_type', label: 'Category Type', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 150, tooltip: 'Category Type - Lookup field for material categories' },
-  { key: 'is_active', label: 'Boolean', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 100, tooltip: 'Boolean - True/False checkbox' },
+  { key: 'category_type', label: 'Lookup / Dropdown', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 150, tooltip: 'Category Type - Lookup field for material categories' },
+  { key: 'is_active', label: 'Boolean / Checkbox', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 100, tooltip: 'Boolean - True/False checkbox' },
   { key: 'discount', label: 'Percentage', resizable: true, sortable: true, filterable: false, width: 120, tooltip: 'Percentage - Displayed with % symbol' },
-  { key: 'status', label: 'Choice', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 140, tooltip: 'Choice - Hardcoded options (active/inactive) with colored badges' },
-  { key: 'price', label: 'Currency', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'currency', tooltip: 'Currency field with sum - Price in AUD' },
+  { key: 'status', label: 'Choice / Badge', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 140, tooltip: 'Choice - Hardcoded options (active/inactive) with colored badges' },
+  { key: 'price', label: 'Currency (AUD)', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'currency', tooltip: 'Currency field with sum - Price in AUD' },
   { key: 'quantity', label: 'Number', resizable: true, sortable: true, filterable: false, width: 100, showSum: true, sumType: 'number', tooltip: 'Number field with sum - Quantity' },
   { key: 'whole_number', label: 'Whole Number', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'number', tooltip: 'Whole Number - Integers only (no decimals). Example: Units, Count, Days' },
-  { key: 'total_cost', label: 'Computed', resizable: true, sortable: true, filterable: false, width: 140, showSum: true, sumType: 'currency', tooltip: 'Computed - Formula: price × quantity. Can also do lookups to other tables and multiply/add values', isComputed: true, computeFunction: (entry) => (entry.price || 0) * (entry.quantity || 0) },
-  { key: 'created_at', label: 'Created At', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Created At - When the record was created' },
-  { key: 'updated_at', label: 'Updated At', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Updated At - When the record was last modified' },
-  { key: 'document_link', label: 'Document Link', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'Clickable link to external document or file' },
-  { key: 'notes', label: 'Multi Line Text', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 300, tooltip: 'Multi-line text field - Notes and comments' }
+  { key: 'total_cost', label: 'Computed Field', resizable: true, sortable: true, filterable: false, width: 140, showSum: true, sumType: 'currency', tooltip: 'Computed - Formula: price × quantity. Can also do lookups to other tables and multiply/add values', isComputed: true, computeFunction: (entry) => (entry.price || 0) * (entry.quantity || 0) },
+  { key: 'created_at', label: 'Date & Time', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Created At - When the record was created' },
+  { key: 'updated_at', label: 'Date & Time', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Updated At - When the record was last modified' },
+  { key: 'document_link', label: 'URL / Link', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'Clickable link to external document or file' },
+  { key: 'notes', label: 'Multi-Line Text', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 300, tooltip: 'Multi-line text field - Notes and comments' }
 ]
 
 export default function GoldStandardTableTab() {

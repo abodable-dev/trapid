@@ -302,6 +302,9 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
            editedColumn.data_type !== (column.data_type || column.column_type);
   };
 
+  // Check if this is a system-generated column
+  const isSystemGenerated = ['id', 'created_at', 'updated_at'].includes(column.column_name);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
          onClick={(e) => {
@@ -312,16 +315,26 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh]
                     flex flex-col overflow-hidden"
            onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r
-                      from-purple-500 to-pink-600">
+        {/* Header - Red for system-generated, Purple for user columns */}
+        <div className={`px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r
+                      ${isSystemGenerated
+                        ? 'from-red-600 to-red-700'
+                        : 'from-purple-500 to-pink-600'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white">
-                Edit Column: {column.name}
-              </h2>
-              <p className="text-sm text-purple-100 mt-1">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-white">
+                  Edit Column: {column.name}
+                </h2>
+                {isSystemGenerated && (
+                  <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold text-white uppercase tracking-wide border border-white/30">
+                    🔒 System Generated
+                  </span>
+                )}
+              </div>
+              <p className={`text-sm mt-1 ${isSystemGenerated ? 'text-red-100' : 'text-purple-100'}`}>
                 {column.column_type} • {column.required ? 'Required' : 'Optional'}
+                {isSystemGenerated && ' • Auto-managed by database'}
               </p>
             </div>
             <button
@@ -360,6 +373,29 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'info' && (
             <div className="space-y-6">
+              {/* System Generated Warning Banner */}
+              {isSystemGenerated && (
+                <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">🔒</div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-red-900 dark:text-red-100 mb-1">
+                        System-Generated Column
+                      </h3>
+                      <p className="text-sm text-red-800 dark:text-red-200">
+                        This column is automatically managed by the database system. While you can view its configuration,
+                        modifying system columns is not recommended as they are essential for tracking records.
+                      </p>
+                      <ul className="mt-2 text-xs text-red-700 dark:text-red-300 space-y-1 list-disc list-inside">
+                        <li><strong>id</strong>: Auto-incrementing primary key for record identification</li>
+                        <li><strong>created_at</strong>: Timestamp automatically set when record is created</li>
+                        <li><strong>updated_at</strong>: Timestamp automatically updated on any modification</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Display Name */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -404,7 +440,13 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
                 </label>
                 <select
                   value={editedColumn.data_type}
-                  onChange={(e) => setEditedColumn({ ...editedColumn, data_type: e.target.value })}
+                  onChange={(e) => {
+                    const newType = e.target.value
+                    setEditedColumn({
+                      ...editedColumn,
+                      data_type: newType
+                    })
+                  }}
                   className="w-full px-4 py-3 bg-white dark:bg-gray-700 rounded-lg border-2 border-purple-300
                            dark:border-purple-600 text-base text-gray-900 dark:text-gray-100 font-medium
                            focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -445,8 +487,16 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
                     <option value="computed">Computed / Formula (COMPUTED)</option>
                   </optgroup>
                 </select>
-                <div className="mt-2 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                  <p className="text-xs text-purple-800 dark:text-purple-200 font-mono font-semibold">
+                <div className={`mt-2 p-3 rounded-lg border ${
+                  isSystemGenerated
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
+                    : 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
+                }`}>
+                  <p className={`text-xs font-mono font-semibold ${
+                    isSystemGenerated
+                      ? 'text-red-800 dark:text-red-200'
+                      : 'text-purple-800 dark:text-purple-200'
+                  }`}>
                     Database Type: {getColumnMetadata(editedColumn.data_type).sqlType}
                   </p>
                 </div>
@@ -471,73 +521,45 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
                 </p>
               </div>
 
-              {/* Actual SQL Type from Column */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Actual SQL Type
-                </label>
-                <div className="w-full px-4 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200
-                             dark:border-blue-700 text-sm font-mono text-blue-900 dark:text-blue-100 font-bold min-h-[2.5rem]">
-                  {column.sql_type || ''}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  The actual SQL type stored in the database
-                </p>
-              </div>
-
-              {/* Display Type from Column */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Display Type
-                </label>
-                <div className="w-full px-4 py-3 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-200
-                             dark:border-green-700 text-sm text-green-900 dark:text-green-100 min-h-[2.5rem]">
-                  {column.display_type || ''}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  How this column is displayed in the UI
-                </p>
-              </div>
-
-              {/* Validation Rules from Column */}
+              {/* Validation Rules - Auto-populated from COLUMN_TYPES */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Validation Rules
                 </label>
                 <div className="w-full px-4 py-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border-2 border-orange-200
                              dark:border-orange-700 text-sm text-orange-900 dark:text-orange-100 min-h-[2.5rem]">
-                  {column.validation_rules || ''}
+                  {getColumnMetadata(editedColumn.data_type).validation || column.validation_rules || 'No validation rules defined'}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Validation rules applied to this column
+                  Validation rules applied to this column (auto-populated from column type)
                 </p>
               </div>
 
-              {/* Example from Column */}
+              {/* Example - Auto-populated from COLUMN_TYPES */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Example
                 </label>
                 <div className="w-full px-4 py-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-2 border-purple-200
                              dark:border-purple-700 text-sm font-mono text-purple-900 dark:text-purple-100 min-h-[2.5rem]">
-                  {column.example || ''}
+                  {getColumnMetadata(editedColumn.data_type).example || column.example || 'No example provided'}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Example values for this column
+                  Example values for this column (auto-populated from column type)
                 </p>
               </div>
 
-              {/* Used For from Column */}
+              {/* Used For - Auto-populated from COLUMN_TYPES */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Used For
                 </label>
-                <div className="w-full px-4 py-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg border-2 border-teal-200
-                             dark:border-teal-700 text-sm text-teal-900 dark:text-teal-100 min-h-[2.5rem]">
-                  {column.used_for || ''}
+                <div className="w-full px-4 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200
+                             dark:border-blue-700 text-sm text-blue-900 dark:text-blue-100 min-h-[2.5rem]">
+                  {getColumnMetadata(editedColumn.data_type).usedFor || 'No usage description'}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Description of what this column is used for
+                  What this column is used for (auto-populated from column type)
                 </p>
               </div>
 
