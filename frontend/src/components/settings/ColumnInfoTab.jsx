@@ -1,17 +1,85 @@
-import { useState, useEffect } from 'react'
-import { CheckCircleIcon, InformationCircleIcon, ArrowDownTrayIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { CheckCircleIcon, InformationCircleIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { COLUMN_TYPES } from '../../constants/columnTypes'
 
 // Convert COLUMN_TYPES to column info format - this is now LIVE and always up-to-date
+// Matches the exact columns shown in Gold Standard Table
 const getInitialColumns = () => {
-  return COLUMN_TYPES.map(type => ({
-    columnName: type.value,
-    sqlType: type.sqlType || 'UNKNOWN',
-    displayType: type.label || type.value,
-    validationRules: type.validationRules || 'No validation rules defined',
-    example: type.example || 'No example provided',
-    usedFor: type.usedFor || 'No usage description'
-  }))
+  // Start with ID column (not in COLUMN_TYPES, but always present in tables)
+  const columns = [
+    {
+      columnName: 'id',
+      sqlType: 'INTEGER',
+      displayType: 'ID / Primary Key',
+      validationRules: 'Auto-increment, unique, not null',
+      example: '1, 2, 3, 100',
+      usedFor: 'Primary key for identifying records'
+    }
+  ]
+
+  // Add all COLUMN_TYPES
+  const typeColumns = COLUMN_TYPES.map(type => {
+    // Special handling for date_and_time to show as created_at
+    if (type.value === 'date_and_time') {
+      return {
+        columnName: 'created_at',
+        sqlType: type.sqlType || 'UNKNOWN',
+        displayType: 'Date & Time (Created)',
+        validationRules: type.validationRules || 'No validation rules defined',
+        example: type.example || 'No example provided',
+        usedFor: type.usedFor || 'No usage description'
+      }
+    }
+
+    // Special handling for boolean to show as checkbox
+    if (type.value === 'boolean') {
+      return {
+        columnName: 'checkbox',
+        sqlType: type.sqlType || 'UNKNOWN',
+        displayType: 'Checkbox',
+        validationRules: type.validationRules || 'No validation rules defined',
+        example: type.example || 'No example provided',
+        usedFor: type.usedFor || 'No usage description'
+      }
+    }
+
+    // Special handling for choice to show as choice
+    if (type.value === 'choice') {
+      return {
+        columnName: 'choice',
+        sqlType: type.sqlType || 'UNKNOWN',
+        displayType: 'Choice',
+        validationRules: type.validationRules || 'No validation rules defined',
+        example: type.example || 'No example provided',
+        usedFor: type.usedFor || 'No usage description'
+      }
+    }
+
+    return {
+      columnName: type.value,
+      sqlType: type.sqlType || 'UNKNOWN',
+      displayType: type.label || type.value,
+      validationRules: type.validationRules || 'No validation rules defined',
+      example: type.example || 'No example provided',
+      usedFor: type.usedFor || 'No usage description'
+    }
+  })
+
+  columns.push(...typeColumns)
+
+  // Add updated_at (second instance of date_and_time)
+  const dateTimeType = COLUMN_TYPES.find(t => t.value === 'date_and_time')
+  if (dateTimeType) {
+    columns.push({
+      columnName: 'updated_at',
+      sqlType: dateTimeType.sqlType,
+      displayType: 'Date & Time (Updated)',
+      validationRules: 'Auto-updated on any modification',
+      example: dateTimeType.example,
+      usedFor: 'Last modification timestamp'
+    })
+  }
+
+  return columns
 }
 
 // Legacy static columns for reference (kept for backwards compatibility)
@@ -188,24 +256,8 @@ const LEGACY_COLUMNS = [
 
 
 export default function ColumnInfoTab() {
-  const [columns, setColumns] = useState(getInitialColumns())
-  const [loading, setLoading] = useState(false)
-  const [lastRefreshed, setLastRefreshed] = useState(new Date())
-
-  // Refresh columns from COLUMN_TYPES constant
-  const handleRefresh = () => {
-    setLoading(true)
-    setTimeout(() => {
-      setColumns(getInitialColumns())
-      setLastRefreshed(new Date())
-      setLoading(false)
-    }, 300)
-  }
-
-  // Auto-refresh on mount to get latest from COLUMN_TYPES
-  useEffect(() => {
-    handleRefresh()
-  }, [])
+  // Always pull fresh from COLUMN_TYPES - no state needed, always live
+  const columns = getInitialColumns()
 
   // Export to CSV
   const exportToCSV = () => {
@@ -274,14 +326,6 @@ export default function ColumnInfoTab() {
           {/* Action Buttons */}
           <div className="flex gap-2">
             <button
-              onClick={handleRefresh}
-              disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-              {loading ? 'Refreshing...' : 'Refresh'}
-            </button>
-            <button
               onClick={exportToCSV}
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
@@ -312,9 +356,9 @@ export default function ColumnInfoTab() {
           </div>
         </div>
         <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg shadow p-4 border border-purple-200 dark:border-purple-700">
-          <div className="text-sm font-medium text-purple-800 dark:text-purple-400">Last Refreshed</div>
+          <div className="text-sm font-medium text-purple-800 dark:text-purple-400">Always Live</div>
           <div className="text-sm font-bold text-purple-900 dark:text-purple-300 mt-1">
-            {lastRefreshed.toLocaleTimeString()}
+            ✓ Real-time from source
           </div>
         </div>
       </div>
@@ -339,6 +383,9 @@ export default function ColumnInfoTab() {
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-700/30 border-b border-gray-200 dark:border-gray-700">
                 <tr>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    #
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Column Name (Database)
                   </th>
@@ -380,6 +427,11 @@ export default function ColumnInfoTab() {
                           : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
                       }`}
                     >
+                      <td className="px-3 py-4 whitespace-nowrap">
+                        <span className="text-sm font-bold text-gray-500 dark:text-gray-400">
+                          {index + 1}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <code className={`text-sm font-mono font-semibold ${

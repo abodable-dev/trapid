@@ -1,32 +1,96 @@
 import { useState, useEffect } from 'react'
 import { PlusIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
 import TrapidTableView from '../documentation/TrapidTableView'
+import { COLUMN_TYPES } from '../../constants/columnTypes'
 
-// Define price book gold standard columns - showing ALL column types from database
-const GOLD_STANDARD_COLUMNS = [
-  { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32, tooltip: 'Checkbox - select rows for bulk actions' },
-  { key: 'id', label: 'ID / Primary Key', resizable: true, sortable: true, filterable: false, width: 80, tooltip: 'Primary Key - Auto-increment ID' },
-  { key: 'item_code', label: 'Single Line Text', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Single line text field - Item code' },
-  { key: 'email', label: 'Email', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 200, tooltip: 'Email field - Must contain @ symbol' },
-  { key: 'phone', label: 'Phone (Landline)', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Landline Phone - Format: (03) 9123 4567 or 1300 numbers' },
-  { key: 'mobile', label: 'Phone (Mobile)', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Mobile Phone - Format: 0407 397 541' },
-  { key: 'start_date', label: 'Date Only', resizable: true, sortable: true, filterable: false, width: 140, tooltip: 'Date field - Date without time component (YYYY-MM-DD)' },
-  { key: 'location_coords', label: 'GPS Coordinates', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'GPS Coordinates - Latitude, Longitude for mapping' },
-  { key: 'color_code', label: 'Color Picker', resizable: true, sortable: false, filterable: false, width: 130, tooltip: 'Color Code - Hex color value for visual categorization' },
-  { key: 'file_attachment', label: 'File Upload', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'File Attachment - Path or reference to uploaded file' },
-  { key: 'category_type', label: 'Lookup / Dropdown', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 150, tooltip: 'Category Type - Lookup field for material categories' },
-  { key: 'is_active', label: 'Boolean / Checkbox', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 100, tooltip: 'Boolean - True/False checkbox' },
-  { key: 'discount', label: 'Percentage', resizable: true, sortable: true, filterable: false, width: 120, tooltip: 'Percentage - Displayed with % symbol' },
-  { key: 'status', label: 'Choice / Badge', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 140, tooltip: 'Choice - Hardcoded options (active/inactive) with colored badges' },
-  { key: 'price', label: 'Currency (AUD)', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'currency', tooltip: 'Currency field with sum - Price in AUD' },
-  { key: 'quantity', label: 'Number', resizable: true, sortable: true, filterable: false, width: 100, showSum: true, sumType: 'number', tooltip: 'Number field with sum - Quantity' },
-  { key: 'whole_number', label: 'Whole Number', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'number', tooltip: 'Whole Number - Integers only (no decimals). Example: Units, Count, Days' },
-  { key: 'total_cost', label: 'Computed Field', resizable: true, sortable: true, filterable: false, width: 140, showSum: true, sumType: 'currency', tooltip: 'Computed - Formula: price × quantity. Can also do lookups to other tables and multiply/add values', isComputed: true, computeFunction: (entry) => (entry.price || 0) * (entry.quantity || 0) },
-  { key: 'created_at', label: 'Date & Time', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Created At - When the record was created' },
-  { key: 'updated_at', label: 'Date & Time', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Updated At - When the record was last modified' },
-  { key: 'document_link', label: 'URL / Link', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'Clickable link to external document or file' },
-  { key: 'notes', label: 'Multi-Line Text', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 300, tooltip: 'Multi-line text field - Notes and comments' }
-]
+// Map COLUMN_TYPES (single source of truth) to table column configuration
+// This ensures Column Info tab and Gold Standard table always match
+const buildGoldStandardColumns = () => {
+  // Base columns that always appear
+  const baseColumns = [
+    { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32, tooltip: 'Checkbox - select rows for bulk actions' },
+    { key: 'id', label: 'ID / Primary Key', resizable: true, sortable: true, filterable: false, width: 80, tooltip: 'Primary Key - Auto-increment ID' }
+  ]
+
+  // Map each COLUMN_TYPE to its database column and configuration
+  const typeToColumnMap = {
+    'single_line_text': { key: 'item_code', width: 150, filterable: true, filterType: 'text' },
+    'email': { key: 'email', width: 200, filterable: true, filterType: 'text' },
+    'phone': { key: 'phone', width: 150, filterable: true, filterType: 'text' },
+    'mobile': { key: 'mobile', width: 150, filterable: true, filterType: 'text' },
+    'url': { key: 'document_link', width: 180, sortable: false, filterable: false },
+    'date': { key: 'start_date', width: 140, filterable: false },
+    'gps_coordinates': { key: 'location_coords', width: 180, sortable: false, filterable: false },
+    'color_picker': { key: 'color_code', width: 130, sortable: false, filterable: false },
+    'file_upload': { key: 'file_attachment', width: 180, sortable: false, filterable: false },
+    'lookup': { key: 'category_type', width: 150, filterable: true, filterType: 'dropdown' },
+    'boolean': { key: 'is_active', width: 100, filterable: true, filterType: 'dropdown' },
+    'percentage': { key: 'discount', width: 120, filterable: false },
+    'choice': { key: 'status', width: 140, filterable: true, filterType: 'dropdown' },
+    'currency': { key: 'price', width: 120, filterable: false, showSum: true, sumType: 'currency' },
+    'number': { key: 'quantity', width: 100, filterable: false, showSum: true, sumType: 'number' },
+    'whole_number': { key: 'whole_number', width: 120, filterable: false, showSum: true, sumType: 'number' },
+    'computed': {
+      key: 'total_cost',
+      width: 140,
+      filterable: false,
+      showSum: true,
+      sumType: 'currency',
+      isComputed: true,
+      computeFunction: (entry) => (entry.price || 0) * (entry.quantity || 0)
+    },
+    'date_and_time': { key: 'created_at', width: 180, filterable: false },
+    'multiple_lines_text': { key: 'notes', width: 300, sortable: false, filterable: true, filterType: 'text' },
+    'multiple_lookups': { key: 'multiple_category_ids', width: 200, sortable: false, filterable: false },
+    'user': { key: 'user_id', width: 120, filterable: true, filterType: 'dropdown' }
+  }
+
+  // Helper function to build a column from COLUMN_TYPES
+  const buildColumn = (typeValue) => {
+    const type = COLUMN_TYPES.find(t => t.value === typeValue)
+    const config = typeToColumnMap[typeValue]
+    if (!type || !config) return null
+
+    return {
+      key: config.key,
+      label: type.label,
+      resizable: true,
+      sortable: config.sortable !== false,
+      filterable: config.filterable || false,
+      filterType: config.filterType,
+      width: config.width,
+      showSum: config.showSum,
+      sumType: config.sumType,
+      isComputed: config.isComputed,
+      computeFunction: config.computeFunction,
+      tooltip: `${type.sqlType} - ${type.usedFor}`
+    }
+  }
+
+  // Build columns in the EXACT same order as COLUMN_TYPES array
+  // This ensures Column Info tab and Gold Standard table match perfectly
+  const dynamicColumns = COLUMN_TYPES
+    .map(type => buildColumn(type.value))
+    .filter(col => col !== null)
+
+  // Add updated_at separately (second date_and_time instance)
+  const updatedAtType = COLUMN_TYPES.find(t => t.value === 'date_and_time')
+  if (updatedAtType) {
+    dynamicColumns.push({
+      key: 'updated_at',
+      label: 'Date & Time (Updated)',
+      resizable: true,
+      sortable: true,
+      filterable: false,
+      width: 180,
+      tooltip: `${updatedAtType.sqlType} - When the record was last modified`
+    })
+  }
+
+  return [...baseColumns, ...dynamicColumns]
+}
+
+const GOLD_STANDARD_COLUMNS = buildGoldStandardColumns()
 
 export default function GoldStandardTableTab() {
   const [data, setData] = useState([])
@@ -50,7 +114,9 @@ export default function GoldStandardTableTab() {
     quantity: 0,
     whole_number: 0,
     notes: '',
-    document_link: ''
+    document_link: '',
+    user_id: null,
+    multiple_category_ids: ''
   })
 
   // Fetch gold standard items from API

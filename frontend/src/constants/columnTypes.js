@@ -95,11 +95,11 @@ export const COLUMN_TYPES = [
     label: 'Number',
     icon: HashtagIcon,
     category: 'Numbers',
-    description: 'Decimal number',
+    description: 'Integer number',
     sqlType: 'INTEGER',
-    validationRules: 'Positive integers, shows sum in footer',
-    example: '10, 250, 15',
-    usedFor: 'Quantity of items'
+    validationRules: 'Integers (positive or negative), shows sum in footer',
+    example: '10, 250, 15, -5',
+    usedFor: 'Quantity of items, counts, or any integer value'
   },
   {
     value: 'whole_number',
@@ -118,7 +118,7 @@ export const COLUMN_TYPES = [
     icon: CurrencyDollarIcon,
     category: 'Numbers',
     description: 'Money amount',
-    sqlType: 'DECIMAL(10,2)',
+    sqlType: 'NUMERIC(10,2)',
     validationRules: 'Positive numbers, 2 decimal places, shows sum in footer',
     example: '$125.50, $1,234.99',
     usedFor: 'Price in Australian dollars'
@@ -129,9 +129,9 @@ export const COLUMN_TYPES = [
     icon: HashtagIcon,
     category: 'Numbers',
     description: 'Percentage value',
-    sqlType: 'DECIMAL(5,2)',
-    validationRules: '0-100, displayed with % symbol',
-    example: '10.5%, 25%, 0%',
+    sqlType: 'NUMERIC(5,2)',
+    validationRules: '0-100, input as number (e.g., 11), displayed with % symbol (e.g., 11%)',
+    example: 'Input: 11 → Display: 11%, Input: 25.5 → Display: 25.5%',
     usedFor: 'Discount percentage for pricing'
   },
 
@@ -143,8 +143,8 @@ export const COLUMN_TYPES = [
     category: 'Date & Time',
     description: 'Date only',
     sqlType: 'DATE',
-    validationRules: 'Format: YYYY-MM-DD, no time component',
-    example: '2025-11-19, 1990-01-15',
+    validationRules: 'Stored as YYYY-MM-DD (sortable), displayed as DD-MM-YYYY (Australian format)',
+    example: 'Display: 19-11-2025, Stored: 2025-11-19',
     usedFor: 'Date values without time, for contracts, events, start dates'
   },
   {
@@ -153,10 +153,10 @@ export const COLUMN_TYPES = [
     icon: ClockIcon,
     category: 'Date & Time',
     description: 'Date and time',
-    sqlType: 'DATETIME',
-    validationRules: 'Auto-populated on creation, not editable',
-    example: '19/11/2024 14:30',
-    usedFor: 'Record creation timestamp'
+    sqlType: 'TIMESTAMP',
+    validationRules: 'Stored as YYYY-MM-DD HH:MM:SS (sortable), displayed as DD-MM-YYYY HH:MM (Australian format)',
+    example: 'Display: 19-11-2025 14:30, Stored: 2025-11-19 14:30:00',
+    usedFor: 'Timestamps, event times, scheduled dates with time'
   },
 
   // Special Types
@@ -213,9 +213,9 @@ export const COLUMN_TYPES = [
     category: 'Selection',
     description: 'Select one option from a list',
     sqlType: 'VARCHAR(50)',
-    validationRules: 'Limited options: active, inactive (with colored badges)',
-    example: 'active (green), inactive (red)',
-    usedFor: 'Status with visual indicators'
+    validationRules: 'Must be one of predefined options, displayed with colored badges',
+    example: 'active, pending, completed, cancelled',
+    usedFor: 'Status fields, workflow states, categories with visual indicators'
   },
 
   // Relationships
@@ -227,9 +227,9 @@ export const COLUMN_TYPES = [
     needsConfig: true,
     description: 'Link to records in another table',
     sqlType: 'VARCHAR(255)',
-    validationRules: 'Must match predefined category list',
-    example: 'Concrete, Timber, Steel, Plasterboard',
-    usedFor: 'Material type classification'
+    validationRules: 'Must reference a valid value from the linked table/list',
+    example: 'Product #123, Category: Materials, Customer: ACME Corp',
+    usedFor: 'Foreign key relationships, dropdown selections from other tables'
   },
   {
     value: 'multiple_lookups',
@@ -262,10 +262,10 @@ export const COLUMN_TYPES = [
     icon: CalculatorIcon,
     category: 'Computed',
     description: 'Calculated value based on other fields',
-    sqlType: 'COMPUTED',
-    validationRules: 'Formula: price × quantity, read-only, shows sum',
-    example: '$1,255.00 (from $125.50 × 10)',
-    usedFor: 'Automatic calculations from other columns'
+    sqlType: 'VIRTUAL/COMPUTED',
+    validationRules: 'Read-only, calculated from formula (e.g., A × B, SUM(C), LOOKUP(D))',
+    example: '$1,255.00 (price × quantity), Total: $15,000 (SUM of all rows)',
+    usedFor: 'Automatic calculations, aggregations, cross-table lookups'
   },
 ]
 
