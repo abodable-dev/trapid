@@ -443,6 +443,6 @@ class SchemaValidationService
 
     # Check for common syntax errors
     raise "Empty expression" if expression.strip.empty?
-    raise "Formula cannot end with operator" if expression =~ /[+\-*/]$/
+    raise "Formula cannot end with operator" if expression =~ /[+\-*\/]$/
   end
 end
