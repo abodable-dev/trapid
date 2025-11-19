@@ -2,6 +2,8 @@ module Api
   module V1
     class TablesController < ApplicationController
       before_action :set_table, only: [:show, :update, :destroy]
+      before_action :require_schema_edit_permission, only: [:create, :update, :destroy]
+      before_action :check_table_protection, only: [:update, :destroy]
 
       # GET /api/v1/tables
       def index
@@ -160,6 +162,26 @@ module Api
           :description,
           :is_live
         )
+      end
+
+      def require_schema_edit_permission
+        unless current_user&.can_edit_table_schema?
+          render json: {
+            success: false,
+            errors: ['Unauthorized. Table schema editing requires admin access.']
+          }, status: :forbidden
+        end
+      end
+
+      def check_table_protection
+        # Check if this table's name is in the protected tables list
+        table_name = @table.database_table_name
+        if TableProtection.table_protected?(table_name)
+          render json: {
+            success: false,
+            errors: ["This table is protected and cannot be modified."]
+          }, status: :forbidden
+        end
       end
 
       def table_json(table, include_columns: false, include_record_count: false, referencing_map: nil)

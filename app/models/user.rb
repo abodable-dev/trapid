@@ -62,6 +62,11 @@ class User < ApplicationRecord
     admin? || builder?
   end
 
+  # Schema editing permission - only admins can modify table schemas
+  def can_edit_table_schema?
+    admin?
+  end
+
   # ===================================================================
   # PERMISSION SYSTEM
   # ===================================================================

@@ -3,6 +3,8 @@ module Api
     class ColumnsController < ApplicationController
       before_action :set_table
       before_action :set_column, only: [:update, :destroy]
+      before_action :require_schema_edit_permission, only: [:create, :update, :destroy, :rename_choice, :delete_choice, :merge_choices, :apply_change]
+      before_action :check_table_protection, only: [:create, :update, :destroy, :rename_choice, :delete_choice, :merge_choices, :apply_change]
 
       # POST /api/v1/tables/:table_id/columns
       def create
@@ -180,6 +182,180 @@ module Api
         }, status: :unprocessable_entity
       end
 
+      # GET /api/v1/tables/:table_id/columns/:id/choices
+      # Get unique values (choices) from a column
+      def choices
+        column = @table.columns.find(params[:id])
+
+        begin
+          model = @table.dynamic_model
+          quoted_column = model.connection.quote_column_name(column.column_name)
+
+          # Get distinct non-null values
+          values = model.distinct.where.not(column.column_name => nil)
+                       .pluck(column.column_name)
+                       .compact
+                       .sort
+
+          # Count occurrences for each value
+          choices_with_counts = values.map do |value|
+            count = model.where(column.column_name => value).count
+            { value: value, count: count }
+          end
+
+          render json: {
+            success: true,
+            choices: choices_with_counts,
+            total_records: model.count
+          }
+        rescue => e
+          render json: {
+            success: false,
+            error: e.message
+          }, status: :internal_server_error
+        end
+      end
+
+      # POST /api/v1/tables/:table_id/columns/:id/rename_choice
+      # Rename a choice value across all records
+      def rename_choice
+        column = @table.columns.find(params[:id])
+        old_value = params[:old_value]
+        new_value = params[:new_value]
+
+        if old_value.blank? || new_value.blank?
+          return render json: {
+            success: false,
+            error: 'Both old_value and new_value are required'
+          }, status: :bad_request
+        end
+
+        migration_service = SchemaMigrationService.new(@table)
+        result = migration_service.rename_choice(column.column_name, old_value, new_value)
+
+        if result[:success]
+          render json: result
+        else
+          render json: result, status: :unprocessable_entity
+        end
+      end
+
+      # DELETE /api/v1/tables/:table_id/columns/:id/delete_choice
+      # Delete a choice value (with optional replacement)
+      def delete_choice
+        column = @table.columns.find(params[:id])
+        value_to_delete = params[:value]
+        replacement_value = params[:replacement_value]
+
+        if value_to_delete.blank?
+          return render json: {
+            success: false,
+            error: 'value parameter is required'
+          }, status: :bad_request
+        end
+
+        migration_service = SchemaMigrationService.new(@table)
+        result = migration_service.delete_choice(column.column_name, value_to_delete, replacement_value)
+
+        if result[:success]
+          render json: result
+        else
+          render json: result, status: :unprocessable_entity
+        end
+      end
+
+      # POST /api/v1/tables/:table_id/columns/:id/merge_choices
+      # Merge multiple choice values into one
+      def merge_choices
+        column = @table.columns.find(params[:id])
+        source_values = params[:source_values]
+        target_value = params[:target_value]
+
+        if source_values.blank? || target_value.blank?
+          return render json: {
+            success: false,
+            error: 'source_values (array) and target_value are required'
+          }, status: :bad_request
+        end
+
+        migration_service = SchemaMigrationService.new(@table)
+        result = migration_service.merge_choices(column.column_name, source_values, target_value)
+
+        if result[:success]
+          render json: result
+        else
+          render json: result, status: :unprocessable_entity
+        end
+      end
+
+      # POST /api/v1/tables/:table_id/columns/:id/validate_change
+      # Validate a schema change before applying it
+      def validate_change
+        column = @table.columns.find(params[:id])
+        change_type = params[:change_type]
+
+        validation_service = SchemaValidationService.new(@table)
+
+        result = case change_type
+        when 'change_type'
+          old_type = column.column_type
+          new_type = params[:new_type]
+          conversion_strategy = params[:conversion_strategy] || 'clear_invalid'
+          validation_service.validate_change_column_type(column.column_name, old_type, new_type, conversion_strategy)
+        when 'rename'
+          new_name = params[:new_name]
+          validation_service.validate_rename_column(column.column_name, new_name)
+        when 'delete'
+          validation_service.validate_remove_column(column.column_name)
+        when 'change_null'
+          allow_null = params[:allow_null]
+          validation_service.validate_change_null_constraint(column.column_name, allow_null)
+        else
+          { valid: false, errors: ["Unknown change_type: #{change_type}"], warnings: [] }
+        end
+
+        render json: result
+      end
+
+      # POST /api/v1/tables/:table_id/columns/:id/apply_change
+      # Apply a schema change (after validation)
+      def apply_change
+        column = @table.columns.find(params[:id])
+        change_type = params[:change_type]
+
+        migration_service = SchemaMigrationService.new(@table)
+
+        result = case change_type
+        when 'change_type'
+          new_type = params[:new_type]
+          conversion_strategy = params[:conversion_strategy] || 'clear_invalid'
+          migration_service.change_column_type(column.column_name, new_type, conversion_strategy: conversion_strategy)
+        when 'rename'
+          new_name = params[:new_name]
+          migration_service.rename_column(column.column_name, new_name)
+        when 'delete'
+          migration_service.remove_column(column.column_name)
+        when 'change_null'
+          allow_null = params[:allow_null]
+          migration_service.change_column_null(column.column_name, allow_null)
+        when 'change_default'
+          default_value = params[:default_value]
+          migration_service.change_column_default(column.column_name, default_value)
+        else
+          { success: false, error: "Unknown change_type: #{change_type}" }
+        end
+
+        if result[:success]
+          # Reload the table and reset schema cache
+          @table.reload
+          ActiveRecord::Base.connection.schema_cache.clear_data_source_cache!(@table.database_table_name)
+
+          render json: result.merge(log: migration_service.get_log)
+        else
+          render json: result, status: :unprocessable_entity
+        end
+      end
+
       # GET /api/v1/tables/:table_id/columns/:id/lookup_search?q=search_term
       def lookup_search
         column = @table.columns.find(params[:id])
@@ -301,6 +477,26 @@ module Api
           :lookup_display_column,
           :is_multiple
         )
+      end
+
+      def require_schema_edit_permission
+        unless current_user&.can_edit_table_schema?
+          render json: {
+            success: false,
+            errors: ['Unauthorized. Column schema editing requires admin access.']
+          }, status: :forbidden
+        end
+      end
+
+      def check_table_protection
+        # Check if this table's name is in the protected tables list
+        table_name = @table.database_table_name
+        if TableProtection.table_protected?(table_name)
+          render json: {
+            success: false,
+            errors: ["This table is protected and columns cannot be modified."]
+          }, status: :forbidden
+        end
       end
 
       def column_json(column)

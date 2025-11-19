@@ -371,6 +371,15 @@ Rails.application.routes.draw do
       get 'schema/tables', to: 'schema#tables'
       get 'schema/system_table_columns/:table_name', to: 'schema#system_table_columns'
 
+      # Table protection management
+      resources :table_protections do
+        collection do
+          post :protect_table
+          post :unprotect_table
+          get 'check/:table_name', action: :check, as: :check
+        end
+      end
+
       # Table management
       resources :tables do
         # Column management
@@ -381,6 +390,13 @@ Rails.application.routes.draw do
           member do
             get :lookup_options
             get :lookup_search
+            # Choice/schema management endpoints
+            get :choices
+            post :rename_choice
+            delete :delete_choice
+            post :merge_choices
+            post :validate_change
+            post :apply_change
           end
         end
 

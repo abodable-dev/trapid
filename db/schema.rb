@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_18_200720) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_19_001311) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -668,6 +668,95 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_200720) do
     t.index ["status"], name: "index_maintenance_requests_on_status"
     t.index ["supplier_contact_id", "status"], name: "index_maintenance_requests_on_supplier_contact_id_and_status"
     t.index ["supplier_contact_id"], name: "index_maintenance_requests_on_supplier_contact_id"
+  end
+
+  create_table "meeting_agenda_items", force: :cascade do |t|
+    t.bigint "meeting_id", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.integer "sequence_order", null: false
+    t.integer "duration_minutes"
+    t.bigint "presenter_id"
+    t.boolean "completed", default: false
+    t.text "notes"
+    t.bigint "created_task_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["completed"], name: "index_meeting_agenda_items_on_completed"
+    t.index ["created_task_id"], name: "index_meeting_agenda_items_on_created_task_id"
+    t.index ["meeting_id", "sequence_order"], name: "index_meeting_agenda_items_on_meeting_id_and_sequence_order"
+    t.index ["meeting_id"], name: "index_meeting_agenda_items_on_meeting_id"
+    t.index ["presenter_id"], name: "index_meeting_agenda_items_on_presenter_id"
+  end
+
+  create_table "meeting_participants", force: :cascade do |t|
+    t.bigint "meeting_id", null: false
+    t.bigint "user_id"
+    t.bigint "contact_id"
+    t.string "response_status", default: "pending"
+    t.boolean "is_organizer", default: false
+    t.boolean "is_required", default: true
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_meeting_participants_on_contact_id"
+    t.index ["meeting_id", "contact_id"], name: "index_meeting_participants_on_meeting_id_and_contact_id", unique: true, where: "(contact_id IS NOT NULL)"
+    t.index ["meeting_id", "user_id"], name: "index_meeting_participants_on_meeting_id_and_user_id", unique: true, where: "(user_id IS NOT NULL)"
+    t.index ["meeting_id"], name: "index_meeting_participants_on_meeting_id"
+    t.index ["response_status"], name: "index_meeting_participants_on_response_status"
+    t.index ["user_id"], name: "index_meeting_participants_on_user_id"
+    t.check_constraint "user_id IS NOT NULL AND contact_id IS NULL OR user_id IS NULL AND contact_id IS NOT NULL", name: "meeting_participants_must_have_user_or_contact"
+  end
+
+  create_table "meeting_types", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.string "category"
+    t.string "icon"
+    t.string "color"
+    t.integer "default_duration_minutes", default: 60
+    t.text "required_participant_types"
+    t.text "optional_participant_types"
+    t.integer "minimum_participants"
+    t.integer "maximum_participants"
+    t.text "default_agenda_items"
+    t.text "required_fields"
+    t.text "optional_fields"
+    t.text "custom_fields"
+    t.text "required_documents"
+    t.text "notification_settings"
+    t.boolean "is_active", default: true
+    t.boolean "is_system_default", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_meeting_types_on_category"
+    t.index ["is_active"], name: "index_meeting_types_on_is_active"
+    t.index ["name"], name: "index_meeting_types_on_name", unique: true
+  end
+
+  create_table "meetings", force: :cascade do |t|
+    t.string "title", null: false
+    t.text "description"
+    t.datetime "start_time", null: false
+    t.datetime "end_time", null: false
+    t.string "location"
+    t.string "meeting_type", null: false
+    t.string "status", default: "scheduled", null: false
+    t.bigint "construction_id", null: false
+    t.bigint "created_by_id", null: false
+    t.text "notes"
+    t.string "video_url"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "meeting_type_id", null: false
+    t.index ["construction_id", "start_time"], name: "index_meetings_on_construction_id_and_start_time"
+    t.index ["construction_id"], name: "index_meetings_on_construction_id"
+    t.index ["created_by_id"], name: "index_meetings_on_created_by_id"
+    t.index ["meeting_type"], name: "index_meetings_on_meeting_type"
+    t.index ["meeting_type_id"], name: "index_meetings_on_meeting_type_id"
+    t.index ["start_time"], name: "index_meetings_on_start_time"
+    t.index ["status"], name: "index_meetings_on_status"
   end
 
   create_table "one_drive_credentials", force: :cascade do |t|
@@ -1437,6 +1526,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_200720) do
     t.index ["supplier_code"], name: "index_suppliers_on_supplier_code", unique: true
   end
 
+  create_table "table_protections", force: :cascade do |t|
+    t.string "table_name", null: false
+    t.boolean "is_protected", default: true, null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["table_name"], name: "index_table_protections_on_table_name", unique: true
+  end
+
   create_table "tables", force: :cascade do |t|
     t.string "name", null: false
     t.string "singular_name"
@@ -1552,6 +1650,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_200720) do
     t.index ["section_number"], name: "index_trinity_on_section_number"
     t.index ["severity"], name: "index_trinity_on_severity"
     t.index ["status"], name: "index_trinity_on_status"
+  end
+
+  create_table "unreal_variables", force: :cascade do |t|
+    t.string "variable_name", null: false
+    t.decimal "claude_value", precision: 10, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "variable_rule"
+    t.boolean "is_active", default: true
+    t.index ["variable_name"], name: "index_unreal_variables_on_variable_name", unique: true
   end
 
   create_table "user_import_1761885699_f0f78b8e7fc2f1fc_78992af1", force: :cascade do |t|
@@ -1829,6 +1937,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_200720) do
   add_foreign_key "maintenance_requests", "contacts", column: "supplier_contact_id"
   add_foreign_key "maintenance_requests", "purchase_orders"
   add_foreign_key "maintenance_requests", "users", column: "reported_by_user_id"
+  add_foreign_key "meeting_agenda_items", "meetings"
+  add_foreign_key "meeting_agenda_items", "project_tasks", column: "created_task_id"
+  add_foreign_key "meeting_agenda_items", "users", column: "presenter_id"
+  add_foreign_key "meeting_participants", "contacts"
+  add_foreign_key "meeting_participants", "meetings"
+  add_foreign_key "meeting_participants", "users"
+  add_foreign_key "meetings", "constructions"
+  add_foreign_key "meetings", "meeting_types"
+  add_foreign_key "meetings", "users", column: "created_by_id"
   add_foreign_key "one_drive_credentials", "constructions"
   add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
   add_foreign_key "outlook_credentials", "users"
