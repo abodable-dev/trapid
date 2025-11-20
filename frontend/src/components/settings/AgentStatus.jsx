@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { api } from '../../api';
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -99,9 +100,7 @@ export default function AgentStatus() {
     try {
       setLoading(true);
       // RULE #1.13 - Single Source of Truth: Fetch all agent data from API
-      const response = await fetch('/api/v1/agents');
-      if (!response.ok) throw new Error('Failed to fetch agent status');
-      const data = await response.json();
+      const data = await api.get('/api/v1/agents');
       setAgentData(data);
     } catch (err) {
       setError(err.message);
