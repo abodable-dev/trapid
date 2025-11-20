@@ -16,7 +16,10 @@ import {
   BookOpenIcon,
   SparklesIcon,
   ChartBarIcon,
-  KeyIcon
+  KeyIcon,
+  ExclamationTriangleIcon,
+  AcademicCapIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../api'
 
@@ -223,12 +226,13 @@ export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Map tab names to indices - REORGANIZED: 14 tabs (operational moved to Company)
+  // Map tab names to indices - REORGANIZED: 15 tabs (operational moved to Company)
   const tabs = [
     'company',
     'security',
     'schedule-master',
     'meeting-types',
+    'whs',
     'documentation',
     'supervisor-checklist',
     'gold-standard',
@@ -404,6 +408,19 @@ export default function SettingsPage() {
                 }`
               }
             >
+              <ShieldCheckIcon className="h-5 w-5" />
+              WHS
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
               <DocumentTextIcon className="h-5 w-5" />
               Documentation
             </Tab>
@@ -556,70 +573,157 @@ export default function SettingsPage() {
             </Suspense>
           </TabPanel>
 
-          {/* 5. Documentation Categories Tab */}
+          {/* 5. WHS Tab */}
+          <TabPanel>
+            <div className="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10">
+              <div>
+                <h2 className="text-base font-semibold leading-7 text-gray-900 dark:text-white">
+                  Workplace Health & Safety
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-400">
+                  Configure WHS templates, settings, and compliance requirements for Queensland construction projects.
+                </p>
+
+                <dl className="mt-6 space-y-6 divide-y divide-gray-100 dark:divide-gray-700 border-t border-gray-200 dark:border-gray-700 text-sm leading-6">
+                  <div className="pt-6">
+                    <dt className="font-semibold text-gray-900 dark:text-white mb-3">WHS Modules</dt>
+                    <dd className="space-y-2">
+                      <Link
+                        to="/whs/swms"
+                        className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                      >
+                        <DocumentTextIcon className="h-5 w-5" />
+                        SWMS Management
+                      </Link>
+                      <Link
+                        to="/whs/inspections"
+                        className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                      >
+                        <ClipboardDocumentCheckIcon className="h-5 w-5" />
+                        Site Inspections & Templates
+                      </Link>
+                      <Link
+                        to="/whs/incidents"
+                        className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                      >
+                        <ExclamationTriangleIcon className="h-5 w-5" />
+                        Incident Reporting
+                      </Link>
+                      <Link
+                        to="/whs/inductions"
+                        className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                      >
+                        <AcademicCapIcon className="h-5 w-5" />
+                        Worker Inductions & Templates
+                      </Link>
+                      <Link
+                        to="/whs/action-items"
+                        className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                      >
+                        <CheckCircleIcon className="h-5 w-5" />
+                        Action Items
+                      </Link>
+                    </dd>
+                  </div>
+
+                  <div className="pt-6">
+                    <dt className="font-semibold text-gray-900 dark:text-white mb-3">WPHS Appointee</dt>
+                    <dd className="text-gray-600 dark:text-gray-400">
+                      <p className="mb-2">
+                        The Workplace Health & Safety Appointee is responsible for approving SWMS,
+                        investigating incidents, and managing compliance.
+                      </p>
+                      <p className="text-sm">
+                        Configure WPHS Appointee permissions in the{' '}
+                        <button
+                          onClick={() => handleTabChange(tabs.indexOf('permissions'))}
+                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 underline"
+                        >
+                          Permissions
+                        </button>
+                        {' '}tab.
+                      </p>
+                    </dd>
+                  </div>
+
+                  <div className="pt-6">
+                    <dt className="font-semibold text-gray-900 dark:text-white mb-3">WorkCover Queensland</dt>
+                    <dd className="text-gray-600 dark:text-gray-400">
+                      <p>
+                        Incidents marked as requiring WorkCover notification will track compliance
+                        with Queensland workplace safety reporting requirements.
+                      </p>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </TabPanel>
+
+          {/* 6. Documentation Categories Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <DocumentationCategoriesTab />
             </Suspense>
           </TabPanel>
 
-          {/* 6. Supervisor Checklist Tab */}
+          {/* 7. Supervisor Checklist Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <SupervisorChecklistTab />
             </Suspense>
           </TabPanel>
 
-          {/* 7. Gold Standard View Tab */}
+          {/* 8. Gold Standard View Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <GoldStandardTabs />
             </Suspense>
           </TabPanel>
 
-          {/* 8. Developer Tools Tab with nested sub-tabs */}
+          {/* 9. Developer Tools Tab with nested sub-tabs */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <DeveloperToolsTab />
             </Suspense>
           </TabPanel>
 
-          {/* 9. Claude Shortcuts Tab */}
+          {/* 10. Claude Shortcuts Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <AgentShortcutsTab />
             </Suspense>
           </TabPanel>
 
-          {/* 10. User Manual Tab */}
+          {/* 11. User Manual Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <UserManualTab />
             </Suspense>
           </TabPanel>
 
-          {/* 11. Inspiring Quotes Tab */}
+          {/* 12. Inspiring Quotes Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <InspiringQuotesTab />
             </Suspense>
           </TabPanel>
 
-          {/* 12. Performance Tab */}
+          {/* 13. Performance Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <SystemPerformancePage />
             </Suspense>
           </TabPanel>
 
-          {/* 13. Permissions Tab */}
+          {/* 14. Permissions Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <PermissionsPage />
             </Suspense>
           </TabPanel>
 
-          {/* 14. Deployment Tab */}
+          {/* 15. Deployment Tab */}
           <TabPanel>
             <div className="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-3">
               <div>
