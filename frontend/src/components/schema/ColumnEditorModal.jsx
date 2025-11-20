@@ -17,7 +17,7 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
   const [editedColumn, setEditedColumn] = useState({
     name: column?.name || '',
     column_name: column?.column_name || '',
-    data_type: column?.data_type || column?.column_type || 'string'
+    data_type: column?.column_type || column?.data_type || 'single_line_text'
   });
   const [saving, setSaving] = useState(false);
 
@@ -70,7 +70,7 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
       setEditedColumn({
         name: column.name || '',
         column_name: column.column_name || '',
-        data_type: column.data_type || column.column_type || 'string'
+        data_type: column.column_type || column.data_type || 'single_line_text'
       });
     }
   }, [column]);

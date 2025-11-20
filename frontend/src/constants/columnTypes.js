@@ -13,6 +13,7 @@ import {
   CalculatorIcon,
   RectangleStackIcon,
   ArrowsRightLeftIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline'
 
 /**
@@ -193,6 +194,17 @@ export const COLUMN_TYPES = [
     example: '/uploads/doc.pdf, https://example.com/file.png',
     usedFor: 'File references, document links, image paths'
   },
+  {
+    value: 'action_buttons',
+    label: 'Action Buttons',
+    icon: WrenchScrewdriverIcon,
+    category: 'Special',
+    description: 'Interactive buttons for row-level actions',
+    sqlType: 'VARCHAR(255)',
+    validationRules: 'Optional field, stores action configuration as JSON string',
+    example: '{"buttons": [{"label": "View", "action": "view"}, {"label": "Edit", "action": "edit"}]}',
+    usedFor: 'Row-level actions like View, Edit, Download, Approve, Process'
+  },
 
   // Selection & Boolean
   {
@@ -337,6 +349,7 @@ export const getColumnTypeEmoji = (columnType) => {
     'gps_coordinates': '📍',
     'color_picker': '🎨',
     'file_upload': '📎',
+    'action_buttons': '⚡',
     'boolean': '☑️',
     'choice': '📋',
     'lookup': '🔗',

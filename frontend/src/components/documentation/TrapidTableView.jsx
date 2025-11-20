@@ -1225,6 +1225,44 @@ export default function TrapidTableView({
           </a>
         )
 
+      case 'action_buttons':
+        // Action buttons column - demonstrates interactive row-level actions
+        // This is a REFERENCE IMPLEMENTATION for the Gold Standard table
+        return (
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                console.log('👁️ View action clicked for entry:', entry.id)
+              }}
+              className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded transition-colors"
+              title="View"
+            >
+              <EyeIcon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                console.log('✏️ Edit action clicked for entry:', entry.id)
+              }}
+              className="p-1.5 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 rounded transition-colors"
+              title="Edit"
+            >
+              <PencilIcon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                console.log('🗑️ Delete action clicked for entry:', entry.id)
+              }}
+              className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded transition-colors"
+              title="Delete"
+            >
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          </div>
+        )
+
       case 'price':
         // Currency column - right-aligned with AUD formatting
         if (editingRowId === entry.id) {
@@ -2494,8 +2532,8 @@ export default function TrapidTableView({
                     {/* COLUMN 4: Saved Views Section */}
                     <div className="border-l border-gray-200 dark:border-gray-700 pl-4 h-full overflow-hidden flex flex-col">
                     {useKanbanSavedViews ? (
-                      /* NEW: Kanban-style drag-and-drop saved views */
                       <div className="flex-1 min-h-0">
+                        {/* NEW: Kanban-style drag-and-drop saved views */}
                         <SavedViewsKanban
                           savedFilters={savedFilters}
                           setSavedFilters={setSavedFilters}
@@ -2513,8 +2551,8 @@ export default function TrapidTableView({
                         />
                       </div>
                     ) : (
-                      /* OLD: Classic list-style saved views */
                       <div className="space-y-3 overflow-y-auto">
+                      {/* OLD: Classic list-style saved views */}
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                           Saved Views
@@ -2801,10 +2839,9 @@ export default function TrapidTableView({
                       </div>
                     )}
                     </div>
-                    {/* END OLD saved views */}
                     )}
-                    </div>
                     {/* END COLUMN 4 */}
+                    </div>
                   </div>
                   {/* END MAIN GRID */}
                 </div>
