@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import RichTextEditor from '../common/RichTextEditor'
 import ColumnEditorModal from '../schema/ColumnEditorModal'
+import SavedViewsKanban from './SavedViewsKanban'
 import {
   MagnifyingGlassIcon,
   XMarkIcon,
@@ -185,6 +186,13 @@ export default function TrapidTableView({
     }
   })
   const [filterName, setFilterName] = useState('') // Name for saving current filter combo
+
+  // Feature flag: Use kanban-style saved views (default: true)
+  const [useKanbanSavedViews, setUseKanbanSavedViews] = useState(() => {
+    const saved = localStorage.getItem('trapidTableUseKanbanSavedViews')
+    return saved !== null ? JSON.parse(saved) : true
+  })
+
   const [selectedCascadeColumn, setSelectedCascadeColumn] = useState('') // Currently selected column in cascade filter
   const [cascadeInputValue, setCascadeInputValue] = useState('') // Input value for text-based filters
   const [cascadeOperator, setCascadeOperator] = useState('=') // Operator for numeric comparisons (=, >, <, >=, <=, !=)
@@ -2484,17 +2492,39 @@ export default function TrapidTableView({
                     </div>
 
                     {/* COLUMN 4: Saved Views Section */}
-                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 space-y-3 h-full overflow-y-auto">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Saved Views
-                      </span>
-                      {savedFilters.length > 0 && (
-                        <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] bg-green-600 text-white rounded-full text-[10px] font-bold">
-                          {savedFilters.length}
+                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 h-full overflow-hidden flex flex-col">
+                    {useKanbanSavedViews ? (
+                      /* NEW: Kanban-style drag-and-drop saved views */
+                      <div className="flex-1 min-h-0">
+                        <SavedViewsKanban
+                          savedFilters={savedFilters}
+                          setSavedFilters={setSavedFilters}
+                          activeViewId={activeViewId}
+                          setActiveViewId={setActiveViewId}
+                          setCascadeFilters={setCascadeFilters}
+                          setVisibleColumns={setVisibleColumns}
+                          setShowCascadeDropdown={setShowCascadeDropdown}
+                          filterName={filterName}
+                          setFilterName={setFilterName}
+                          cascadeFilters={cascadeFilters}
+                          visibleColumns={visibleColumns}
+                          editingViewId={editingViewId}
+                          setEditingViewId={setEditingViewId}
+                        />
+                      </div>
+                    ) : (
+                      /* OLD: Classic list-style saved views */
+                      <div className="space-y-3 overflow-y-auto">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          Saved Views
                         </span>
-                      )}
-                    </div>
+                        {savedFilters.length > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] bg-green-600 text-white rounded-full text-[10px] font-bold">
+                            {savedFilters.length}
+                          </span>
+                        )}
+                      </div>
 
                     {/* Update existing view button - only show if active view has been modified */}
                     {(() => {
@@ -2771,7 +2801,10 @@ export default function TrapidTableView({
                       </div>
                     )}
                     </div>
-                    {/* END RIGHT SIDE */}
+                    {/* END OLD saved views */}
+                    )}
+                    </div>
+                    {/* END COLUMN 4 */}
                   </div>
                   {/* END MAIN GRID */}
                 </div>
