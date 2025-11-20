@@ -58,6 +58,14 @@ const SamPage = lazy(() => import('./pages/SamPage')) // Sam page
 
 // Corporate pages
 const CorporateDashboardPage = lazy(() => import('./pages/CorporateDashboardPage'))
+
+// WHS (Workplace Health & Safety) pages
+const WhsDashboardPage = lazy(() => import('./pages/WhsDashboardPage'))
+const WhsSwmsPage = lazy(() => import('./pages/WhsSwmsPage'))
+const WhsInspectionsPage = lazy(() => import('./pages/WhsInspectionsPage'))
+const WhsIncidentsPage = lazy(() => import('./pages/WhsIncidentsPage'))
+const WhsInductionsPage = lazy(() => import('./pages/WhsInductionsPage'))
+const WhsActionItemsPage = lazy(() => import('./pages/WhsActionItemsPage'))
 const CompaniesPage = lazy(() => import('./pages/CompaniesPage'))
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
 const DirectorsRegistryPage = lazy(() => import('./pages/DirectorsRegistryPage'))
@@ -127,6 +135,15 @@ function App() {
         <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
         <Route path="/meetings" element={<AppLayout><MeetingsPage /></AppLayout>} />
         <Route path="/meeting-types" element={<AppLayout><MeetingTypesPage /></AppLayout>} />
+
+        {/* WHS (Workplace Health & Safety) Routes */}
+        <Route path="/whs" element={<AppLayout><WhsDashboardPage /></AppLayout>} />
+        <Route path="/whs/dashboard" element={<Navigate to="/whs" replace />} />
+        <Route path="/whs/swms" element={<AppLayout><WhsSwmsPage /></AppLayout>} />
+        <Route path="/whs/inspections" element={<AppLayout><WhsInspectionsPage /></AppLayout>} />
+        <Route path="/whs/incidents" element={<AppLayout><WhsIncidentsPage /></AppLayout>} />
+        <Route path="/whs/inductions" element={<AppLayout><WhsInductionsPage /></AppLayout>} />
+        <Route path="/whs/action-items" element={<AppLayout><WhsActionItemsPage /></AppLayout>} />
         <Route path="/sam" element={<AppLayout><SamPage /></AppLayout>} />
         <Route path="/price-books" element={<AppLayout><PriceBooksPageWithTabs /></AppLayout>} />
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
