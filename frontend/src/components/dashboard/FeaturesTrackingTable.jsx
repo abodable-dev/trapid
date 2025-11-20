@@ -165,7 +165,8 @@ export default function FeaturesTrackingTable() {
       'DataBuild',
       'Simpro',
       'SmarterBuild',
-      'ClickHome'
+      'ClickHome',
+      'ClickUp'
     ]
 
     const rows = features.map(feature => [
@@ -188,7 +189,8 @@ export default function FeaturesTrackingTable() {
       feature.databuild_has ? 'Yes' : 'No',
       feature.simpro_has ? 'Yes' : 'No',
       feature.smarterbuild_has ? 'Yes' : 'No',
-      feature.clickhome_has ? 'Yes' : 'No'
+      feature.clickhome_has ? 'Yes' : 'No',
+      feature.clickup_has ? 'Yes' : 'No'
     ])
 
     // Create CSV string with proper escaping
@@ -291,7 +293,8 @@ export default function FeaturesTrackingTable() {
           databuild_has: entry.databuild_has,
           simpro_has: entry.simpro_has,
           smarterbuild_has: entry.smarterbuild_has,
-          clickhome_has: entry.clickhome_has
+          clickhome_has: entry.clickhome_has,
+          clickup_has: entry.clickup_has
         }
       })
 
@@ -426,7 +429,8 @@ export default function FeaturesTrackingTable() {
     databuild: totalFeatures > 0 ? Math.round((filteredFeatures.filter(f => f.databuild_has).length / totalFeatures) * 100) : 0,
     simpro: totalFeatures > 0 ? Math.round((filteredFeatures.filter(f => f.simpro_has).length / totalFeatures) * 100) : 0,
     smarterbuild: totalFeatures > 0 ? Math.round((filteredFeatures.filter(f => f.smarterbuild_has).length / totalFeatures) * 100) : 0,
-    clickhome: totalFeatures > 0 ? Math.round((filteredFeatures.filter(f => f.clickhome_has).length / totalFeatures) * 100) : 0
+    clickhome: totalFeatures > 0 ? Math.round((filteredFeatures.filter(f => f.clickhome_has).length / totalFeatures) * 100) : 0,
+    clickup: totalFeatures > 0 ? Math.round((filteredFeatures.filter(f => f.clickup_has).length / totalFeatures) * 100) : 0
   }
 
   // Create sorted array of competitors by coverage percentage (highest first)
@@ -439,7 +443,8 @@ export default function FeaturesTrackingTable() {
     { key: 'databuild', name: 'DataBuild', field: 'databuild_has', coverage: competitorCoverage.databuild, isTrapid: false },
     { key: 'simpro', name: 'Simpro', field: 'simpro_has', coverage: competitorCoverage.simpro, isTrapid: false },
     { key: 'smarterbuild', name: 'SmarterBuild', field: 'smarterbuild_has', coverage: competitorCoverage.smarterbuild, isTrapid: false },
-    { key: 'clickhome', name: 'ClickHome', field: 'clickhome_has', coverage: competitorCoverage.clickhome, isTrapid: false }
+    { key: 'clickhome', name: 'ClickHome', field: 'clickhome_has', coverage: competitorCoverage.clickhome, isTrapid: false },
+    { key: 'clickup', name: 'ClickUp', field: 'clickup_has', coverage: competitorCoverage.clickup, isTrapid: false }
   ].sort((a, b) => b.coverage - a.coverage)
 
   return (
