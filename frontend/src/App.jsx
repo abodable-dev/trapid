@@ -73,6 +73,10 @@ const AssetsPage = lazy(() => import('./pages/AssetsPage'))
 const AssetDetailPage = lazy(() => import('./pages/AssetDetailPage'))
 const XeroDashboardPage = lazy(() => import('./pages/XeroDashboardPage'))
 
+// Financial pages
+const FinancialPage = lazy(() => import('./pages/FinancialPage'))
+const FinancialReportsPage = lazy(() => import('./pages/FinancialReportsPage'))
+
 // Designer pages (admin tools)
 const DesignerHome = lazy(() => import('./pages/designer/DesignerHome'))
 const TableSettings = lazy(() => import('./pages/designer/TableSettings'))
@@ -144,6 +148,11 @@ function App() {
         <Route path="/whs/incidents" element={<AppLayout><WhsIncidentsPage /></AppLayout>} />
         <Route path="/whs/inductions" element={<AppLayout><WhsInductionsPage /></AppLayout>} />
         <Route path="/whs/action-items" element={<AppLayout><WhsActionItemsPage /></AppLayout>} />
+
+        {/* Financial Routes */}
+        <Route path="/financial" element={<AppLayout><FinancialPage /></AppLayout>} />
+        <Route path="/financial/transactions" element={<Navigate to="/financial" replace />} />
+        <Route path="/financial/reports" element={<AppLayout><FinancialReportsPage /></AppLayout>} />
         <Route path="/sam" element={<AppLayout><SamPage /></AppLayout>} />
         <Route path="/price-books" element={<AppLayout><PriceBooksPageWithTabs /></AppLayout>} />
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />

@@ -54,6 +54,7 @@ const navigation = [
   { name: 'Sam', href: '/sam', icon: UserIcon },
   { name: 'Meetings', href: '/meetings', icon: CalendarIcon },
   { name: 'WHS', href: '/whs', icon: ShieldCheckIcon },
+  { name: 'Financial', href: '/financial', icon: BanknotesIcon },
   { name: 'Xest', href: '/xest', icon: BeakerIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
   { name: 'Contacts', href: '/contacts', icon: UsersIcon },

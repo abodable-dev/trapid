@@ -19,7 +19,8 @@ import {
   KeyIcon,
   ExclamationTriangleIcon,
   AcademicCapIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  BanknotesIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../api'
 
@@ -226,13 +227,14 @@ export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Map tab names to indices - REORGANIZED: 15 tabs (operational moved to Company)
+  // Map tab names to indices - REORGANIZED: 16 tabs (added financial)
   const tabs = [
     'company',
     'security',
     'schedule-master',
     'meeting-types',
     'whs',
+    'financial',
     'documentation',
     'supervisor-checklist',
     'gold-standard',
@@ -410,6 +412,19 @@ export default function SettingsPage() {
             >
               <ShieldCheckIcon className="h-5 w-5" />
               WHS
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              <BanknotesIcon className="h-5 w-5" />
+              Financial
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -660,7 +675,94 @@ export default function SettingsPage() {
             </div>
           </TabPanel>
 
-          {/* 6. Documentation Categories Tab */}
+          {/* 6. Financial Tab */}
+          <TabPanel>
+            <div className="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10">
+              <div>
+                <h2 className="text-base font-semibold leading-7 text-gray-900 dark:text-white">
+                  Financial Tracking & Reporting
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-400">
+                  Track income and expenses, generate financial reports, and export data for your accountant.
+                  Built on double-entry bookkeeping (Keepr gem) for accuracy.
+                </p>
+
+                <dl className="mt-6 space-y-6 divide-y divide-gray-100 dark:divide-gray-700 border-t border-gray-200 dark:border-gray-700 text-sm leading-6">
+                  <div className="pt-6">
+                    <dt className="font-semibold text-gray-900 dark:text-white mb-3">Financial Modules</dt>
+                    <dd className="space-y-2">
+                      <Link
+                        to="/financial"
+                        className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                      >
+                        <BanknotesIcon className="h-5 w-5" />
+                        Transactions (Income & Expenses)
+                      </Link>
+                      <Link
+                        to="/financial/reports"
+                        className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                      >
+                        <ChartBarIcon className="h-5 w-5" />
+                        Financial Reports (Balance Sheet, P&L, Job Profitability)
+                      </Link>
+                    </dd>
+                  </div>
+
+                  <div className="pt-6">
+                    <dt className="font-semibold text-gray-900 dark:text-white mb-3">Chart of Accounts Setup</dt>
+                    <dd className="text-gray-600 dark:text-gray-400">
+                      <p className="mb-3">
+                        The Chart of Accounts provides the foundation for double-entry bookkeeping.
+                        You must set up your accounts before recording transactions.
+                      </p>
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
+                        <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Setup Required</h4>
+                        <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
+                          Run this command in your backend terminal to create default accounts:
+                        </p>
+                        <code className="block bg-gray-900 text-green-400 p-3 rounded font-mono text-xs">
+                          cd backend && bin/rails trapid:financial:setup_simple
+                        </code>
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
+                          This creates 20 essential accounts (Bank, Revenue, Expenses, etc.)
+                        </p>
+                      </div>
+                    </dd>
+                  </div>
+
+                  <div className="pt-6">
+                    <dt className="font-semibold text-gray-900 dark:text-white mb-3">Documentation</dt>
+                    <dd className="text-gray-600 dark:text-gray-400 space-y-2">
+                      <p>
+                        See <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">FINANCIAL_TRACKING_IMPLEMENTATION.md</code> for backend details
+                      </p>
+                      <p>
+                        See <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">FRONTEND_FINANCIAL_IMPLEMENTATION.md</code> for frontend details
+                      </p>
+                      <p>
+                        See <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">TESTING_GUIDE.md</code> for testing instructions
+                      </p>
+                    </dd>
+                  </div>
+
+                  <div className="pt-6">
+                    <dt className="font-semibold text-gray-900 dark:text-white mb-3">Important Notes</dt>
+                    <dd className="text-gray-600 dark:text-gray-400">
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>This is for <strong>project financial tracking</strong>, not compliance-grade accounting</li>
+                        <li>Always export to CSV for your accountant (built-in export functionality)</li>
+                        <li>Transactions auto-post to Keepr journals for proper double-entry bookkeeping</li>
+                        <li>All amounts are in AUD (Australian Dollars)</li>
+                        <li>Receipt uploads supported (max 5MB)</li>
+                      </ul>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </TabPanel>
+
+          {/* 7. Documentation Categories Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <DocumentationCategoriesTab />
