@@ -216,6 +216,20 @@ export default function FeaturesTrackingTable() {
     URL.revokeObjectURL(url)
   }
 
+  // Filter features based on search query (MUST come before featuresByChapter)
+  const filteredFeatures = searchQuery.trim() === ''
+    ? features
+    : features.filter(feature => {
+        const query = searchQuery.toLowerCase()
+        return (
+          feature.feature_name?.toLowerCase().includes(query) ||
+          feature.chapter?.toLowerCase().includes(query) ||
+          feature.detail_point_1?.toLowerCase().includes(query) ||
+          feature.detail_point_2?.toLowerCase().includes(query) ||
+          feature.detail_point_3?.toLowerCase().includes(query)
+        )
+      })
+
   // Group features by chapter (using filtered features for search)
   const featuresByChapter = filteredFeatures.reduce((acc, feature) => {
     if (!acc[feature.chapter]) {
