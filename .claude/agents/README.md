@@ -75,6 +75,39 @@ This directory contains specialized agent definitions for the Trapid project.
 - Verifies empty/loading states, mobile responsiveness
 - Dark mode compliance for tables
 
+### 10. trapid-table-architect
+**Focus:** TrapidTableView Component Specialist
+- Creates new table implementations using TrapidTableView
+- Reviews existing tables for standards compliance
+- Migrates legacy tables to TrapidTableView
+- Optimizes table performance (N+1 queries, pagination)
+- Ensures accessibility and mobile responsiveness
+- Enforces the "One Table Standard"
+
+### 11. architecture-guardian
+**Focus:** Clean Architecture & Code Quality
+- Reviews code for architectural consistency
+- Ensures SOLID principles and clean architecture
+- Validates component reusability
+- Checks backward compatibility
+- Identifies unnecessary fallbacks
+- Maintains codebase scalability
+
+### 12. code-guardian
+**Focus:** Automated Pattern Violation Detection
+- Scans code for known bug patterns
+- Prevents repeat bugs before they reach production
+- Posts PR review comments with fixes
+- References Pattern Library and Detection Rules
+- Tracks violation metrics
+- Consolidates backend + frontend code review
+
+### 13. invoke-helper
+**Focus:** Agent Invocation Guide
+- Helper agent for invoking other agents
+- Provides agent shortcuts and invocation patterns
+- Manages run history tracking
+
 ## How to Use
 
 ### Quick Commands
@@ -111,25 +144,56 @@ This directory contains specialized agent definitions for the Trapid project.
 "allagent"
 ```
 
-This will run all 9 agents in parallel with health check tasks.
+This will run all 13 agents in parallel with health check tasks.
+
+## Database Integration
+
+All agent definitions are automatically synced to the `agent_definitions` database table.
+
+### Viewing Agents in UI
+
+Navigate to: **http://localhost:5173/admin/system?tab=developer-tools** → "Agent Status" sub-tab
+
+The UI displays:
+- Agent name and icon
+- Description and focus area
+- Last run timestamp
+- Total runs and success rate
+- Current status (success/failure)
+- Run button to execute agent
+
+### Auto-Sync Mechanisms
+
+Agents are automatically synced to the database in two ways:
+
+**1. Git Post-Commit Hook (Automatic)**
+- Whenever you commit changes to `.claude/agents/*.md` files
+- The hook detects changed agent files
+- Automatically runs `bin/rails trapid:agents:sync`
+- Agents appear in UI immediately after commit
+
+**2. Manual Sync Command**
+```bash
+# From project root
+npm run sync-agents
+
+# Or directly
+cd backend && bin/rails trapid:agents:sync
+```
 
 ## Run History
 
-Agent run history is tracked in `run-history.json`:
+Agent run history is tracked in the **database** (`agent_definitions` table):
 
-```json
-{
-  "agent-name": {
-    "total_runs": 10,
-    "successful_runs": 9,
-    "failed_runs": 1,
-    "last_run": "2025-11-16T10:30:00Z",
-    "last_status": "success",
-    "last_message": "Completed successfully",
-    "runs": [...]
-  }
-}
-```
+- `total_runs` - Total number of times agent was executed
+- `successful_runs` - Number of successful executions
+- `failed_runs` - Number of failed executions
+- `last_run_at` - Timestamp of last execution
+- `last_status` - Last run status (success/failure)
+- `last_message` - Last run message/summary
+- `last_run_details` - JSON details of last run
+
+View run history in the UI at: **http://localhost:5173/admin/system?tab=developer-tools** → "Agent Status"
 
 ## Agent Definitions
 
@@ -149,15 +213,59 @@ To modify an agent:
 
 ## Adding New Agents
 
-1. Create `new-agent.md` in this directory
-2. Follow the template from existing agents
-3. Add entry to `run-history.json`
-4. Document in this README
+1. **Create agent file** in `.claude/agents/your-agent-name.md`:
+
+```markdown
+---
+name: your-agent-name
+description: Brief description of what the agent does
+model: sonnet  # or opus, haiku
+type: development  # or diagnostic, deployment, planning
+---
+
+Your agent's full instructions and capabilities here...
+```
+
+2. **Sync to database**:
+```bash
+npm run sync-agents
+```
+
+3. **Verify in UI**:
+- Navigate to http://localhost:5173/admin/system?tab=developer-tools
+- Check "Agent Status" tab
+- Your new agent should appear in the list
+
+4. **Update this README** with agent description
+
+**Important:** Keep YAML frontmatter simple. Avoid multi-line values with special characters. Put detailed instructions in the markdown body.
 
 ## Notes
 
 - Agents are stateless (each run is independent)
-- Run history persists across sessions
-- Agent definitions are version-controlled
+- Run history is stored in the database and persists across sessions
+- Agent definitions (markdown files) are version-controlled
+- Agent run statistics are tracked automatically in the database
 - Agents should fetch from Trinity API (`/api/v1/trinity`), never read markdown files
 - Trinity database is the source of truth for all documentation
+
+## Recording Agent Runs
+
+When an agent completes, record the run in the database:
+
+```ruby
+# Success
+agent = AgentDefinition.find_by(agent_id: 'your-agent-name')
+agent.record_success('Task completed successfully', { details: 'any metadata' })
+
+# Failure
+agent.record_failure('Error message', { error: 'details' })
+```
+
+This updates:
+- `total_runs` (incremented)
+- `successful_runs` or `failed_runs` (incremented)
+- `last_run_at` (current timestamp)
+- `last_status` ('success' or 'failure')
+- `last_message` (your message)
+- `last_run_details` (optional metadata)

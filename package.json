@@ -1,9 +1,10 @@
 {
+  "scripts": {
+    "sync-agents": "cd backend && bin/rails trapid:agents:sync",
+    "prepare": "husky"
+  },
   "dependencies": {
     "dompurify": "^3.3.0",
     "isomorphic-dompurify": "^2.31.0"
-  },
-  "scripts": {
-    "prepare": "husky"
   }
 }

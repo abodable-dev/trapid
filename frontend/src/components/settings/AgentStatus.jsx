@@ -18,18 +18,19 @@ export default function AgentStatus() {
   const [error, setError] = useState(null);
   const [runningAgents, setRunningAgents] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
+  const [selectedAgentDescription, setSelectedAgentDescription] = useState(null);
 
   // Table state - RULE #19 compliance
   const [globalSearch, setGlobalSearch] = useState('');
   const [columnFilters, setColumnFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [columnWidths, setColumnWidths] = useState({
-    agent: 300,
-    description: 400,
-    status: 150,
-    lastRun: 150,
+    agent: 250,
+    description: 500,
+    status: 140,
+    lastRun: 180,
     totalRuns: 120,
-    audit: 200,
+    successRate: 120,
     actions: 100
   });
   const [resizingColumn, setResizingColumn] = useState(null);
@@ -41,12 +42,12 @@ export default function AgentStatus() {
     status: true,
     lastRun: true,
     totalRuns: true,
-    audit: true,
+    successRate: true,
     actions: true
   });
   const [showColumnPicker, setShowColumnPicker] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [columnOrder, setColumnOrder] = useState(['agent', 'description', 'status', 'lastRun', 'totalRuns', 'audit', 'actions']);
+  const [columnOrder, setColumnOrder] = useState(['agent', 'description', 'status', 'lastRun', 'totalRuns', 'successRate', 'actions']);
   const [draggingColumn, setDraggingColumn] = useState(null);
 
   useEffect(() => {
@@ -119,12 +120,6 @@ export default function AgentStatus() {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const formatAuditInfo = (agentStats) => {
-    if (!agentStats.last_run) return 'Never run';
-    const date = formatDate(agentStats.last_run);
-    return `${date}\nby ${currentUser || 'System'}`;
   };
 
   // RULE #1.13 - Single Source of Truth: Data comes from API, not hardcoded
@@ -250,7 +245,7 @@ export default function AgentStatus() {
     { key: 'status', label: 'Status', sortable: true, searchable: false },
     { key: 'lastRun', label: 'Last Run', sortable: true, searchable: false },
     { key: 'totalRuns', label: 'Total Runs', sortable: true, searchable: false },
-    { key: 'audit', label: 'Audit Info', sortable: false, searchable: false },
+    { key: 'successRate', label: 'Success Rate', sortable: true, searchable: false },
     { key: 'actions', label: 'Actions', sortable: false, searchable: false }
   ];
 
@@ -278,9 +273,9 @@ export default function AgentStatus() {
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-10">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-6 px-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
           Claude Code Agents
         </h2>
@@ -290,7 +285,7 @@ export default function AgentStatus() {
       </div>
 
       {/* Table Toolbar - RULE #19.11A */}
-      <div className="mb-4 flex items-center justify-between gap-4" style={{ minHeight: '44px' }}>
+      <div className="mb-4 px-6 flex items-center justify-between gap-4" style={{ minHeight: '44px' }}>
         {/* LEFT SIDE: Global Search */}
         <div className="flex-1">
           <div className="relative">
@@ -368,8 +363,8 @@ export default function AgentStatus() {
       </div>
 
       {/* Table - RULE #19.2 Sticky Headers, #19.3 Inline Filters, #19.5B Resizable */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden flex-1 flex flex-col">
+        <div className="overflow-x-auto overflow-y-auto flex-1">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
               <tr>
@@ -512,8 +507,16 @@ export default function AgentStatus() {
                         );
                       } else if (key === 'description') {
                         return (
-                          <td key="description" className="px-6 py-4">
-                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <td
+                            key="description"
+                            className="px-6 py-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                            onDoubleClick={() => setSelectedAgentDescription({
+                              name: agent.name || agent.agent_id,
+                              description: agent.description
+                            })}
+                            title="Double-click to view full description"
+                          >
+                            <div className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-md">
                               {agent.description}
                             </div>
                           </td>
@@ -540,11 +543,11 @@ export default function AgentStatus() {
                             </div>
                           </td>
                         );
-                      } else if (key === 'audit') {
+                      } else if (key === 'successRate') {
                         return (
-                          <td key="audit" className="px-6 py-4">
-                            <div className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line">
-                              {formatAuditInfo(agent)}
+                          <td key="successRate" className="px-6 py-4">
+                            <div className="text-sm text-gray-900 dark:text-white">
+                              {agent.total_runs > 0 ? `${agent.success_rate}%` : 'N/A'}
                             </div>
                           </td>
                         );
@@ -579,10 +582,48 @@ export default function AgentStatus() {
           </table>
         </div>
       </div>
-      <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+      <div className="mt-3 px-6 text-sm text-gray-600 dark:text-gray-400">
         Showing {filteredAgents.length} of {agentsArray.length} agents
         {(globalSearch || Object.keys(columnFilters).length > 0) && ' (filtered)'}
       </div>
+
+      {/* Description Modal */}
+      {selectedAgentDescription && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setSelectedAgentDescription(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {selectedAgentDescription.name}
+              </h3>
+              <button
+                onClick={() => setSelectedAgentDescription(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+              {selectedAgentDescription.description}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setSelectedAgentDescription(null)}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

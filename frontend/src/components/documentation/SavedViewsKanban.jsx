@@ -1,20 +1,11 @@
-import { useState, useCallback, useEffect } from 'react'
-import ReactFlow, {
-  Background,
-  applyNodeChanges
-} from 'reactflow'
-import 'reactflow/dist/style.css'
-import SavedViewCard from './SavedViewCard'
-import { PlusIcon } from '@heroicons/react/24/outline'
-
-// Register custom node type
-const nodeTypes = {
-  savedViewCard: SavedViewCard
-}
+import { useState, useEffect } from 'react'
+import { StarIcon, PencilIcon, TrashIcon, FunnelIcon, EyeIcon } from '@heroicons/react/24/outline'
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 
 /**
- * SavedViewsKanban - Drag-and-drop kanban interface for saved views
- * Replaces up/down arrow buttons with natural drag-to-reorder
+ * SavedViewsKanban - Trello-style drag-and-drop list for saved views
+ * Cards fill width, stay in bounds, scroll naturally
+ * First card automatically becomes default
  */
 export default function SavedViewsKanban({
   savedFilters,
@@ -31,102 +22,26 @@ export default function SavedViewsKanban({
   editingViewId,
   setEditingViewId
 }) {
-  const [nodes, setNodes] = useState([])
-  const [isInitialized, setIsInitialized] = useState(false)
+  const [draggedIndex, setDraggedIndex] = useState(null)
+  const [dragOverIndex, setDragOverIndex] = useState(null)
 
-  // Initialize nodes from saved filters
+  // Auto-set first card as default when order changes
   useEffect(() => {
-    const CARD_HEIGHT = 180
-    const CARD_SPACING = 20
-    const START_Y = 60
-
-    const newNodes = savedFilters.map((view, index) => ({
-      id: `view-${view.id}`,
-      type: 'savedViewCard',
-      position: { x: 20, y: START_Y + index * (CARD_HEIGHT + CARD_SPACING) },
-      draggable: true,
-      data: {
-        view,
-        isActive: activeViewId === view.id,
-        onLoad: () => {
-          // Load this view
-          setCascadeFilters(view.filters.map(f => ({
-            id: Date.now() + Math.random(),
-            column: f.column,
-            value: f.value,
-            operator: f.operator || '=',
-            label: f.label
-          })))
-          if (view.visibleColumns) {
-            setVisibleColumns(view.visibleColumns)
-          }
-          setActiveViewId(view.id)
-          setShowCascadeDropdown(false)
-        },
-        onEdit: () => {
-          setEditingViewId(view.id)
-        },
-        onDelete: () => {
-          if (confirm(`Delete view "${view.name}"?`)) {
-            setSavedFilters(savedFilters.filter(v => v.id !== view.id))
-            if (activeViewId === view.id) {
-              setActiveViewId(null)
-            }
-          }
-        },
-        onToggleDefault: () => {
-          setSavedFilters(savedFilters.map(v => ({
-            ...v,
-            isDefault: v.id === view.id ? !v.isDefault : false
-          })))
-        }
+    if (savedFilters.length > 0) {
+      const firstView = savedFilters[0]
+      // Only update if the first view is not already default
+      if (!firstView.isDefault) {
+        setSavedFilters(savedFilters.map((v, idx) => ({
+          ...v,
+          isDefault: idx === 0
+        })))
       }
-    }))
+    }
+  }, [savedFilters.map(v => v.id).join(',')]) // Only trigger when order changes
 
-    setNodes(newNodes)
-    setIsInitialized(true)
-  }, [savedFilters, activeViewId])
-
-  // Handle node position changes (drag)
-  const onNodesChange = useCallback((changes) => {
-    setNodes((nds) => {
-      const updatedNodes = applyNodeChanges(changes, nds)
-
-      // Check for drag end
-      const dragEndChanges = changes.filter(c => c.type === 'position' && c.dragging === false)
-      if (dragEndChanges.length > 0) {
-        // Sort nodes by Y position to determine new order
-        const sortedNodes = [...updatedNodes].sort((a, b) => a.position.y - b.position.y)
-
-        // Reorder savedFilters array
-        const newOrder = sortedNodes.map(node => {
-          const viewId = parseInt(node.id.replace('view-', ''))
-          return savedFilters.find(v => v.id === viewId)
-        }).filter(Boolean)
-
-        setSavedFilters(newOrder)
-
-        // Snap to vertical positions
-        const CARD_HEIGHT = 180
-        const CARD_SPACING = 20
-        const START_Y = 60
-
-        sortedNodes.forEach((node, index) => {
-          node.position.x = 20 // Keep X fixed
-          node.position.y = START_Y + index * (CARD_HEIGHT + CARD_SPACING)
-        })
-
-        return sortedNodes
-      }
-
-      return updatedNodes
-    })
-  }, [savedFilters, setSavedFilters])
-
-  // Handle edit name inline
+  // Handle edit name
   useEffect(() => {
     if (editingViewId !== null) {
-      // Find the view being edited
       const viewToEdit = savedFilters.find(v => v.id === editingViewId)
       if (viewToEdit) {
         const newName = prompt('Edit view name:', viewToEdit.name)
@@ -140,21 +55,60 @@ export default function SavedViewsKanban({
     }
   }, [editingViewId])
 
-  if (!isInitialized) {
-    return (
-      <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-        <div className="text-center">
-          <div className="text-4xl mb-2">📋</div>
-          <div className="text-sm">Loading saved views...</div>
-        </div>
-      </div>
-    )
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', e.currentTarget)
+  }
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index)
+    }
+  }
+
+  const handleDragEnd = () => {
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      const newFilters = [...savedFilters]
+      const [draggedItem] = newFilters.splice(draggedIndex, 1)
+      newFilters.splice(dragOverIndex, 0, draggedItem)
+      setSavedFilters(newFilters)
+    }
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  const handleLoadView = (view) => {
+    setCascadeFilters(view.filters.map(f => ({
+      id: Date.now() + Math.random(),
+      column: f.column,
+      value: f.value,
+      operator: f.operator || '=',
+      label: f.label
+    })))
+    if (view.visibleColumns) {
+      setVisibleColumns(view.visibleColumns)
+    }
+    setActiveViewId(view.id)
+    setShowCascadeDropdown(false)
+  }
+
+  const handleDeleteView = (view) => {
+    if (confirm(`Delete view "${view.name}"?`)) {
+      setSavedFilters(savedFilters.filter(v => v.id !== view.id))
+      if (activeViewId === view.id) {
+        setActiveViewId(null)
+      }
+    }
   }
 
   if (savedFilters.length === 0) {
     return (
       <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-        <div className="text-center max-w-xs">
+        <div className="text-center max-w-xs px-4">
           <div className="text-4xl mb-3">🎯</div>
           <div className="text-sm font-medium mb-1">No Saved Views</div>
           <div className="text-xs">
@@ -166,9 +120,9 @@ export default function SavedViewsKanban({
   }
 
   return (
-    <div className="h-full relative bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg">
+    <div className="h-full flex flex-col bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-3 rounded-t-lg z-10 shadow-lg">
+      <div className="flex-shrink-0 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-3 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold">Saved Views</span>
@@ -180,37 +134,138 @@ export default function SavedViewsKanban({
         </div>
       </div>
 
-      {/* ReactFlow Canvas */}
-      <div className="h-full pt-14">
-        <ReactFlow
-          nodes={nodes}
-          onNodesChange={onNodesChange}
-          nodeTypes={nodeTypes}
-          fitView={false}
-          minZoom={0.8}
-          maxZoom={1.2}
-          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-          nodesDraggable={true}
-          nodesConnectable={false}
-          elementsSelectable={true}
-          panOnDrag={false}
-          zoomOnScroll={false}
-          preventScrolling={true}
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background
-            color="#cbd5e1"
-            gap={16}
-            size={0.5}
-            className="dark:opacity-20"
-          />
-        </ReactFlow>
+      {/* Scrollable card list */}
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+        {savedFilters.map((view, index) => {
+          const isActive = activeViewId === view.id
+          const isDragging = draggedIndex === index
+          const isDragOver = dragOverIndex === index
+          const isFirst = index === 0
+
+          return (
+            <div
+              key={view.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragEnd={handleDragEnd}
+              onClick={() => handleLoadView(view)}
+              className={`
+                group relative rounded-lg shadow-md p-3 cursor-pointer
+                transition-all duration-200 ease-out
+                ${isDragging ? 'opacity-40 scale-95' : 'opacity-100 scale-100'}
+                ${isDragOver ? 'border-t-4 border-indigo-500' : ''}
+                ${isActive
+                  ? 'bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 border-2 border-blue-500 dark:border-blue-400 shadow-lg'
+                  : 'bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-xl'
+                }
+              `}
+            >
+              {/* Drag handle indicator */}
+              <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-30 group-hover:opacity-60 transition-opacity">
+                <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z" />
+                </svg>
+              </div>
+
+              {/* Active badge */}
+              {isActive && (
+                <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-lg z-10">
+                  ACTIVE
+                </div>
+              )}
+
+              {/* Default star (auto-set for first card) */}
+              {isFirst && (
+                <div className="absolute -top-2 -left-2 z-10">
+                  <div className="relative">
+                    <StarIconSolid className="h-6 w-6 text-yellow-500 drop-shadow-md" />
+                    <div className="absolute -bottom-1 -right-1 bg-yellow-600 text-white text-[8px] font-bold px-1 rounded-full">
+                      DEFAULT
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Card content */}
+              <div className="ml-6">
+                {/* View name */}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h4 className="font-semibold text-sm text-gray-900 dark:text-white truncate flex-1">
+                    {view.name}
+                  </h4>
+                </div>
+
+                {/* Metadata badges */}
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-1 text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded">
+                    <FunnelIcon className="h-3 w-3" />
+                    <span className="font-medium">{view.filters?.length || 0} filters</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded">
+                    <EyeIcon className="h-3 w-3" />
+                    <span className="font-medium">
+                      {view.visibleColumns ? Object.values(view.visibleColumns).filter(Boolean).length : 0} cols
+                    </span>
+                  </div>
+                </div>
+
+                {/* Filter preview */}
+                {view.filters && view.filters.length > 0 && (
+                  <div className="mb-2 space-y-1">
+                    {view.filters.slice(0, 2).map((filter, idx) => (
+                      <div
+                        key={idx}
+                        className="text-xs bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded truncate"
+                      >
+                        <span className="text-gray-600 dark:text-gray-400">{filter.label}</span>
+                      </div>
+                    ))}
+                    {view.filters.length > 2 && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 italic">
+                        +{view.filters.length - 2} more filter{view.filters.length - 2 > 1 ? 's' : ''}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-1 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditingViewId(view.id)
+                    }}
+                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs font-medium transition-colors"
+                    title="Edit view name"
+                  >
+                    <PencilIcon className="h-3 w-3" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteView(view)
+                    }}
+                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 rounded text-xs font-medium transition-colors"
+                    title="Delete view"
+                  >
+                    <TrashIcon className="h-3 w-3" />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
-      {/* Floating hint */}
+      {/* Footer hint */}
       {savedFilters.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-full shadow-lg opacity-80 pointer-events-none">
-          💡 Drag cards to reorder your views
+        <div className="flex-shrink-0 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 text-center border-t border-indigo-200 dark:border-indigo-800">
+          <div className="text-xs text-indigo-700 dark:text-indigo-300 font-medium">
+            💡 Top card is always the default view
+          </div>
         </div>
       )}
     </div>

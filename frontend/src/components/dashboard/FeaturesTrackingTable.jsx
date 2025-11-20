@@ -415,20 +415,6 @@ export default function FeaturesTrackingTable() {
     )
   }
 
-  // Filter features based on search query
-  const filteredFeatures = searchQuery.trim() === ''
-    ? features
-    : features.filter(feature => {
-        const query = searchQuery.toLowerCase()
-        return (
-          feature.feature_name?.toLowerCase().includes(query) ||
-          feature.chapter?.toLowerCase().includes(query) ||
-          feature.detail_point_1?.toLowerCase().includes(query) ||
-          feature.detail_point_2?.toLowerCase().includes(query) ||
-          feature.detail_point_3?.toLowerCase().includes(query)
-        )
-      })
-
   // Calculate competitor coverage percentages
   const totalFeatures = filteredFeatures.length
   const competitorCoverage = {
