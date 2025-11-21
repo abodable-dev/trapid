@@ -2144,7 +2144,7 @@ export default function TrapidTableView({
               <option value="">Select user...</option>
               {users.map(user => (
                 <option key={user.id} value={user.id}>
-                  {user.name || user.email}
+                  {user.name || user.email || `User #${user.id}`}
                 </option>
               ))}
             </select>
@@ -3919,7 +3919,7 @@ export default function TrapidTableView({
                             )}
                             {colKey === 'user' && users.map(user => (
                               <option key={user.id} value={user.id}>
-                                {user.name || user.email}
+                                {user.name || user.email || `User #${user.id}`}
                               </option>
                             ))}
                             {colKey === 'trinity' && (
