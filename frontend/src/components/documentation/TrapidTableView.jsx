@@ -371,6 +371,14 @@ export default function TrapidTableView({
         return 'Invalid boolean value. Must be true or false'
       }
     }
+    if (key === 'document_link' && value) {
+      // URL validation: must be valid URL format
+      try {
+        new URL(value)
+      } catch {
+        return 'Invalid URL format. Example: https://example.com/document.pdf'
+      }
+    }
     return null
   }
 
@@ -1212,6 +1220,21 @@ export default function TrapidTableView({
         return <span className="text-gray-400">-</span>
 
       case 'document_link':
+        // URL column - editable in edit mode
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="url"
+              value={editingData.document_link || ''}
+              onChange={(e) => setEditingData({ ...editingData, document_link: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              placeholder="https://example.com"
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          )
+        }
+
         if (!entry.document_link) {
           return <span className="text-gray-400 text-xs">-</span>
         }
