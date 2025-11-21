@@ -25,14 +25,14 @@ export default function AgentStatus() {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [columnWidths, setColumnWidths] = useState({
     agent: 160,
-    description: 250,
-    status: 90,
-    lastRun: 130,
-    totalRuns: 70,
-    successRate: 80,
-    createdBy: 130,
-    updatedBy: 130,
-    actions: 70
+    description: 'auto',
+    status: 65,
+    lastRun: 85,
+    totalRuns: 40,
+    successRate: 50,
+    createdBy: 85,
+    updatedBy: 85,
+    actions: 80
   });
   const [resizingColumn, setResizingColumn] = useState(null);
   const [resizeStartX, setResizeStartX] = useState(0);
@@ -191,6 +191,7 @@ export default function AgentStatus() {
         icon: getAgentIcon(agent),
         description: getAgentDescription(agent),
         last_run: agent.last_run_at,
+        last_run_by: agent.last_run_by,
         status: agent.last_status,
         total_runs: agent.total_runs || 0,
         success_rate: agent.success_rate || 0,
@@ -358,7 +359,7 @@ export default function AgentStatus() {
 
       {/* Table - RULE #19.2 Sticky Headers, #19.3 Inline Filters, #19.5B Resizable */}
       <div className="bg-white dark:bg-gray-800 shadow overflow-hidden flex-1 flex flex-col">
-        <div className="overflow-y-auto flex-1">
+        <div className="overflow-y-auto overflow-x-hidden flex-1">
           <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
               <tr>
@@ -407,8 +408,8 @@ export default function AgentStatus() {
                       setDraggingColumn(null);
                     }}
                     onDragEnd={() => setDraggingColumn(null)}
-                    style={{ width: columnWidths[column.key] }}
-                    className={`relative px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-move hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${draggingColumn === column.key ? 'opacity-50' : ''}`}
+                    style={column.key !== 'description' ? { width: columnWidths[column.key] } : undefined}
+                    className={`relative px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-move hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${draggingColumn === column.key ? 'opacity-50' : ''} ${column.key === 'description' ? 'w-auto' : ''}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -525,8 +526,13 @@ export default function AgentStatus() {
                         return (
                           <td key="lastRun" className="px-3 py-2">
                             <div className="text-xs text-gray-900 dark:text-white">
-                              {agent.last_run ? formatDate(agent.last_run) : 'Never'}
+                              {agent.last_run_by?.name || agent.last_run_by?.email || '-'}
                             </div>
+                            {agent.last_run && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {formatDate(agent.last_run)}
+                              </div>
+                            )}
                           </td>
                         );
                       } else if (key === 'totalRuns') {
@@ -549,7 +555,7 @@ export default function AgentStatus() {
                         return (
                           <td key="createdBy" className="px-3 py-2">
                             <div className="text-xs text-gray-900 dark:text-white">
-                              {agent.created_by || '-'}
+                              {agent.created_by?.name || agent.created_by?.email || '-'}
                             </div>
                             {agent.created_at && (
                               <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -562,7 +568,7 @@ export default function AgentStatus() {
                         return (
                           <td key="updatedBy" className="px-3 py-2">
                             <div className="text-xs text-gray-900 dark:text-white">
-                              {agent.updated_by || '-'}
+                              {agent.updated_by?.name || agent.updated_by?.email || '-'}
                             </div>
                             {agent.updated_at && (
                               <div className="text-xs text-gray-500 dark:text-gray-400">
