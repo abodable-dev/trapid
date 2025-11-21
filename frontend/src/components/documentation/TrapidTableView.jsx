@@ -424,6 +424,13 @@ export default function TrapidTableView({
         return 'Invalid URL format. Example: https://example.com/document.pdf'
       }
     }
+    if (key === 'user' && value !== undefined && value !== null && value !== '') {
+      // User validation: must be a valid integer (user ID)
+      const userId = typeof value === 'string' ? parseInt(value) : value
+      if (isNaN(userId) || userId <= 0) {
+        return 'Invalid user. Please select a valid user from the dropdown'
+      }
+    }
     return null
   }
 
