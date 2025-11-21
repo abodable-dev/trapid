@@ -651,6 +651,10 @@ export default function TrapidTableView({
         case 'severity':
           result = result.filter(e => e.severity === value)
           break
+        case 'user':
+          // User filter - convert string to number for comparison
+          result = result.filter(e => e.user === parseInt(value))
+          break
         default:
           // Generic handler for other filterable columns
           // For boolean columns, convert string "true"/"false" to boolean
