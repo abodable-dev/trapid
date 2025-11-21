@@ -4,6 +4,7 @@ import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import RichTextEditor from '../common/RichTextEditor'
 import ColumnEditorModal from '../schema/ColumnEditorModal'
 import SavedViewsKanban from './SavedViewsKanban'
+import LocationMapCard from '../job-detail/LocationMapCard'
 import {
   MagnifyingGlassIcon,
   XMarkIcon,
@@ -166,6 +167,14 @@ export default function TrapidTableView({
   const [editingRowId, setEditingRowId] = useState(null)
   const [editingData, setEditingData] = useState({})
   const [validationError, setValidationError] = useState(null)
+
+  // GPS map picker modal state
+  const [showGpsModal, setShowGpsModal] = useState(false)
+  const [gpsModalCoords, setGpsModalCoords] = useState({ lat: -27.4705, lng: 153.0260 }) // Default to Brisbane
+
+  // Color picker modal state
+  const [showColorModal, setShowColorModal] = useState(false)
+  const [colorModalValue, setColorModalValue] = useState('#000000')
 
   // Column visibility dropdown state
   const [showColumnsDropdown, setShowColumnsDropdown] = useState(false)
@@ -731,6 +740,10 @@ export default function TrapidTableView({
         case 'updated_at':
           aVal = a.updated_at ? new Date(a.updated_at).getTime() : 0
           bVal = b.updated_at ? new Date(b.updated_at).getTime() : 0
+          break
+        case 'created_at':
+          aVal = a.created_at ? new Date(a.created_at).getTime() : 0
+          bVal = b.created_at ? new Date(b.created_at).getTime() : 0
           break
         case 'price':
           aVal = a.price || 0
@@ -1432,6 +1445,7 @@ export default function TrapidTableView({
           </div>
         )
 
+      case 'number':
       case 'quantity':
       case 'whole_number':
         // Number column - right-aligned
@@ -1484,6 +1498,200 @@ export default function TrapidTableView({
             {entry[columnKey] != null ? `$${parseFloat(entry[columnKey]).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
           </div>
         )
+
+      case 'percentage':
+        // Percentage column - right-aligned with % sign
+        if (editingRowId === entry.id) {
+          return (
+            <div className="relative flex items-center">
+              <input
+                type="number"
+                step="0.01"
+                value={editingData[columnKey] ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setEditingData({ ...editingData, [columnKey]: value })
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                className="w-full pr-6 pl-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-right"
+              />
+              <span className="absolute right-2 text-gray-500 dark:text-gray-400">%</span>
+            </div>
+          )
+        }
+        return (
+          <div className="text-right font-medium">
+            {entry[columnKey] != null ? `${parseFloat(entry[columnKey]).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : '-'}
+          </div>
+        )
+
+      case 'date':
+        // Date column with calendar picker
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="date"
+              value={editingData[columnKey] ?? ''}
+              onChange={(e) => {
+                const value = e.target.value
+                setEditingData({ ...editingData, [columnKey]: value })
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          )
+        }
+        return (
+          <div>
+            {entry[columnKey] ? new Date(entry[columnKey]).toLocaleDateString('en-AU') : '-'}
+          </div>
+        )
+
+      case 'date_and_time':
+        // Date and time column with datetime picker
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="datetime-local"
+              value={editingData[columnKey] ?? ''}
+              onChange={(e) => {
+                const value = e.target.value
+                setEditingData({ ...editingData, [columnKey]: value })
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          )
+        }
+        return (
+          <div>
+            {entry[columnKey] ? new Date(entry[columnKey]).toLocaleString('en-AU') : '-'}
+          </div>
+        )
+
+      case 'gps_coordinates':
+        // GPS coordinates with picker button
+        if (editingRowId === entry.id) {
+          return (
+            <div className="flex items-center gap-1 min-w-0">
+              <input
+                type="text"
+                value={editingData[columnKey] ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setEditingData({ ...editingData, [columnKey]: value })
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                placeholder="lat, lng (e.g., -27.4705, 153.0260)"
+                className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // Parse existing coordinates or use default
+                  const existing = editingData[columnKey] || ''
+                  const [lat, lng] = existing.split(',').map(s => parseFloat(s.trim()))
+                  if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                    setGpsModalCoords({ lat, lng })
+                  }
+                  setShowGpsModal(true)
+                }}
+                className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex-shrink-0"
+                title="Open location picker"
+              >
+                📍 Pick
+              </button>
+            </div>
+          )
+        }
+        // Display mode - show coordinates with Google Maps link
+        if (entry[columnKey]) {
+          const coords = entry[columnKey]
+          const [lat, lng] = coords.split(',').map(s => s.trim())
+          if (lat && lng) {
+            return (
+              <a
+                href={`https://www.google.com/maps?q=${lat},${lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 underline text-sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {coords}
+              </a>
+            )
+          }
+          return <span>{coords}</span>
+        }
+        return <span className="text-gray-400">-</span>
+
+      case 'color_picker':
+        // Color picker with button to open modal
+        if (editingRowId === entry.id) {
+          const colorValue = editingData[columnKey] || '#000000'
+          return (
+            <div className="flex items-center gap-2">
+              {/* Color preview and picker button */}
+              <div
+                className="h-8 w-12 rounded border-2 border-gray-400 dark:border-gray-500 flex-shrink-0"
+                style={{ backgroundColor: colorValue }}
+                title={colorValue}
+              />
+              {/* Hex input field */}
+              <input
+                type="text"
+                value={colorValue}
+                onChange={(e) => {
+                  let value = e.target.value
+                  // Auto-add # if not present
+                  if (value && !value.startsWith('#')) {
+                    value = '#' + value
+                  }
+                  // Validate hex format
+                  if (!value || /^#[0-9A-Fa-f]{0,6}$/.test(value)) {
+                    setEditingData({ ...editingData, [columnKey]: value })
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                placeholder="#000000"
+                className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 font-mono"
+                maxLength={7}
+              />
+              {/* Pick button to open modal */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setColorModalValue(colorValue)
+                  setShowColorModal(true)
+                }}
+                className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex-shrink-0"
+                title="Open color picker"
+              >
+                🎨 Pick
+              </button>
+            </div>
+          )
+        }
+        // Display mode - show color swatch with hex value
+        if (entry[columnKey]) {
+          const color = entry[columnKey]
+          return (
+            <div className="flex items-center gap-2">
+              <div
+                className="w-6 h-6 rounded border border-gray-300 dark:border-gray-600"
+                style={{ backgroundColor: color }}
+                title={color}
+              />
+              <span className="text-sm font-mono">{color}</span>
+            </div>
+          )
+        }
+        return <span className="text-gray-400">-</span>
 
       case 'email':
         // Email column with mailto link
@@ -4205,6 +4413,255 @@ export default function TrapidTableView({
                 >
                   Save
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GPS Location Picker Modal - Using LocationMapCard */}
+      {showGpsModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" onClick={() => setShowGpsModal(false)}>
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 transition-opacity" aria-hidden="true" />
+
+            {/* Modal Dialog */}
+            <div
+              className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full border border-gray-200 dark:border-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Pick GPS Location
+                </h3>
+                <button
+                  onClick={() => setShowGpsModal(false)}
+                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Body - Manual Input + LocationMapCard */}
+              <div className="p-6 space-y-4">
+                {/* Manual Input Section */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Manual Entry
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Latitude (e.g., -27.4705)"
+                      value={gpsModalCoords.lat || ''}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        if (value === '' || !isNaN(parseFloat(value))) {
+                          setGpsModalCoords({ ...gpsModalCoords, lat: value === '' ? '' : parseFloat(value) })
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Longitude (e.g., 153.0260)"
+                      value={gpsModalCoords.lng || ''}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        if (value === '' || !isNaN(parseFloat(value))) {
+                          setGpsModalCoords({ ...gpsModalCoords, lng: value === '' ? '' : parseFloat(value) })
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => {
+                        if (gpsModalCoords.lat && gpsModalCoords.lng) {
+                          setEditingData({ ...editingData, gps_coordinates: `${gpsModalCoords.lat}, ${gpsModalCoords.lng}` })
+                        }
+                      }}
+                      className="px-4 py-2 text-sm font-medium bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors"
+                    >
+                      Use These
+                    </button>
+                  </div>
+                </div>
+
+                {/* Map Picker Section */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Pick on Map (Click map, search address, or use current location button)
+                  </label>
+                  <LocationMapCard
+                    jobId={null}
+                    location=""
+                    latitude={gpsModalCoords.lat}
+                    longitude={gpsModalCoords.lng}
+                    onLocationUpdate={(location, lat, lng) => {
+                      // Update coordinates when user picks a location on the map
+                      setEditingData({ ...editingData, gps_coordinates: `${lat}, ${lng}` })
+                      setGpsModalCoords({ lat: parseFloat(lat), lng: parseFloat(lng) })
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 rounded-b-xl flex justify-between items-center gap-3">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Current: {editingData.gps_coordinates || 'Not set'}
+                </div>
+                <button
+                  onClick={() => setShowGpsModal(false)}
+                  className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Color Picker Modal */}
+      {showColorModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" onClick={() => setShowColorModal(false)}>
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 transition-opacity" aria-hidden="true" />
+
+            {/* Modal Dialog */}
+            <div
+              className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full border border-gray-200 dark:border-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Pick a Color
+                </h3>
+                <button
+                  onClick={() => setShowColorModal(false)}
+                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-6">
+                {/* Large Color Preview */}
+                <div className="flex justify-center">
+                  <div
+                    className="w-48 h-48 rounded-lg border-4 border-gray-300 dark:border-gray-600 shadow-lg"
+                    style={{ backgroundColor: colorModalValue }}
+                  />
+                </div>
+
+                {/* Color Wheel Picker */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Visual Color Picker
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="color"
+                      value={colorModalValue}
+                      onChange={(e) => setColorModalValue(e.target.value)}
+                      className="h-16 w-32 rounded border-2 border-gray-300 dark:border-gray-600 cursor-pointer"
+                    />
+                    <div className="flex-1 text-sm text-gray-600 dark:text-gray-400">
+                      Click the color box to open your browser's color picker wheel
+                    </div>
+                  </div>
+                </div>
+
+                {/* Manual Hex Input */}
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Manual Hex Entry
+                  </label>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={colorModalValue}
+                      onChange={(e) => {
+                        let value = e.target.value
+                        if (value && !value.startsWith('#')) {
+                          value = '#' + value
+                        }
+                        if (!value || /^#[0-9A-Fa-f]{0,6}$/.test(value)) {
+                          setColorModalValue(value)
+                        }
+                      }}
+                      placeholder="#000000"
+                      className="flex-1 px-4 py-3 text-lg font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                      maxLength={7}
+                    />
+                    <button
+                      onClick={() => {
+                        if (colorModalValue) {
+                          setEditingData({ ...editingData, color_picker: colorModalValue })
+                          setShowColorModal(false)
+                        }
+                      }}
+                      className="px-6 py-3 text-sm font-medium bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors"
+                    >
+                      Use This Color
+                    </button>
+                  </div>
+                </div>
+
+                {/* Common Colors */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Quick Colors
+                  </label>
+                  <div className="grid grid-cols-8 gap-2">
+                    {['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3', '#000000',
+                      '#FFFFFF', '#808080', '#FF1493', '#00CED1', '#FFD700', '#32CD32', '#FF4500', '#8B4513'].map(color => (
+                      <button
+                        key={color}
+                        onClick={() => setColorModalValue(color)}
+                        className="h-10 w-10 rounded border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 transition-colors"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 rounded-b-xl flex justify-between items-center gap-3">
+                <div className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+                  Current: {colorModalValue}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowColorModal(false)}
+                    className="px-4 py-2 text-sm font-medium bg-gray-300 text-gray-700 hover:bg-gray-400 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (colorModalValue) {
+                        setEditingData({ ...editingData, color_picker: colorModalValue })
+                      }
+                      setShowColorModal(false)
+                    }}
+                    className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+                  >
+                    Apply Color
+                  </button>
+                </div>
               </div>
             </div>
           </div>

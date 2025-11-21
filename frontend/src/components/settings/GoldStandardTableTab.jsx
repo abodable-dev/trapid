@@ -21,8 +21,8 @@ const buildGoldStandardColumns = () => {
     'mobile': { key: 'mobile', width: 150, filterable: true, filterType: 'text' },
     'url': { key: 'url', width: 180, sortable: false, filterable: false },
     'date': { key: 'date', width: 140, filterable: false },
-    'gps_coordinates': { key: 'gps_coordinates', width: 180, sortable: false, filterable: false },
-    'color_picker': { key: 'color_picker', width: 130, sortable: false, filterable: false },
+    'gps_coordinates': { key: 'gps_coordinates', width: 280, sortable: false, filterable: false },
+    'color_picker': { key: 'color_picker', width: 320, sortable: false, filterable: false },
     'file_upload': { key: 'file_upload', width: 180, sortable: false, filterable: false },
     'action_buttons': { key: 'action_buttons', width: 150, sortable: false, filterable: false },
     'lookup': { key: 'lookup', width: 150, filterable: true, filterType: 'dropdown' },
@@ -76,9 +76,22 @@ const buildGoldStandardColumns = () => {
     .map(type => buildColumn(type.value))
     .filter(col => col !== null)
 
-  // Add updated_at separately (second date_and_time instance)
-  const updatedAtType = COLUMN_TYPES.find(t => t.value === 'date_and_time')
-  if (updatedAtType) {
+  // Add system timestamp columns (created_at and updated_at)
+  const dateTimeType = COLUMN_TYPES.find(t => t.value === 'date_and_time')
+  if (dateTimeType) {
+    // Add created_at
+    dynamicColumns.push({
+      key: 'created_at',
+      label: 'Date & Time (Created)',
+      column_type: 'date_and_time',
+      resizable: true,
+      sortable: true,
+      filterable: false,
+      width: 180,
+      tooltip: `${dateTimeType.sqlType} - When the record was created`
+    })
+
+    // Add updated_at
     dynamicColumns.push({
       key: 'updated_at',
       label: 'Date & Time (Updated)',
@@ -87,7 +100,7 @@ const buildGoldStandardColumns = () => {
       sortable: true,
       filterable: false,
       width: 180,
-      tooltip: `${updatedAtType.sqlType} - When the record was last modified`
+      tooltip: `${dateTimeType.sqlType} - When the record was last modified`
     })
   }
 
