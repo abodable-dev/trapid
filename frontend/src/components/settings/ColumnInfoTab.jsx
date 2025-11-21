@@ -296,7 +296,8 @@ export default function ColumnInfoTab() {
             icon: getColumnTypeEmoji(type.value),
             validationRules: type.validationRules || 'No validation rules defined',
             example: type.example || 'No example provided',
-            usedFor: type.usedFor || 'No usage description'
+            usedFor: type.usedFor || 'No usage description',
+            sampleValue: type.sampleValue
           }))
 
           // Add system columns (id, created_at, updated_at)
@@ -597,6 +598,9 @@ export default function ColumnInfoTab() {
                     Example
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Sample Data
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Used For
                   </th>
                 </tr>
@@ -685,6 +689,17 @@ export default function ColumnInfoTab() {
                       <code className="bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
                         {column.example}
                       </code>
+                    </td>
+
+                    {/* Sample Data - From Gold Standard Table */}
+                    <td className="px-6 py-4 text-xs">
+                      {column.sampleValue !== null && column.sampleValue !== undefined ? (
+                        <code className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded font-semibold">
+                          {String(column.sampleValue)}
+                        </code>
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-600 italic">No data</span>
+                      )}
                     </td>
 
                     {/* Used For - Auto-Generated (Read-Only) */}

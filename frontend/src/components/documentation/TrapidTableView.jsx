@@ -2966,7 +2966,7 @@ export default function TrapidTableView({
                                   id: colKey,
                                   name: column.label,
                                   column_name: colKey,
-                                  column_type: 'string', // TODO: Determine actual type
+                                  column_type: column.column_type || 'single_line_text', // Use column type from config
                                   required: false
                                 })
                               }}

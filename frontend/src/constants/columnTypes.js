@@ -17,6 +17,16 @@ import {
 } from '@heroicons/react/24/outline'
 
 /**
+ * IMPORTANT: This is a FALLBACK ONLY for when the API is unavailable.
+ *
+ * THE SINGLE SOURCE OF TRUTH is:
+ * - Backend: Column::COLUMN_SQL_TYPE_MAP (backend/app/models/column.rb)
+ * - API: /api/v1/column_types (serves from Gold Standard Reference table)
+ * - Trinity: Teacher §T19.001-T19.022 (documents all column types)
+ *
+ * This constant MUST be kept in sync with the backend but should ONLY be used as a fallback.
+ * Always fetch from the API first using getColumnTypesWithCache().
+ *
  * Complete list of all column types supported by the application.
  * Used for column creation and display.
  * Includes SQL types, validation rules, examples, and usage information from Gold Standard.

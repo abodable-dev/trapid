@@ -9,7 +9,7 @@ const buildGoldStandardColumns = () => {
   // Base columns that always appear
   const baseColumns = [
     { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32, tooltip: 'Checkbox - select rows for bulk actions' },
-    { key: 'id', label: 'ID / Primary Key', resizable: true, sortable: true, filterable: false, width: 80, tooltip: 'Primary Key - Auto-increment ID' }
+    { key: 'id', label: 'ID / Primary Key', column_type: 'id', resizable: true, sortable: true, filterable: false, width: 80, tooltip: 'Primary Key - Auto-increment ID' }
   ]
 
   // Map each COLUMN_TYPE to its database column and configuration
@@ -55,6 +55,7 @@ const buildGoldStandardColumns = () => {
     return {
       key: config.key,
       label: type.label,
+      column_type: typeValue,  // IMPORTANT: Include column type for schema editor
       resizable: true,
       sortable: config.sortable !== false,
       filterable: config.filterable || false,
@@ -80,6 +81,7 @@ const buildGoldStandardColumns = () => {
     dynamicColumns.push({
       key: 'updated_at',
       label: 'Date & Time (Updated)',
+      column_type: 'date_and_time',  // IMPORTANT: Include column type for schema editor
       resizable: true,
       sortable: true,
       filterable: false,
@@ -304,7 +306,7 @@ export default function GoldStandardTableTab() {
 
       <TrapidTableView
         tableId="gold-standard-table"
-        tableIdNumeric={166}
+        tableIdNumeric={1}
         tableName="Gold Standard Reference"
         entries={data}
         columns={GOLD_STANDARD_COLUMNS}
