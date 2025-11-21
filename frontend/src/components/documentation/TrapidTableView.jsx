@@ -1693,6 +1693,88 @@ export default function TrapidTableView({
         }
         return <span className="text-gray-400">-</span>
 
+      case 'file_upload':
+        // File upload column with upload button and file link
+        if (editingRowId === entry.id) {
+          const fileValue = editingData[columnKey] || ''
+          return (
+            <div className="flex items-center gap-2">
+              {/* Text input for file path/URL */}
+              <input
+                type="text"
+                value={fileValue}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setEditingData({ ...editingData, [columnKey]: value })
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                placeholder="/uploads/document.pdf or https://..."
+                className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              />
+              {/* File upload button */}
+              <label
+                className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors cursor-pointer flex-shrink-0 flex items-center gap-1"
+                title="Upload file"
+              >
+                📎 Upload
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      // For now, just set the filename as placeholder
+                      // In production, this would upload to server and get back a URL
+                      const mockPath = `/uploads/${file.name}`
+                      setEditingData({ ...editingData, [columnKey]: mockPath })
+
+                      // TODO: Implement actual file upload to server
+                      console.log('File selected:', file.name, 'Size:', file.size, 'Type:', file.type)
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </label>
+            </div>
+          )
+        }
+        // Display mode - show file link with icon
+        if (entry[columnKey]) {
+          const filePath = entry[columnKey]
+          const fileName = filePath.split('/').pop() || filePath
+          const fileExt = fileName.split('.').pop()?.toLowerCase() || ''
+
+          // Determine file icon based on extension
+          let fileIcon = '📄' // Default document
+          if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(fileExt)) {
+            fileIcon = '🖼️'
+          } else if (['pdf'].includes(fileExt)) {
+            fileIcon = '📕'
+          } else if (['doc', 'docx'].includes(fileExt)) {
+            fileIcon = '📘'
+          } else if (['xls', 'xlsx', 'csv'].includes(fileExt)) {
+            fileIcon = '📊'
+          } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(fileExt)) {
+            fileIcon = '📦'
+          }
+
+          return (
+            <a
+              href={filePath}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 underline text-sm flex items-center gap-1 hover:text-blue-800 dark:hover:text-blue-300"
+              onClick={(e) => e.stopPropagation()}
+              title={`Download: ${fileName}`}
+            >
+              <span>{fileIcon}</span>
+              <span className="truncate max-w-[200px]">{fileName}</span>
+            </a>
+          )
+        }
+        return <span className="text-gray-400">No file</span>
+
       case 'email':
         // Email column with mailto link
         if (editingRowId === entry.id) {
