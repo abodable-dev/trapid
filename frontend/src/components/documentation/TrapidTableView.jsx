@@ -246,6 +246,8 @@ export default function TrapidTableView({
   const [cascadeInputValue, setCascadeInputValue] = useState('') // Input value for text-based filters
   const [cascadeOperator, setCascadeOperator] = useState('=') // Operator for numeric comparisons (=, >, <, >=, <=, !=)
   const [columnSearchQuery, setColumnSearchQuery] = useState('') // Search query for filtering column list
+  const [draggedCascadeColumn, setDraggedCascadeColumn] = useState(null) // Column being dragged into cascade filter
+  const [isDragOverValues, setIsDragOverValues] = useState(false) // Whether dragging over the values drop zone
   const [activeViewId, setActiveViewId] = useState(null) // Track which saved view is currently active
   const [editingViewId, setEditingViewId] = useState(null) // Track which view is being edited
   const [editingFilterId, setEditingFilterId] = useState(null) // Track which filter is being edited
@@ -2919,20 +2921,30 @@ export default function TrapidTableView({
                           return filteredColumns.length > 0 ? filteredColumns.map((col, index) => (
                             <button
                               key={`cascade-${col.key}`}
+                              draggable
+                              onDragStart={(e) => {
+                                setDraggedCascadeColumn(col.key)
+                                e.dataTransfer.effectAllowed = 'move'
+                                e.dataTransfer.setData('text/plain', col.key)
+                              }}
+                              onDragEnd={() => setDraggedCascadeColumn(null)}
                               onClick={() => {
                                 setSelectedCascadeColumn(col.key === selectedCascadeColumn ? '' : col.key)
                                 setColumnSearchQuery('') // Clear search after selection
                                 setCascadeOperator('=') // Reset operator to default
                                 setCascadeInputValue('') // Clear input value
                               }}
-                              className={`w-full text-left text-xs px-3 py-0.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors ${
-                                selectedCascadeColumn === col.key
-                                  ? 'bg-blue-200 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-medium'
-                                  : index % 2 === 0
-                                    ? 'bg-blue-50 dark:bg-blue-900/10 text-gray-700 dark:text-gray-300'
-                                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                              className={`w-full text-left text-xs px-3 py-0.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors cursor-grab active:cursor-grabbing ${
+                                draggedCascadeColumn === col.key
+                                  ? 'opacity-50 bg-blue-300 dark:bg-blue-800'
+                                  : selectedCascadeColumn === col.key
+                                    ? 'bg-blue-200 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-medium'
+                                    : index % 2 === 0
+                                      ? 'bg-blue-50 dark:bg-blue-900/10 text-gray-700 dark:text-gray-300'
+                                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                               }`}
                             >
+                              <span className="mr-1 text-gray-400">⠿</span>
                               {col.label}
                             </button>
                           )) : (
@@ -2949,10 +2961,38 @@ export default function TrapidTableView({
                       <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                         Select Values:
                       </label>
-                      <div className="h-[40%] overflow-y-auto">
+                      <div
+                        className="h-[40%] overflow-y-auto"
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          e.dataTransfer.dropEffect = 'move'
+                          setIsDragOverValues(true)
+                        }}
+                        onDragLeave={() => setIsDragOverValues(false)}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          setIsDragOverValues(false)
+                          const columnKey = e.dataTransfer.getData('text/plain') || draggedCascadeColumn
+                          if (columnKey) {
+                            setSelectedCascadeColumn(columnKey)
+                            setColumnSearchQuery('')
+                            setCascadeOperator('=')
+                            setCascadeInputValue('')
+                          }
+                          setDraggedCascadeColumn(null)
+                        }}
+                      >
                       {!selectedCascadeColumn ? (
-                        <div className="h-full flex items-center justify-center border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/30 text-xs text-gray-500 dark:text-gray-400 text-center p-4">
-                          Select a column from the left to choose values
+                        <div className={`h-full flex items-center justify-center border-2 border-dashed rounded text-xs text-center p-4 transition-colors ${
+                          isDragOverValues
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/30 text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {isDragOverValues ? (
+                            <span className="font-medium">Drop column here to filter</span>
+                          ) : (
+                            <span>Drag a column here or click to select</span>
+                          )}
                         </div>
                       ) : (() => {
                         const column = COLUMNS.find(c => c.key === selectedCascadeColumn)
@@ -3332,141 +3372,47 @@ export default function TrapidTableView({
                       </div>
                     </div>
 
-                    {/* COLUMN 3: Column Visibility with Cascading Order */}
-                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 h-full overflow-y-auto w-fit min-w-[280px] max-w-[320px]">
-                      {/* Header with Select All / Reset Order */}
+                    {/* COLUMN 3: Column Visibility */}
+                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 h-full overflow-y-auto w-fit max-w-[200px]">
                       <div className="flex items-center justify-between mb-2">
                         <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                          Columns & Order:
+                          Show/Hide Columns:
                         </label>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => {
-                              const allVisible = COLUMNS.filter(col => col.key !== 'select').every(col => visibleColumns[col.key] !== false)
-                              const newVisibility = {}
-                              COLUMNS.filter(col => col.key !== 'select').forEach(col => {
-                                newVisibility[col.key] = !allVisible
-                              })
-                              setVisibleColumns({ ...visibleColumns, ...newVisibility })
-                            }}
-                            className="px-2 py-0.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-[10px] font-medium rounded transition-colors"
-                          >
-                            {COLUMNS.filter(col => col.key !== 'select').every(col => visibleColumns[col.key] !== false) ? 'Hide All' : 'Show All'}
-                          </button>
-                          <button
-                            onClick={() => setColumnOrder(DEFAULT_COLUMN_ORDER)}
-                            className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-[10px] font-medium rounded transition-colors"
-                            title="Reset column order to default"
-                          >
-                            Reset Order
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => {
+                            const allVisible = COLUMNS.filter(col => col.key !== 'select').every(col => visibleColumns[col.key] !== false)
+                            const newVisibility = {}
+                            COLUMNS.filter(col => col.key !== 'select').forEach(col => {
+                              newVisibility[col.key] = !allVisible
+                            })
+                            setVisibleColumns({ ...visibleColumns, ...newVisibility })
+                          }}
+                          className="px-2 py-0.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-[10px] font-medium rounded transition-colors"
+                        >
+                          {COLUMNS.filter(col => col.key !== 'select').every(col => visibleColumns[col.key] !== false) ? 'Deselect All' : 'Select All'}
+                        </button>
                       </div>
-
-                      {/* Two-column layout: Available columns | Selected columns order */}
-                      <div className="flex gap-2">
-                        {/* Left: Available Columns (checkbox list) */}
-                        <div className="flex-1 min-w-[120px]">
-                          <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-                            Available
-                          </div>
-                          <div className="space-y-0.5 max-h-[200px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded p-1">
-                            {COLUMNS.filter(col => col.key !== 'select')
-                              .sort((a, b) => a.label.localeCompare(b.label))
-                              .map((column) => (
-                              <label key={column.key} className={`flex items-center gap-1.5 text-[11px] text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 px-1.5 py-0.5 cursor-pointer rounded ${
-                                visibleColumns[column.key] !== false ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-800'
-                              }`}>
-                                <input
-                                  type="checkbox"
-                                  checked={visibleColumns[column.key] !== false}
-                                  onChange={(e) => {
-                                    setVisibleColumns({
-                                      ...visibleColumns,
-                                      [column.key]: e.target.checked
-                                    })
-                                  }}
-                                  className="rounded border-gray-300 w-3 h-3"
-                                />
-                                <span className="flex-1 truncate">{column.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Right: Selected Columns Order (drag to reorder) */}
-                        <div className="flex-1 min-w-[140px]">
-                          <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">
-                            Display Order (▲▼)
-                          </div>
-                          <div className="space-y-0.5 max-h-[200px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded p-1">
-                            {columnOrder
-                              .filter(key => key !== 'select' && visibleColumns[key] !== false)
-                              .map((colKey, index, arr) => {
-                                const column = COLUMNS.find(c => c.key === colKey)
-                                if (!column) return null
-                                return (
-                                  <div
-                                    key={colKey}
-                                    className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-800"
-                                  >
-                                    <div className="flex flex-col gap-0">
-                                      <button
-                                        onClick={() => {
-                                          if (index === 0) return
-                                          const visibleKeys = columnOrder.filter(k => k !== 'select' && visibleColumns[k] !== false)
-                                          const actualIndex = columnOrder.indexOf(colKey)
-                                          const prevVisibleKey = visibleKeys[index - 1]
-                                          const prevActualIndex = columnOrder.indexOf(prevVisibleKey)
-                                          const newOrder = [...columnOrder]
-                                          newOrder.splice(actualIndex, 1)
-                                          newOrder.splice(prevActualIndex, 0, colKey)
-                                          setColumnOrder(newOrder)
-                                        }}
-                                        disabled={index === 0}
-                                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none px-0.5"
-                                        title="Move up"
-                                      >
-                                        ▲
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          if (index === arr.length - 1) return
-                                          const visibleKeys = columnOrder.filter(k => k !== 'select' && visibleColumns[k] !== false)
-                                          const actualIndex = columnOrder.indexOf(colKey)
-                                          const nextVisibleKey = visibleKeys[index + 1]
-                                          const nextActualIndex = columnOrder.indexOf(nextVisibleKey)
-                                          const newOrder = [...columnOrder]
-                                          newOrder.splice(actualIndex, 1)
-                                          newOrder.splice(nextActualIndex, 0, colKey)
-                                          setColumnOrder(newOrder)
-                                        }}
-                                        disabled={index === arr.length - 1}
-                                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none px-0.5"
-                                        title="Move down"
-                                      >
-                                        ▼
-                                      </button>
-                                    </div>
-                                    <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 w-4">{index + 1}.</span>
-                                    <span className="flex-1 text-[11px] text-gray-700 dark:text-gray-300 truncate">{column.label}</span>
-                                    <button
-                                      onClick={() => setVisibleColumns({ ...visibleColumns, [colKey]: false })}
-                                      className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-[10px] px-0.5"
-                                      title="Hide column"
-                                    >
-                                      ×
-                                    </button>
-                                  </div>
-                                )
-                              })}
-                            {columnOrder.filter(key => key !== 'select' && visibleColumns[key] !== false).length === 0 && (
-                              <div className="text-[10px] text-gray-400 dark:text-gray-500 italic p-2 text-center">
-                                No columns selected
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                      <div className="space-y-0.5">
+                        {COLUMNS.filter(col => col.key !== 'select')
+                          .sort((a, b) => a.label.localeCompare(b.label))
+                          .map((column, index) => (
+                          <label key={column.key} className={`flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 px-2 py-0.5 cursor-pointer ${
+                            index % 2 === 0 ? 'bg-blue-50 dark:bg-blue-900/10' : 'bg-white dark:bg-gray-800'
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns[column.key] !== false}
+                              onChange={(e) => {
+                                setVisibleColumns({
+                                  ...visibleColumns,
+                                  [column.key]: e.target.checked
+                                })
+                              }}
+                              className="rounded border-gray-300"
+                            />
+                            <span className="flex-1">{column.label}</span>
+                          </label>
+                        ))}
                       </div>
                     </div>
 
