@@ -581,13 +581,19 @@ export default function AgentStatus() {
                       } else if (key === 'lastRun') {
                         return (
                           <td key="lastRun" className="px-3 py-2 overflow-hidden" style={{ width: columnWidths.lastRun }}>
-                            <div className="text-xs text-gray-900 dark:text-white truncate">
-                              {agent.last_run_by?.name || agent.last_run_by?.email || '-'}
-                            </div>
-                            {agent.last_run && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                {formatDate(agent.last_run)}
-                              </div>
+                            {agent.last_run ? (
+                              <>
+                                <div className="text-xs text-gray-900 dark:text-white truncate">
+                                  {formatDate(agent.last_run)}
+                                </div>
+                                {agent.last_run_by && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    by {agent.last_run_by.name || agent.last_run_by.email}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
                             )}
                           </td>
                         );
