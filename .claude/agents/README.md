@@ -108,6 +108,16 @@ This directory contains specialized agent definitions for the Trapid project.
 - Provides agent shortcuts and invocation patterns
 - Manages run history tracking
 
+### 14. ssot-agent
+**Focus:** Single Source of Truth Validation
+- Validates Dense Index ↔ CLAUDE.md consistency
+- Scans all .md files for conflicts with Trinity
+- Suggests archivable documentation (superseded by Trinity)
+- Audits backend code for SSoT compliance
+- Audits frontend code for SSoT compliance
+- Stops on conflicts and asks user to resolve
+- Updates Trinity with archive records
+
 ## How to Use
 
 ### Quick Commands

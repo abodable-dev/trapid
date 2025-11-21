@@ -24,60 +24,77 @@ export default function AgentStatus() {
   const [columnFilters, setColumnFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [columnWidths, setColumnWidths] = useState(() => {
-    const saved = localStorage.getItem('agentStatus_columnWidths');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing saved column widths:', e);
-      }
-    }
-    return {
+    const defaultWidths = {
       agent: 180,
       description: 200,
       status: 75,
       lastRun: 90,
       totalRuns: 50,
       successRate: 60,
+      tokens: 70,
       createdBy: 90,
       updatedBy: 90
     };
+    const saved = localStorage.getItem('agentStatus_columnWidths');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Merge with defaults to ensure new columns have widths
+        return { ...defaultWidths, ...parsed };
+      } catch (e) {
+        console.error('Error parsing saved column widths:', e);
+      }
+    }
+    return defaultWidths;
   });
   const [resizingColumn, setResizingColumn] = useState(null);
   const [resizeStartX, setResizeStartX] = useState(0);
   const [resizeStartWidth, setResizeStartWidth] = useState(0);
   const [visibleColumns, setVisibleColumns] = useState(() => {
-    const saved = localStorage.getItem('agentStatus_visibleColumns');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing saved visible columns:', e);
-      }
-    }
-    return {
+    const defaultVisible = {
       agent: true,
       description: true,
       status: true,
       lastRun: true,
       totalRuns: true,
       successRate: true,
+      tokens: true,
       createdBy: true,
       updatedBy: true
     };
+    const saved = localStorage.getItem('agentStatus_visibleColumns');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Merge with defaults to ensure new columns are visible
+        return { ...defaultVisible, ...parsed };
+      } catch (e) {
+        console.error('Error parsing saved visible columns:', e);
+      }
+    }
+    return defaultVisible;
   });
   const [showColumnPicker, setShowColumnPicker] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [columnOrder, setColumnOrder] = useState(() => {
+    const defaultOrder = ['agent', 'description', 'status', 'lastRun', 'totalRuns', 'successRate', 'tokens', 'createdBy', 'updatedBy'];
     const saved = localStorage.getItem('agentStatus_columnOrder');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Add any new columns that aren't in the saved order
+        const missingColumns = defaultOrder.filter(col => !parsed.includes(col));
+        if (missingColumns.length > 0) {
+          // Insert missing columns before the last two columns (createdBy, updatedBy)
+          const insertIndex = Math.max(0, parsed.length - 2);
+          return [...parsed.slice(0, insertIndex), ...missingColumns, ...parsed.slice(insertIndex)];
+        }
+        return parsed;
       } catch (e) {
         console.error('Error parsing saved column order:', e);
       }
     }
-    return ['agent', 'description', 'status', 'lastRun', 'totalRuns', 'successRate', 'createdBy', 'updatedBy'];
+    return defaultOrder;
   });
   const [draggingColumn, setDraggingColumn] = useState(null);
 
@@ -253,6 +270,18 @@ export default function AgentStatus() {
       return sortConfig.direction === 'asc' ? comparison : -comparison;
     });
 
+  // Get token usage from last run details (if available)
+  const getTokenDisplay = (agent) => {
+    const details = agent.last_run_details;
+    if (details?.tokens_used) {
+      const tokens = details.tokens_used;
+      // Format as "12.5K" for thousands
+      const formatted = tokens >= 1000 ? `${(tokens / 1000).toFixed(1)}K` : String(tokens);
+      return formatted;
+    }
+    return null;
+  };
+
   const columns = [
     { key: 'agent', label: 'Agent', sortable: true, searchable: true },
     { key: 'description', label: 'Description', sortable: true, searchable: true },
@@ -260,6 +289,7 @@ export default function AgentStatus() {
     { key: 'lastRun', label: 'Last Run', sortable: true, searchable: false },
     { key: 'totalRuns', label: 'Total Runs', sortable: true, searchable: false },
     { key: 'successRate', label: 'Success Rate', sortable: true, searchable: false },
+    { key: 'tokens', label: 'Est. Tokens', sortable: true, searchable: false },
     { key: 'createdBy', label: 'Created By', sortable: true, searchable: true },
     { key: 'updatedBy', label: 'Updated', sortable: true, searchable: true }
   ];
@@ -575,6 +605,19 @@ export default function AgentStatus() {
                             <div className="text-sm text-gray-900 dark:text-white">
                               {agent.total_runs > 0 ? `${agent.success_rate}%` : 'N/A'}
                             </div>
+                          </td>
+                        );
+                      } else if (key === 'tokens') {
+                        const tokens = getTokenDisplay(agent);
+                        return (
+                          <td key="tokens" className="px-3 py-2 overflow-hidden" style={{ width: columnWidths.tokens }}>
+                            {tokens ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                                {tokens}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
                           </td>
                         );
                       } else if (key === 'createdBy') {
