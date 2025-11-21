@@ -24,7 +24,7 @@ const buildGoldStandardColumns = () => {
     'gps_coordinates': { key: 'gps_coordinates', width: 280, sortable: false, filterable: false },
     'color_picker': { key: 'color_picker', width: 320, sortable: false, filterable: false },
     'file_upload': { key: 'file_upload', width: 300, sortable: false, filterable: false },
-    'action_buttons': { key: 'action_buttons', width: 150, sortable: false, filterable: false },
+    'action_buttons': { key: 'action_buttons', width: 180, sortable: false, filterable: false },
     'lookup': { key: 'lookup', width: 150, filterable: true, filterType: 'dropdown' },
     'boolean': { key: 'boolean', width: 100, filterable: true, filterType: 'dropdown' },
     'percentage': { key: 'percentage', width: 120, filterable: false },

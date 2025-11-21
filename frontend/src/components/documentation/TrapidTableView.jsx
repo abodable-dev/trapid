@@ -24,7 +24,8 @@ import {
   ArrowDownTrayIcon,
   ViewColumnsIcon,
   Cog8ToothIcon,
-  WrenchScrewdriverIcon
+  WrenchScrewdriverIcon,
+  PlayIcon
 } from '@heroicons/react/24/outline'
 
 const CHAPTER_NAMES = {
@@ -1414,6 +1415,16 @@ export default function TrapidTableView({
               title="Edit"
             >
               <PencilIcon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                console.log('▶️ Run action clicked for entry:', entry.id)
+              }}
+              className="p-1.5 text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/20 rounded transition-colors"
+              title="Run"
+            >
+              <PlayIcon className="h-4 w-4" />
             </button>
             <button
               onClick={(e) => {
