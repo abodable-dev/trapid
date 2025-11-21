@@ -139,6 +139,25 @@ export default function TrapidTableView({
     severity: 'all'
   })
 
+  // Users list for user column dropdown
+  const [users, setUsers] = useState([])
+
+  // Fetch users from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/api/v1/users')
+        if (response.ok) {
+          const usersData = await response.json()
+          setUsers(usersData)
+        }
+      } catch (error) {
+        console.error('Failed to fetch users:', error)
+      }
+    }
+    fetchUsers()
+  }, [])
+
   // Get current user for audit trail
   const getCurrentUser = () => {
     try {
@@ -151,6 +170,13 @@ export default function TrapidTableView({
       console.error('Failed to parse user from localStorage:', e)
     }
     return 'User'
+  }
+
+  // Helper to get user by ID
+  const getUserById = (userId) => {
+    if (!userId) return null
+    const user = users.find(u => u.id === userId)
+    return user || null
   }
 
   // Row selection state (Chapter 20: Always enabled for multi-select)
@@ -2099,30 +2125,45 @@ export default function TrapidTableView({
         )
 
       case 'user':
-        // User column - displays user information
+        // User column - displays user information with dropdown selector
         if (editingRowId === entry.id) {
-          // In edit mode: show current user (non-editable for now)
-          const currentUser = getCurrentUser()
+          // In edit mode: show dropdown to select user
           return (
-            <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-xs font-bold">
-                {currentUser.charAt(0).toUpperCase()}
-              </div>
-              <span className="text-sm text-gray-700 dark:text-gray-300">{currentUser}</span>
-            </div>
+            <select
+              value={editingData[columnKey] || ''}
+              onChange={(e) => {
+                const value = e.target.value ? parseInt(e.target.value) : null
+                setEditingData({ ...editingData, [columnKey]: value })
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select user...</option>
+              {users.map(user => (
+                <option key={user.id} value={user.id}>
+                  {user.name || user.email}
+                </option>
+              ))}
+            </select>
           )
         }
-        // Display mode - show user info or prompt to set
+        // Display mode - show user info with avatar
         if (entry[columnKey]) {
-          // If user ID exists, display it with an avatar
-          const userName = getCurrentUser() // In a real app, would lookup by user ID
-          return (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-xs font-bold">
-                {userName.charAt(0).toUpperCase()}
+          const user = getUserById(entry[columnKey])
+          if (user) {
+            const displayName = user.name || user.email
+            return (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-xs font-bold">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{displayName}</span>
               </div>
-              <span className="text-sm text-gray-700 dark:text-gray-300">{userName}</span>
-            </div>
+            )
+          }
+          // User ID exists but user not found in list
+          return (
+            <span className="text-gray-500 text-xs">User #{entry[columnKey]}</span>
           )
         }
         return (
