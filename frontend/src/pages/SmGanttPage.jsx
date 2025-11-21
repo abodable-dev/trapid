@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon, PauseIcon, PlayIcon } from '@heroicons/react/24/outline'
+import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon, PauseIcon, PlayIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import Toast from '../components/Toast'
 import SmGanttChart from '../components/sm-gantt/SmGanttChart'
+import SmTaskModal from '../components/sm-gantt/SmTaskModal'
 
 const SmTaskList = ({ tasks, onTaskClick, onStatusChange }) => (
   <div className="h-full overflow-auto">
@@ -92,10 +93,13 @@ export default function SmGanttPage() {
   const [viewMode, setViewMode] = useState('table') // 'gantt' or 'table'
   const [toast, setToast] = useState(null)
   const [selectedTask, setSelectedTask] = useState(null)
+  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [holdReasons, setHoldReasons] = useState([])
 
   useEffect(() => {
     if (id) {
       loadData()
+      loadHoldReasons()
     }
   }, [id])
 
@@ -119,8 +123,18 @@ export default function SmGanttPage() {
     }
   }
 
+  const loadHoldReasons = async () => {
+    try {
+      const response = await api.get('/api/v1/sm_hold_reasons?active_only=true')
+      setHoldReasons(response.hold_reasons || [])
+    } catch (err) {
+      console.error('Failed to load hold reasons:', err)
+    }
+  }
+
   const handleTaskClick = (task) => {
     setSelectedTask(task)
+    setShowTaskModal(true)
     // Future: Open task detail modal
   }
 
@@ -128,11 +142,29 @@ export default function SmGanttPage() {
     try {
       await api.patch(`/api/v1/sm_tasks/${taskId}`, { sm_task: updates })
       setToast({ type: 'success', message: 'Task updated' })
-      loadData() // Refresh
+      await loadData() // Refresh
     } catch (err) {
       console.error('Failed to update task:', err)
       setToast({ type: 'error', message: 'Failed to update task' })
+      throw err
     }
+  }
+
+  const handleTaskDelete = async (taskId) => {
+    try {
+      await api.delete(`/api/v1/sm_tasks/${taskId}`)
+      setToast({ type: 'success', message: 'Task deleted' })
+      await loadData() // Refresh
+    } catch (err) {
+      console.error('Failed to delete task:', err)
+      setToast({ type: 'error', message: 'Failed to delete task' })
+      throw err
+    }
+  }
+
+  const handleCloseModal = () => {
+    setShowTaskModal(false)
+    setSelectedTask(null)
   }
 
   if (loading) {
@@ -236,6 +268,16 @@ export default function SmGanttPage() {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Task Modal */}
+      <SmTaskModal
+        task={selectedTask}
+        holdReasons={holdReasons}
+        isOpen={showTaskModal}
+        onClose={handleCloseModal}
+        onSave={handleTaskUpdate}
+        onDelete={handleTaskDelete}
+      />
     </div>
   )
 }
