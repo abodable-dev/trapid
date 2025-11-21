@@ -109,11 +109,26 @@ const buildGoldStandardColumns = () => {
 
 const GOLD_STANDARD_COLUMNS = buildGoldStandardColumns()
 
+// Helper to get current user ID (defined outside component)
+const getCurrentUserId = () => {
+  try {
+    const user = localStorage.getItem('user')
+    if (user) {
+      const userData = JSON.parse(user)
+      return userData.id || 1 // Default to 1 if no ID
+    }
+  } catch (e) {
+    console.error('Failed to parse user from localStorage:', e)
+  }
+  return 1 // Default user ID
+}
+
 export default function GoldStandardTableTab() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [showFeatures, setShowFeatures] = useState(false)
+
   const [newItem, setNewItem] = useState({
     single_line_text: '',
     email: '',
@@ -133,7 +148,7 @@ export default function GoldStandardTableTab() {
     whole_number: 0,
     multiple_lines_text: '',
     url: '',
-    user: null,
+    user: getCurrentUserId(),
     multiple_lookups: ''
   })
 

@@ -2098,6 +2098,37 @@ export default function TrapidTableView({
           </div>
         )
 
+      case 'user':
+        // User column - displays user information
+        if (editingRowId === entry.id) {
+          // In edit mode: show current user (non-editable for now)
+          const currentUser = getCurrentUser()
+          return (
+            <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-xs font-bold">
+                {currentUser.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm text-gray-700 dark:text-gray-300">{currentUser}</span>
+            </div>
+          )
+        }
+        // Display mode - show user info or prompt to set
+        if (entry[columnKey]) {
+          // If user ID exists, display it with an avatar
+          const userName = getCurrentUser() // In a real app, would lookup by user ID
+          return (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-xs font-bold">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm text-gray-700 dark:text-gray-300">{userName}</span>
+            </div>
+          )
+        }
+        return (
+          <span className="text-gray-400 text-xs italic">No user assigned</span>
+        )
+
       default:
         // Generic handler for all other columns - make them editable in edit mode
         const value = entry[columnKey]
