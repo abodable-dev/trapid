@@ -1999,6 +1999,72 @@ export default function TrapidTableView({
         }
         return <span className="text-gray-400">-</span>
 
+      case 'boolean':
+        // Boolean column with toggle switch (green = true, red = false)
+        const boolValue = editingRowId === entry.id ? editingData[columnKey] : entry[columnKey]
+
+        return (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (editingRowId === entry.id) {
+                  // In edit mode: toggle the value
+                  setEditingData({ ...editingData, [columnKey]: !editingData[columnKey] })
+                }
+              }}
+              disabled={editingRowId !== entry.id}
+              className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors ${
+                boolValue
+                  ? 'bg-green-500 dark:bg-green-600'
+                  : 'bg-red-400 dark:bg-red-500'
+              } ${editingRowId === entry.id ? 'cursor-pointer' : 'cursor-default'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                boolValue ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+        )
+
+      case 'choice':
+        // Choice/dropdown column with predefined options
+        if (editingRowId === entry.id) {
+          return (
+            <select
+              value={editingData[columnKey] || ''}
+              onChange={(e) => {
+                const value = e.target.value
+                setEditingData({ ...editingData, [columnKey]: value })
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select...</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="pending">Pending</option>
+              <option value="archived">Archived</option>
+            </select>
+          )
+        }
+        // Display mode - show the value with color coding
+        const choiceValue = entry[columnKey]
+        const choiceColors = {
+          'active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+          'inactive': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+          'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+          'archived': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+        }
+        return (
+          <div className="flex justify-center">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${choiceColors[choiceValue] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>
+              {choiceValue || '-'}
+            </span>
+          </div>
+        )
+
       default:
         // Generic handler for all other columns - make them editable in edit mode
         const value = entry[columnKey]
