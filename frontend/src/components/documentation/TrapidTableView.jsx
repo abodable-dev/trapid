@@ -1483,7 +1483,29 @@ export default function TrapidTableView({
         return <span className="text-gray-400">-</span>
 
       default:
-        return null
+        // Generic handler for all other columns - make them editable in edit mode
+        const value = entry[columnKey]
+
+        if (editingRowId === entry.id) {
+          // In edit mode: show editable input
+          return (
+            <input
+              type="text"
+              value={editingData[columnKey] || ''}
+              onChange={(e) => setEditingData({ ...editingData, [columnKey]: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          )
+        }
+
+        // Display mode: show value as text
+        return value ? (
+          <span className="text-gray-900 dark:text-white">{value}</span>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )
     }
   }
 
