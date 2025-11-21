@@ -542,7 +542,14 @@ export default function FeaturesTrackingTable() {
 
           {/* Chapter Accordion */}
           <div className="space-y-2">
-            {Object.entries(featuresByChapter).map(([chapter, chapterFeatures]) => {
+            {Object.entries(featuresByChapter)
+              .sort(([a], [b]) => {
+                // Extract chapter number from strings like "1. PRE-CONSTRUCTION" or "10. QUALITY"
+                const numA = parseInt(a.match(/^\d+/)?.[0] || '999')
+                const numB = parseInt(b.match(/^\d+/)?.[0] || '999')
+                return numA - numB
+              })
+              .map(([chapter, chapterFeatures]) => {
               const isExpanded = expandedChapters[chapter]
               const chapterStats = {
                 total: chapterFeatures.length,
@@ -615,7 +622,10 @@ export default function FeaturesTrackingTable() {
                   {/* Chapter Features Table */}
                   {isExpanded && (
                     <div className="border-t border-gray-200 dark:border-gray-700">
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto overflow-y-auto max-h-[600px]" style={{
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#CBD5E0 #F7FAFC'
+                      }}>
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                           <thead className="bg-gray-50 dark:bg-gray-900">
                             <tr>
@@ -629,7 +639,7 @@ export default function FeaturesTrackingTable() {
                               <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tester</th>
                               <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">UI</th>
                               <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">User</th>
-                              {sortedCompetitors.map((competitor) => (
+                              {sortedCompetitors.map((competitor, index) => (
                                 <th
                                   key={competitor.key}
                                   className={`px-3 py-3 text-center text-xs font-medium uppercase ${
@@ -638,7 +648,14 @@ export default function FeaturesTrackingTable() {
                                       : 'text-gray-500 dark:text-gray-400'
                                   }`}
                                 >
-                                  <div>{competitor.name}</div>
+                                  <div className="flex items-center justify-center gap-1">
+                                    <span className={`text-xs font-bold ${
+                                      competitor.isTrapid
+                                        ? 'text-blue-500 dark:text-blue-400'
+                                        : 'text-gray-400 dark:text-gray-500'
+                                    }`}>#{index + 1}</span>
+                                    <span>{competitor.name}</span>
+                                  </div>
                                   <div className={`font-normal ${
                                     competitor.isTrapid
                                       ? 'text-blue-500 dark:text-blue-400'
