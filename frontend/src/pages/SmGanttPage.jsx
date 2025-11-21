@@ -5,6 +5,7 @@ import { api } from '../api'
 import Toast from '../components/Toast'
 import SmGanttChart from '../components/sm-gantt/SmGanttChart'
 import SmTaskModal from '../components/sm-gantt/SmTaskModal'
+import SmNewTaskModal from '../components/sm-gantt/SmNewTaskModal'
 
 const SmTaskList = ({ tasks, onTaskClick, onStatusChange }) => (
   <div className="h-full overflow-auto">
@@ -95,6 +96,7 @@ export default function SmGanttPage() {
   const [selectedTask, setSelectedTask] = useState(null)
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [holdReasons, setHoldReasons] = useState([])
+  const [showNewTaskModal, setShowNewTaskModal] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -167,6 +169,18 @@ export default function SmGanttPage() {
     setSelectedTask(null)
   }
 
+  const handleTaskCreate = async (taskData) => {
+    try {
+      await api.post(`/api/v1/constructions/${id}/sm_tasks`, { sm_task: taskData })
+      setToast({ type: 'success', message: 'Task created successfully' })
+      await loadData() // Refresh
+    } catch (err) {
+      console.error('Failed to create task:', err)
+      setToast({ type: 'error', message: 'Failed to create task' })
+      throw err
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -214,6 +228,15 @@ export default function SmGanttPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* New Task Button */}
+            <button
+              onClick={() => setShowNewTaskModal(true)}
+              className="px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-1.5"
+            >
+              <PlusIcon className="h-4 w-4" />
+              New Task
+            </button>
+
             {/* View Toggle */}
             <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
               <button
@@ -277,6 +300,14 @@ export default function SmGanttPage() {
         onClose={handleCloseModal}
         onSave={handleTaskUpdate}
         onDelete={handleTaskDelete}
+      />
+
+      {/* New Task Modal */}
+      <SmNewTaskModal
+        constructionId={id}
+        isOpen={showNewTaskModal}
+        onClose={() => setShowNewTaskModal(false)}
+        onCreate={handleTaskCreate}
       />
     </div>
   )
