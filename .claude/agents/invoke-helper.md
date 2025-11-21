@@ -1,3 +1,12 @@
+---
+name: Agent Invocation Helper
+description: Guides Claude Code on how to invoke agents based on user input
+model: sonnet
+color: gray
+type: development
+author: Jake
+---
+
 # Agent Invocation Helper
 
 This document guides Claude Code on how to invoke agents based on user input.

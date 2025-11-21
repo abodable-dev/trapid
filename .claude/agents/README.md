@@ -2,24 +2,42 @@
 
 This directory contains specialized agent definitions for the Trapid project.
 
+## Agent Attribution
+
+Agent definitions support an `author` field in YAML frontmatter to track who created each agent:
+
+```yaml
+---
+name: My Agent
+description: What it does
+model: sonnet
+author: Jake  # Matches user by name or email
+---
+```
+
+The sync task uses this priority for attribution:
+1. Explicit `author:` field in frontmatter (recommended)
+2. Git history (first commit author)
+3. Fallback to current user
+
 ## Available Agents
 
 ### 1. backend-developer
-**Focus:** Rails API Backend Development
+**Focus:** Rails API Backend Development | **Created by:** Robert
 - API endpoints, controllers, services
 - Database migrations and models
 - Background jobs (Solid Queue)
 - Rails-specific features
 
 ### 2. frontend-developer
-**Focus:** React + Vite Frontend Development
+**Focus:** React + Vite Frontend Development | **Created by:** Robert
 - React components and pages
 - Tailwind CSS styling
 - UI/UX implementation
 - API integration on frontend
 
 ### 3. production-bug-hunter
-**Focus:** General Production Bug Diagnosis & Resolution
+**Focus:** General Production Bug Diagnosis & Resolution | **Created by:** Robert
 - Production bug diagnosis (backend, frontend, database, etc.)
 - Heroku log analysis
 - Error reproduction and fixing
@@ -27,7 +45,7 @@ This directory contains specialized agent definitions for the Trapid project.
 - **Note:** For Gantt bugs, use **"Gantt Bug Hunter"** workflow (separate from this agent)
 
 ### 4. deploy-manager
-**Focus:** Git Operations & Staging Deployment
+**Focus:** Git Operations & Staging Deployment | **Created by:** Robert
 - Commit and push changes to appropriate branch
 - **HAS AUTHORITY** to deploy to staging from `rob` branch
 - Does NOT have authority to deploy to production from `main` branch
@@ -35,14 +53,14 @@ This directory contains specialized agent definitions for the Trapid project.
 - Frontend deploys automatically via Vercel
 
 ### 5. planning-collaborator
-**Focus:** Feature Planning & Architecture Design
+**Focus:** Feature Planning & Architecture Design | **Created by:** Robert
 - Feature brainstorming
 - Architecture planning
 - Documentation creation
 - Strategic decisions
 
 ### 6. gantt-bug-hunter
-**Focus:** Gantt Chart & Schedule Master Bug Diagnosis
+**Focus:** Gantt Chart & Schedule Master Bug Diagnosis | **Created by:** Robert
 - Gantt/Schedule Master bug diagnosis
 - Run 12 automated visual tests
 - Verify all 13 RULES from Trinity Chapter 9
@@ -50,7 +68,7 @@ This directory contains specialized agent definitions for the Trapid project.
 - Analyze cascade behavior
 
 ### 7. trinity-sync-validator
-**Focus:** Trinity Database & Markdown Sync Validation
+**Focus:** Trinity Database & Markdown Sync Validation | **Created by:** Robert
 - Validates Trinity database integrity
 - Ensures markdown exports are up-to-date backups
 - Prevents stale markdown files
@@ -58,7 +76,7 @@ This directory contains specialized agent definitions for the Trapid project.
 - Trinity database is source of truth
 
 ### 8. ui-compliance-auditor
-**Focus:** UI/UX Standards Compliance (Chapter 19 & 20 - Non-Table Components)
+**Focus:** UI/UX Standards Compliance (Chapter 19 & 20) | **Created by:** Jake
 - Audits all frontend code against Chapter 19 UI/UX standards
 - Focuses on forms, modals, navigation, buttons, layouts
 - Checks for incorrect icon usage
@@ -67,7 +85,7 @@ This directory contains specialized agent definitions for the Trapid project.
 - **Note:** For table-specific audits, use ui-table-auditor
 
 ### 9. ui-table-auditor
-**Focus:** Table Component Compliance (Chapter 19 - Tables)
+**Focus:** Table Component Compliance (Chapter 19 - Tables) | **Created by:** Jake
 - Specialized audits for ALL table components
 - Trinity tables, DataTable, custom table implementations
 - Validates table structure, inline editing, column formatting
@@ -76,7 +94,7 @@ This directory contains specialized agent definitions for the Trapid project.
 - Dark mode compliance for tables
 
 ### 10. trapid-table-architect
-**Focus:** TrapidTableView Component Specialist
+**Focus:** TrapidTableView Component Specialist | **Created by:** Jake
 - Creates new table implementations using TrapidTableView
 - Reviews existing tables for standards compliance
 - Migrates legacy tables to TrapidTableView
@@ -85,7 +103,7 @@ This directory contains specialized agent definitions for the Trapid project.
 - Enforces the "One Table Standard"
 
 ### 11. architecture-guardian
-**Focus:** Clean Architecture & Code Quality
+**Focus:** Clean Architecture & Code Quality | **Created by:** Jake
 - Reviews code for architectural consistency
 - Ensures SOLID principles and clean architecture
 - Validates component reusability
@@ -94,7 +112,7 @@ This directory contains specialized agent definitions for the Trapid project.
 - Maintains codebase scalability
 
 ### 12. code-guardian
-**Focus:** Automated Pattern Violation Detection
+**Focus:** Automated Pattern Violation Detection | **Created by:** Jake
 - Scans code for known bug patterns
 - Prevents repeat bugs before they reach production
 - Posts PR review comments with fixes
@@ -103,13 +121,13 @@ This directory contains specialized agent definitions for the Trapid project.
 - Consolidates backend + frontend code review
 
 ### 13. invoke-helper
-**Focus:** Agent Invocation Guide
+**Focus:** Agent Invocation Guide | **Created by:** Jake
 - Helper agent for invoking other agents
 - Provides agent shortcuts and invocation patterns
 - Manages run history tracking
 
 ### 14. ssot-agent
-**Focus:** Single Source of Truth Validation
+**Focus:** Single Source of Truth Validation | **Created by:** Jake
 - Validates Dense Index ↔ CLAUDE.md consistency
 - Scans all .md files for conflicts with Trinity
 - Suggests archivable documentation (superseded by Trinity)
@@ -117,6 +135,22 @@ This directory contains specialized agent definitions for the Trapid project.
 - Audits frontend code for SSoT compliance
 - Stops on conflicts and asks user to resolve
 - Updates Trinity with archive records
+
+### 15. gold-standard-sst
+**Focus:** Column Types SSoT Validation | **Created by:** Robert
+- Validates Trinity T19.xxx entries match Gold Standard columns
+- Checks SQL type sync across all sources
+- Audits for hardcoded column type duplicates
+- Verifies validation rules are defined
+- Enforces Bible Rule #19.37
+
+### 16. product-owner-analyst
+**Focus:** Product Decisions & Feature Planning | **Created by:** Jake
+- Classifies features as PUBLIC-READY, INTERNAL-ONLY, or TECHNICAL-DEBT
+- Reviews code for public product readiness
+- Identifies Tekna-specific logic that needs isolation
+- Provides product strategy guidance
+- Guards against internal tools shipping to external users
 
 ## How to Use
 
@@ -286,6 +320,7 @@ description: |
 model: sonnet  # or opus, haiku
 color: blue    # optional: for UI display
 type: diagnostic  # or development, deployment, planning
+author: Jake  # Your name - matches database user by name or email
 ---
 
 Brief one-line mission statement.
@@ -348,14 +383,15 @@ Add the agent to the "Available Agents" list above.
 - [ ] Created mockup of expected output
 - [ ] Answered all planning questions
 - [ ] Created `.claude/agents/your-agent-name.md`
-- [ ] Included YAML frontmatter (name, description, model, type)
+- [ ] Included YAML frontmatter (name, description, model, type, author)
+- [ ] Added `author: YourName` field for attribution
 - [ ] Wrote clear diagnostic protocol/workflow
 - [ ] Defined pass/fail/warning criteria
 - [ ] Included fix guidance section
 - [ ] Specified required final summary output format
 - [ ] Ran `npm run sync-agents`
-- [ ] Verified agent appears in UI
-- [ ] Updated this README
+- [ ] Verified agent appears in UI with correct attribution
+- [ ] Updated this README with agent listing and "Created by" info
 
 **Important:** Keep YAML frontmatter simple. Put detailed instructions in the markdown body.
 

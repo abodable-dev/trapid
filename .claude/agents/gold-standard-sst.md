@@ -1,19 +1,21 @@
 ---
 name: Gold STD Table - SSoT
 description: |
-  ╔═══════════════════════════════════════════════════╗
-  ║  Trinity Entries:       21 types documented       ║
-  ║  Gold Standard Cols:    21 column types           ║
-  ║  Type Comparison:       21/21 matched             ║
-  ║  SQL Type Sync:         22/22 defined             ║
-  ║    (+1 action_buttons system-only)                ║
-  ║  Column Validation:     21/21 have rules          ║
-  ║  Code Audit:            No unauthorized dupes     ║
-  ╠═══════════════════════════════════════════════════╣
-  ║  System Columns:        id, created_at, updated_at║
-  ║  Single Source of Truth: Trinity T19.xxx          ║
-  ║  Bible Rule: #19.37                               ║
-  ╚═══════════════════════════════════════════════════╝
+  ╔═══════════════════════════════════════════════════════════╗
+  ║  Trinity Entries:       21 types documented       [PASS]  ║
+  ║  Gold Standard Cols:    21 column types           [PASS]  ║
+  ║  Type Comparison:       21/21 matched             [PASS]  ║
+  ║  SQL Type Sync:         22/22 defined             [PASS]  ║
+  ║    (+1 action_buttons system-only)                        ║
+  ║  Column Validation:     21/21 have rules          [PASS]  ║
+  ║  Code Audit:            No unauthorized dupes     [PASS]  ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  System Columns:        id, created_at, updated_at        ║
+  ║  Single Source of Truth: Trinity T19.xxx                  ║
+  ║  Bible Rule: #19.37                                       ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Est. Tokens:           ~5,600                            ║
+  ╚═══════════════════════════════════════════════════════════╝
 model: sonnet
 color: yellow
 type: diagnostic

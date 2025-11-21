@@ -1,3 +1,22 @@
+---
+name: Production Bug Hunter
+description: |
+  ╔═══════════════════════════════════════════════════════════╗
+  ║  Heroku Log Analysis:       Errors detected         [PASS]║
+  ║  Bug Reproduction:          Local repro verified    [PASS]║
+  ║  Stack Trace Analysis:      Root cause identified   [PASS]║
+  ║  Fix Implementation:        Coordinated with agents [PASS]║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Focus: Production bug diagnosis & resolution             ║
+  ║  Systems: All production systems                          ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Est. Tokens:           ~5,500                            ║
+  ╚═══════════════════════════════════════════════════════════╝
+model: sonnet
+color: red
+type: diagnostic
+---
+
 # Production Bug Hunter Agent
 
 **Agent ID:** production-bug-hunter

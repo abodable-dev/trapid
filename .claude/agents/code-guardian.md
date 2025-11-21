@@ -1,3 +1,23 @@
+---
+name: Code Guardian
+description: |
+  ╔═══════════════════════════════════════════════════════════╗
+  ║  Bug Pattern Detection:     Known patterns checked  [PASS]║
+  ║  PR Review:                 Line-by-line analysis   [PASS]║
+  ║  Pattern Library:           References linked       [PASS]║
+  ║  Pre-Commit Integration:    Second layer defense    [PASS]║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Focus: Automated code review & bug prevention            ║
+  ║  Trigger: Pull request submissions                        ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Est. Tokens:           ~3,500                            ║
+  ╚═══════════════════════════════════════════════════════════╝
+model: sonnet
+color: red
+type: diagnostic
+author: Jake
+---
+
 # Code Guardian Agent
 
 **Purpose:** Automated code review agent that prevents bugs before they reach production by detecting pattern violations in pull requests.
