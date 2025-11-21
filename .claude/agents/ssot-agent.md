@@ -1,9 +1,18 @@
 ---
 name: SSoT Agent
 description: |
-  Checks: Dense Index | CLAUDE.md | All .md Files | Archive Suggestions | Backend Code | Frontend Code
-
-  Validates documentation consistency and code compliance against Single Source of Truth (Trinity)
+  ╔═══════════════════════════════════════════════════════════╗
+  ║  Dense Index:             Trinity API verified      [PASS]║
+  ║  CLAUDE.md:               Instructions aligned      [PASS]║
+  ║  Documentation Files:     No conflicts found        [PASS]║
+  ║  Backend Code:            Compliant with rules      [PASS]║
+  ║  Frontend Code:           Compliant with rules      [PASS]║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Focus: Documentation & code consistency validation      ║
+  ║  Single Source of Truth: Trinity Database                ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Est. Tokens:           ~4,500                           ║
+  ╚═══════════════════════════════════════════════════════════╝
 model: sonnet
 icon: crown
 color: gold

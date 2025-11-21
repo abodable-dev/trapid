@@ -1,6 +1,17 @@
 ---
 name: Agent Invocation Helper
-description: Guides Claude Code on how to invoke agents based on user input
+description: |
+  ╔═══════════════════════════════════════════════════════════╗
+  ║  Pattern Recognition:     User input mapped         [PASS]║
+  ║  Agent Routing:           Correct agent selected    [PASS]║
+  ║  Task Invocation:         Proper subagent launch    [PASS]║
+  ║  All Agents Command:      Parallel execution        [PASS]║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Focus: Agent invocation routing based on user input     ║
+  ║  Usage: Maps natural language to agent definitions       ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Est. Tokens:           ~2,000                           ║
+  ╚═══════════════════════════════════════════════════════════╝
 model: sonnet
 color: gray
 type: development
