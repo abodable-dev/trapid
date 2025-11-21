@@ -149,10 +149,13 @@ export default function TrapidTableView({
         const response = await fetch('/api/v1/users')
         if (response.ok) {
           const usersData = await response.json()
+          console.log('✅ Loaded users for dropdown:', usersData.length, 'users')
           setUsers(usersData)
+        } else {
+          console.error('❌ Failed to fetch users, status:', response.status)
         }
       } catch (error) {
-        console.error('Failed to fetch users:', error)
+        console.error('❌ Failed to fetch users:', error)
       }
     }
     fetchUsers()
