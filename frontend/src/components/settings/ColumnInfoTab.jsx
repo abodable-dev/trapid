@@ -308,6 +308,15 @@ export default function ColumnInfoTab() {
             },
             ...columnTypes,
             {
+              columnName: 'created_at',
+              sqlType: 'TIMESTAMP',
+              displayType: 'Date & Time (Created)',
+              icon: getColumnTypeEmoji('date_and_time'),
+              validationRules: 'Auto-populated on creation, not editable',
+              example: '19/11/2024 14:30',
+              usedFor: 'Record creation timestamp'
+            },
+            {
               columnName: 'updated_at',
               sqlType: 'TIMESTAMP',
               displayType: 'Date & Time (Updated)',
@@ -339,9 +348,9 @@ export default function ColumnInfoTab() {
 
   // Handle starting to edit a cell
   const handleStartEdit = (rowIndex, field, currentValue) => {
-    // Don't allow editing system columns (id, updated_at) or read-only fields
+    // Don't allow editing system columns (id, created_at, updated_at) or read-only fields
     const column = columns[rowIndex]
-    if (column.columnName === 'id' || column.columnName === 'updated_at') {
+    if (column.columnName === 'id' || column.columnName === 'created_at' || column.columnName === 'updated_at') {
       return
     }
 
