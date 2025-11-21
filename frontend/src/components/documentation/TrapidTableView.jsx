@@ -365,6 +365,12 @@ export default function TrapidTableView({
         return 'Invalid phone format. Example: (03) 9123 4567 or 1300 123 456'
       }
     }
+    if (key === 'is_active' && value !== undefined && value !== null) {
+      // Boolean validation: must be true or false
+      if (typeof value !== 'boolean') {
+        return 'Invalid boolean value. Must be true or false'
+      }
+    }
     return null
   }
 
@@ -1417,30 +1423,30 @@ export default function TrapidTableView({
 
       case 'is_active':
         // Boolean column with toggle-style indicator
-        if (editingRowId === entry.id) {
-          return (
-            <div className="flex justify-center">
-              <input
-                type="checkbox"
-                checked={editingData.is_active || false}
-                onChange={(e) => setEditingData({ ...editingData, is_active: e.target.checked })}
-                onClick={(e) => e.stopPropagation()}
-                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-              />
-            </div>
-          )
-        }
+        const isActive = editingRowId === entry.id ? editingData.is_active : entry.is_active
+
         return (
           <div className="flex justify-center">
-            <div className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors ${
-              entry.is_active
-                ? 'bg-green-500 dark:bg-green-600'
-                : 'bg-red-400 dark:bg-red-500'
-            }`}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (editingRowId === entry.id) {
+                  // In edit mode: toggle the value
+                  setEditingData({ ...editingData, is_active: !editingData.is_active })
+                }
+              }}
+              disabled={editingRowId !== entry.id}
+              className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors ${
+                isActive
+                  ? 'bg-green-500 dark:bg-green-600'
+                  : 'bg-red-400 dark:bg-red-500'
+              } ${editingRowId === entry.id ? 'cursor-pointer' : 'cursor-default'}`}
+            >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                entry.is_active ? 'translate-x-6' : 'translate-x-1'
+                isActive ? 'translate-x-6' : 'translate-x-1'
               }`} />
-            </div>
+            </button>
           </div>
         )
 
