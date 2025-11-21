@@ -3917,6 +3917,11 @@ export default function TrapidTableView({
                                 <option key="critical" value="critical">Critical</option>
                               </>
                             )}
+                            {colKey === 'user' && users.map(user => (
+                              <option key={user.id} value={user.id}>
+                                {user.name || user.email}
+                              </option>
+                            ))}
                             {colKey === 'trinity' && (
                               <>
                                 <option key="inline-trinity-bible" value="bible">📖 Bible</option>
