@@ -155,9 +155,9 @@ function DeveloperToolsTab() {
   }, [location.search])
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-10">
-      <div className="max-w-7xl">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Developer Tools</h2>
+    <div className="px-4 sm:px-6 lg:px-8 py-6">
+      <div>
+        <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Developer Tools</h2>
 
         <TabGroup selectedIndex={selectedSubIndex} onChange={handleSubTabChange}>
           <TabList className="flex space-x-1 rounded-xl bg-indigo-900/20 p-1 mb-6">
@@ -380,10 +380,10 @@ export default function SettingsPage() {
           </p>
         </div>
         <div>
-          <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 w-full overflow-x-auto">
+          <TabList className="flex flex-wrap gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 w-full">
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -391,12 +391,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <BuildingOfficeIcon className="h-5 w-5" />
+              <BuildingOfficeIcon className="h-4 w-4" />
               Company
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -404,12 +404,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <ShieldCheckIcon className="h-5 w-5" />
+              <ShieldCheckIcon className="h-4 w-4" />
               Security
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -417,12 +417,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <CalendarDaysIcon className="h-5 w-5" />
+              <CalendarDaysIcon className="h-4 w-4" />
               Schedule Master
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -430,12 +430,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <CalendarIcon className="h-5 w-5" />
+              <CalendarIcon className="h-4 w-4" />
               Meeting Types
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -443,12 +443,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <ShieldCheckIcon className="h-5 w-5" />
+              <ShieldCheckIcon className="h-4 w-4" />
               WHS
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -456,12 +456,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <BanknotesIcon className="h-5 w-5" />
+              <BanknotesIcon className="h-4 w-4" />
               Financial
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -469,12 +469,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <DocumentTextIcon className="h-5 w-5" />
+              <DocumentTextIcon className="h-4 w-4" />
               Documentation
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -482,12 +482,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <ClipboardDocumentCheckIcon className="h-5 w-5" />
+              <ClipboardDocumentCheckIcon className="h-4 w-4" />
               Supervisor Checklist
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -495,12 +495,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <StarIcon className="h-5 w-5" />
+              <StarIcon className="h-4 w-4" />
               Gold Standard View
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -508,12 +508,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <WrenchScrewdriverIcon className="h-5 w-5" />
+              <WrenchScrewdriverIcon className="h-4 w-4" />
               Developer Tools
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -521,12 +521,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <BoltIcon className="h-5 w-5" />
+              <BoltIcon className="h-4 w-4" />
               Claude Shortcuts
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -534,12 +534,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <BookOpenIcon className="h-5 w-5" />
+              <BookOpenIcon className="h-4 w-4" />
               User Manual
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -547,12 +547,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <SparklesIcon className="h-5 w-5" />
+              <SparklesIcon className="h-4 w-4" />
               Inspiring Quotes
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -560,12 +560,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <ChartBarIcon className="h-5 w-5" />
+              <ChartBarIcon className="h-4 w-4" />
               Performance
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -573,12 +573,12 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <KeyIcon className="h-5 w-5" />
+              <KeyIcon className="h-4 w-4" />
               Permissions
             </Tab>
             <Tab
               className={({ selected }) =>
-                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-2
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -586,7 +586,7 @@ export default function SettingsPage() {
                 }`
               }
             >
-              <RocketLaunchIcon className="h-5 w-5" />
+              <RocketLaunchIcon className="h-4 w-4" />
               Deployment
             </Tab>
           </TabList>
