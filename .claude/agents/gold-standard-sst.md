@@ -1,9 +1,14 @@
 ---
 name: Gold STD Table - SSoT
 description: |
-  Checks: Trinity Entries | Gold Standard Columns | Type Comparison | SQL Type Sync | Column Validation | Code Audit
-
-  Validates all 22 column types are synced across Trinity T19.xxx → columns table → SQL types → validation rules
+  ╔═══════════════════════════════════════════════════╗
+  ║  Trinity Entries:       21 types documented       ║
+  ║  Gold Standard Cols:    21 column types           ║
+  ║  Type Comparison:       21/21 matched             ║
+  ║  SQL Type Sync:         22/22 defined             ║
+  ║  Column Validation:     21/21 have rules          ║
+  ║  Code Audit:            No unauthorized dupes     ║
+  ╚═══════════════════════════════════════════════════╝
 model: sonnet
 color: yellow
 type: diagnostic
@@ -221,9 +226,9 @@ For each column type in the Gold Standard table, check that validation rules are
 ╠════════════════════════════════════════════════════════════════╣
 ║  STATUS: ALL SYNCED                                            ║
 ╠════════════════════════════════════════════════════════════════╣
-║  Trinity Entries:          22 types documented       [PASS]    ║
-║  Gold Standard Columns:    22 column types           [PASS]    ║
-║  Type Comparison:          22/22 matched             [PASS]    ║
+║  Trinity Entries:          21 types documented       [PASS]    ║
+║  Gold Standard Columns:    21 column types           [PASS]    ║
+║  Type Comparison:          21/21 matched             [PASS]    ║
 ║  SQL Type Sync:            All matched               [PASS]    ║
 ║  Column Validation:        All rules defined         [PASS]    ║
 ║  Code Audit:               No unauthorized dupes     [PASS]    ║
