@@ -223,32 +223,141 @@ To modify an agent:
 
 ## Adding New Agents
 
-1. **Create agent file** in `.claude/agents/your-agent-name.md`:
+### Step 1: Define the Deliverable FIRST (Before Writing Any Code)
+
+**Critical:** Agree on what the agent will OUTPUT before creating the file. This prevents scope creep and ensures clear success criteria.
+
+Answer these questions:
+
+| Question | Your Answer |
+|----------|-------------|
+| **What is the agent's job?** | One sentence description |
+| **What does it check/do?** | List of specific checks or actions |
+| **What does it output?** | Exact format (see example below) |
+| **What triggers it?** | Manual, proactive, on PR, scheduled? |
+| **What tools does it need?** | Read, Grep, Glob, API calls, Edit, Write? |
+| **What's the token budget?** | Estimated tokens per run |
+| **Pass/Fail criteria?** | What makes each check pass or fail? |
+
+### Step 2: Design the Output Format
+
+Create a mockup of EXACTLY what the agent should produce. This becomes the contract.
+
+**Example: Gold STD Table - SSoT Agent Output**
+
+```
+╔═══════════════════════════════════════════════════════════╗
+║  Trinity Entries:       21 types documented       [PASS]  ║
+║  Gold Standard Cols:    21 column types           [PASS]  ║
+║  Type Comparison:       21/21 matched             [PASS]  ║
+║  SQL Type Sync:         22/22 defined             [PASS]  ║
+║    (+1 action_buttons system-only)                        ║
+║  Column Validation:     21/21 have rules          [PASS]  ║
+║  Code Audit:            No unauthorized dupes     [PASS]  ║
+╠═══════════════════════════════════════════════════════════╣
+║  System Columns:        id, created_at, updated_at        ║
+║  Single Source of Truth: Trinity T19.xxx                  ║
+║  Bible Rule: #19.37                                       ║
+╠═══════════════════════════════════════════════════════════╣
+║  Est. Tokens:           ~5,600                            ║
+╚═══════════════════════════════════════════════════════════╝
+```
+
+**Why this matters:**
+- Clear visual confirmation of pass/fail status
+- User knows exactly what to expect
+- Agent has clear success criteria to implement
+- Token budget is transparent
+
+### Step 3: Create the Agent File
+
+Create `.claude/agents/your-agent-name.md` with this structure:
 
 ```markdown
 ---
-name: your-agent-name
-description: Brief description of what the agent does
+name: Your Agent Name
+description: |
+  ╔════════════════════════════════════════════════════════╗
+  ║  Check 1:             Expected result         [PASS]   ║
+  ║  Check 2:             Expected result         [PASS]   ║
+  ╠════════════════════════════════════════════════════════╣
+  ║  Est. Tokens:         ~X,XXX                           ║
+  ╚════════════════════════════════════════════════════════╝
 model: sonnet  # or opus, haiku
-type: development  # or diagnostic, deployment, planning
+color: blue    # optional: for UI display
+type: diagnostic  # or development, deployment, planning
 ---
 
-Your agent's full instructions and capabilities here...
+Brief one-line mission statement.
+
+## The Problem This Agent Solves
+
+Explain why this agent exists and what pain point it addresses.
+
+## Your Diagnostic Protocol (or Workflow)
+
+### Step 1: First Check
+- What to fetch/read
+- What to look for
+- Pass/fail criteria
+
+### Step 2: Second Check
+...
+
+## What to Report
+
+### Green (All Good)
+- List conditions for all-pass status
+
+### Yellow (Warning)
+- List conditions for warning status
+
+### Red (Critical)
+- List conditions for failure status
+
+## Fix Guidance
+
+### If [problem 1]:
+1. Step to fix
+2. Step to fix
+
+## Final Summary Output (REQUIRED)
+
+You MUST output a summary box at the end (see gold-standard-sst.md for full example)
 ```
 
-2. **Sync to database**:
+### Step 4: Sync to Database
+
 ```bash
 npm run sync-agents
 ```
 
-3. **Verify in UI**:
+### Step 5: Verify in UI
+
 - Navigate to http://localhost:5173/admin/system?tab=developer-tools
 - Check "Agent Status" tab
 - Your new agent should appear in the list
 
-4. **Update this README** with agent description
+### Step 6: Update this README
 
-**Important:** Keep YAML frontmatter simple. Avoid multi-line values with special characters. Put detailed instructions in the markdown body.
+Add the agent to the "Available Agents" list above.
+
+### Agent Creation Checklist
+
+- [ ] Defined deliverable/output format FIRST
+- [ ] Created mockup of expected output
+- [ ] Answered all planning questions
+- [ ] Created `.claude/agents/your-agent-name.md`
+- [ ] Included YAML frontmatter (name, description, model, type)
+- [ ] Wrote clear diagnostic protocol/workflow
+- [ ] Defined pass/fail/warning criteria
+- [ ] Included fix guidance section
+- [ ] Specified required final summary output format
+- [ ] Ran `npm run sync-agents`
+- [ ] Verified agent appears in UI
+- [ ] Updated this README
+
+**Important:** Keep YAML frontmatter simple. Put detailed instructions in the markdown body.
 
 ## Notes
 
