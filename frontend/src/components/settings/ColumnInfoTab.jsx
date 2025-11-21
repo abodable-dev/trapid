@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckCircleIcon, InformationCircleIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import { CheckCircleIcon, InformationCircleIcon, ArrowDownTrayIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { COLUMN_TYPES, getColumnTypeEmoji, clearColumnTypesCache } from '../../constants/columnTypes'
 import api from '../../api'
 
@@ -501,6 +501,17 @@ export default function ColumnInfoTab() {
 
           {/* Action Buttons */}
           <div className="flex gap-2">
+            <button
+              onClick={() => {
+                clearColumnTypesCache()
+                window.location.reload()
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+              title="Clear cache and refresh column data from database"
+            >
+              <ArrowPathIcon className="h-5 w-5" />
+              Refresh Data
+            </button>
             <button
               onClick={exportToCSV}
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
