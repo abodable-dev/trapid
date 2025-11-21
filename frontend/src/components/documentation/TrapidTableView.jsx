@@ -4076,7 +4076,7 @@ export default function TrapidTableView({
                         if (editModeActive && colKey !== 'select' && colKey !== 'id' && colKey !== 'user_id' && !column.isComputed) {
                           e.stopPropagation();
                           if (editingRowId !== entry.id) {
-                            // Validate current editing data before switching rows
+                            // Validate and save current editing data before switching rows
                             if (editingRowId !== null && Object.keys(editingData).length > 0) {
                               const errors = []
                               Object.keys(editingData).forEach(key => {
@@ -4087,6 +4087,15 @@ export default function TrapidTableView({
                                 setValidationError(errors[0]) // Show first error
                                 setTimeout(() => setValidationError(null), 4000) // Clear after 4 seconds
                                 return // Don't switch rows if validation fails
+                              }
+
+                              // Auto-save the current row before switching
+                              if (onEdit) {
+                                onEdit(editingData).catch(err => {
+                                  console.error('Failed to auto-save row:', err)
+                                  setValidationError('Failed to save changes')
+                                  setTimeout(() => setValidationError(null), 4000)
+                                })
                               }
                             }
                             setValidationError(null)
