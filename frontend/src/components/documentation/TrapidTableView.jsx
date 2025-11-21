@@ -3814,7 +3814,7 @@ export default function TrapidTableView({
                         fontSize: '14px',
                         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                       }}
-                      className={`group relative ${colKey === 'select' ? 'px-1 py-1' : 'px-3 py-1'} ${
+                      className={`group relative ${colKey === 'select' ? 'px-1 py-2' : 'px-3 py-2'} ${
                         // Validation: bright red background with white text for invalid cells (not in edit mode)
                         !editModeActive && !isCellValid(entry, colKey, column) ? 'bg-red-600 text-white dark:bg-red-600 dark:text-white' :
                         // Gray out computed columns when in edit mode
