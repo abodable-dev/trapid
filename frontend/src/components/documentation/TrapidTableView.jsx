@@ -2148,10 +2148,11 @@ export default function TrapidTableView({
           )
         }
         // Display mode - show user info with avatar
-        if (entry[columnKey]) {
-          const user = getUserById(entry[columnKey])
+        const userId = entry[columnKey]
+        if (userId) {
+          const user = getUserById(userId)
           if (user) {
-            const displayName = user.name || user.email
+            const displayName = user.name || user.email || 'Unknown User'
             return (
               <div className="flex items-center gap-2">
                 <div className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-xs font-bold">
@@ -2163,11 +2164,16 @@ export default function TrapidTableView({
           }
           // User ID exists but user not found in list
           return (
-            <span className="text-gray-500 text-xs">User #{entry[columnKey]}</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-6 h-6 bg-gray-400 text-white rounded-full text-xs font-bold">
+                ?
+              </div>
+              <span className="text-gray-500 text-xs">User #{userId}</span>
+            </div>
           )
         }
         return (
-          <span className="text-gray-400 text-xs italic">No user assigned</span>
+          <div className="text-center text-gray-400 text-xs">-</div>
         )
 
       default:
