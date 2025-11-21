@@ -1,6 +1,9 @@
 ---
 name: Gold STD Table - SSoT
-description: Validates Column Types SSoT - ensures Trinity T19.xxx entries, columns table, SQL types, and validation rules are all in sync
+description: |
+  Checks: Trinity Entries | Gold Standard Columns | Type Comparison | SQL Type Sync | Column Validation | Code Audit
+
+  Validates all 22 column types are synced across Trinity T19.xxx → columns table → SQL types → validation rules
 model: sonnet
 color: yellow
 type: diagnostic
@@ -107,6 +110,25 @@ Search for violations:
 - Controllers with hardcoded SQL type maps (except fallbacks)
 - Other files with duplicate definitions
 
+### Step 6: Validate Column Validation Rules
+
+For each column type in the Gold Standard table, check that validation rules are properly defined:
+
+1. **Fetch validation rules from Trinity entries** - Each T19.xxx entry should specify validation rules
+2. **Check Gold Standard columns have validation_rules field populated** - Use `/api/v1/gold_table_sync` response
+3. **Compare validation rules match between Trinity and implementation**
+
+**What to check:**
+- `max_length` for text types (single_line_text, multiple_lines_text)
+- `pattern` for formatted types (email, phone, mobile, url)
+- `min`/`max` for numeric types (number, whole_number, currency, percentage)
+- `allowed_values` for choice types
+- `file_types` and `max_size` for file_upload
+
+**Pass criteria:**
+- All column types have validation rules defined in Trinity
+- Validation rules are consistent between Trinity documentation and implementation
+
 ## What to Report
 
 ### Green (All Good)
@@ -115,9 +137,10 @@ Search for violations:
 - All Trinity types have matching Gold Standard columns
 - Sync check shows all "match" (no SQL type mismatches)
 - No hardcoded duplicates
+- All column types have validation rules defined
 
 ### Yellow (Warning)
-- Missing validation rules in Trinity entry
+- Missing validation rules in Trinity entry (some types)
 - Frontend cache comment missing
 
 ### Red (Critical)
@@ -126,6 +149,7 @@ Search for violations:
 - **Missing from Gold Standard**: Trinity entry exists but no column in Gold Standard
 - SQL type mismatch between sources
 - Hardcoded duplicate map found in unauthorized location
+- **Missing validation rules**: Multiple column types without validation rules
 
 ## Fix Guidance
 
@@ -201,10 +225,13 @@ Search for violations:
 ║  Gold Standard Columns:    22 column types           [PASS]    ║
 ║  Type Comparison:          22/22 matched             [PASS]    ║
 ║  SQL Type Sync:            All matched               [PASS]    ║
+║  Column Validation:        All rules defined         [PASS]    ║
 ║  Code Audit:               No unauthorized dupes     [PASS]    ║
 ╠════════════════════════════════════════════════════════════════╣
 ║  Single Source of Truth: Trinity T19.xxx                       ║
 ║  Bible Rule: #19.37                                            ║
+╠════════════════════════════════════════════════════════════════╣
+║  Tokens Used: ~X,XXX (input) / ~X,XXX (output)                 ║
 ╚════════════════════════════════════════════════════════════════╝
 ```
 
@@ -219,18 +246,36 @@ Search for violations:
 ║  Gold Standard Columns:    [Y] column types          [PASS/FAIL]║
 ║  Type Comparison:          [X]/[Y] matched           [PASS/FAIL]║
 ║  SQL Type Sync:            [status]                  [PASS/FAIL]║
+║  Column Validation:        [X]/[Y] have rules        [PASS/FAIL]║
 ║  Code Audit:               [status]                  [PASS/FAIL]║
 ╠════════════════════════════════════════════════════════════════╣
 ║  ISSUES:                                                       ║
 ║  - Missing from Trinity: [list types]                          ║
 ║  - Missing from Gold Standard: [list types]                    ║
 ║  - SQL mismatches: [list columns]                              ║
+║  - Missing validation rules: [list types]                      ║
 ╠════════════════════════════════════════════════════════════════╣
 ║  FIX: See "Fix Guidance" section above                         ║
+╠════════════════════════════════════════════════════════════════╣
+║  Tokens Used: ~X,XXX (input) / ~X,XXX (output)                 ║
 ╚════════════════════════════════════════════════════════════════╝
 ```
 
 **Always end your report with one of these summary boxes so the user has a clear visual confirmation of the sync status.**
+
+### Token Usage Tracking
+
+The "Tokens Used" line should report approximate token consumption for the agent run:
+- **Input tokens**: API responses read (Trinity entries, Gold Standard sync, etc.)
+- **Output tokens**: Report generated
+
+Estimate based on:
+- Trinity API response: ~500-1000 tokens per entry
+- Gold Standard sync: ~200-500 tokens per column
+- Code audit searches: ~100-300 tokens per file checked
+- Summary output: ~500 tokens
+
+This helps users understand the cost of running the validation.
 
 ## References
 

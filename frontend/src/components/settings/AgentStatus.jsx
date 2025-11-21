@@ -11,12 +11,12 @@ import {
   Bars3Icon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+// Note: Agents are run via Claude Code CLI, not from this UI
 
 export default function AgentStatus() {
   const [agentData, setAgentData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [runningAgents, setRunningAgents] = useState(new Set());
   const [selectedAgentDescription, setSelectedAgentDescription] = useState(null);
 
   // Table state - RULE #19 compliance
@@ -40,8 +40,7 @@ export default function AgentStatus() {
       totalRuns: 50,
       successRate: 60,
       createdBy: 90,
-      updatedBy: 90,
-      actions: 60
+      updatedBy: 90
     };
   });
   const [resizingColumn, setResizingColumn] = useState(null);
@@ -64,8 +63,7 @@ export default function AgentStatus() {
       totalRuns: true,
       successRate: true,
       createdBy: true,
-      updatedBy: true,
-      actions: true
+      updatedBy: true
     };
   });
   const [showColumnPicker, setShowColumnPicker] = useState(false);
@@ -79,7 +77,7 @@ export default function AgentStatus() {
         console.error('Error parsing saved column order:', e);
       }
     }
-    return ['agent', 'description', 'status', 'lastRun', 'totalRuns', 'successRate', 'createdBy', 'updatedBy', 'actions'];
+    return ['agent', 'description', 'status', 'lastRun', 'totalRuns', 'successRate', 'createdBy', 'updatedBy'];
   });
   const [draggingColumn, setDraggingColumn] = useState(null);
 
@@ -191,25 +189,6 @@ export default function AgentStatus() {
     );
   };
 
-  const handleRunAgent = async (agentName) => {
-    setRunningAgents(prev => new Set(prev).add(agentName));
-    try {
-      // Simulate agent run - replace with actual API call when backend is ready
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log(`Running agent: ${agentName}`);
-      // Refresh agent status after run
-      await fetchAgentStatus();
-    } catch (err) {
-      console.error(`Error running agent ${agentName}:`, err);
-    } finally {
-      setRunningAgents(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(agentName);
-        return newSet;
-      });
-    }
-  };
-
   const handleSort = (key) => {
     setSortConfig(prev => ({
       key,
@@ -282,8 +261,7 @@ export default function AgentStatus() {
     { key: 'totalRuns', label: 'Total Runs', sortable: true, searchable: false },
     { key: 'successRate', label: 'Success Rate', sortable: true, searchable: false },
     { key: 'createdBy', label: 'Created By', sortable: true, searchable: true },
-    { key: 'updatedBy', label: 'Updated', sortable: true, searchable: true },
-    { key: 'actions', label: 'Actions', sortable: false, searchable: false }
+    { key: 'updatedBy', label: 'Updated', sortable: true, searchable: true }
   ];
 
   if (loading) {
@@ -623,27 +601,6 @@ export default function AgentStatus() {
                                 {formatDate(agent.updated_at)}
                               </div>
                             )}
-                          </td>
-                        );
-                      } else if (key === 'actions') {
-                        return (
-                          <td key="actions" className="px-3 py-2 overflow-hidden" style={{ width: columnWidths.actions }}>
-                            <button
-                              onClick={() => handleRunAgent(agent.id)}
-                              disabled={runningAgents.has(agent.id)}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {runningAgents.has(agent.id) ? (
-                                <>
-                                  <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                </>
-                              ) : (
-                                <>
-                                  <PlayCircleIcon className="h-3 w-3" />
-                                  Run
-                                </>
-                              )}
-                            </button>
                           </td>
                         );
                       }
