@@ -610,8 +610,8 @@ export default function ColumnInfoTab() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {columns.map((column, index) => {
-                  // Check if this is a system-generated column (only created_at and updated_at)
-                  const isSystemGenerated = ['created_at', 'updated_at'].includes(column.columnName)
+                  // Check if this is a system-generated column (id, created_at, updated_at)
+                  const isSystemGenerated = ['id', 'created_at', 'updated_at'].includes(column.columnName)
 
                   return (
                     <tr
