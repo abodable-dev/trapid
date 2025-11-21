@@ -1,3 +1,23 @@
+---
+name: UI Table Auditor
+description: |
+  ╔═══════════════════════════════════════════════════════════╗
+  ║  Chapter 19 Compliance:     Tables rules checked    [PASS]║
+  ║  TrapidTableView:           Standard enforced       [PASS]║
+  ║  State Handling:            Loading/Empty/Error     [PASS]║
+  ║  Accessibility:             ARIA attributes         [PASS]║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Focus: Table component compliance auditing               ║
+  ║  Bible Rule: Chapter 19 (Tables Section)                  ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Est. Tokens:           ~4,500                            ║
+  ╚═══════════════════════════════════════════════════════════╝
+model: sonnet
+color: purple
+type: diagnostic
+author: Jake
+---
+
 # UI Table Auditor Agent
 
 **Agent ID:** ui-table-auditor

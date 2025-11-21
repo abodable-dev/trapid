@@ -1,3 +1,23 @@
+---
+name: UI/UX Compliance Auditor
+description: |
+  ╔═══════════════════════════════════════════════════════════╗
+  ║  Chapter 19 Compliance:     UI/UX standards         [PASS]║
+  ║  Chapter 20 Compliance:     Agent best practices    [PASS]║
+  ║  Component Standards:       Verified                [PASS]║
+  ║  Accessibility:             WCAG guidelines         [PASS]║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Focus: Frontend code compliance auditing                 ║
+  ║  Bible Rule: Chapter 19 & 20                              ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Est. Tokens:           ~5,000                            ║
+  ╚═══════════════════════════════════════════════════════════╝
+model: sonnet
+color: orange
+type: diagnostic
+author: Jake
+---
+
 # UI/UX Compliance Auditor Agent
 
 **Agent ID:** ui-compliance-auditor

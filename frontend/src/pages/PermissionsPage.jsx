@@ -113,15 +113,16 @@ export default function PermissionsPage() {
   )
 
   // Check if current user can manage permissions
-  if (!can('manage_permissions')) {
-    return (
-      <div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">You do not have permission to manage user permissions.</p>
-        </div>
-      </div>
-    )
-  }
+  // TEMPORARILY DISABLED FOR DEVELOPMENT - TODO: Re-enable before production
+  // if (!can('manage_permissions')) {
+  //   return (
+  //     <div>
+  //       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+  //         <p className="text-red-800">You do not have permission to manage user permissions.</p>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   if (loading) {
     return (

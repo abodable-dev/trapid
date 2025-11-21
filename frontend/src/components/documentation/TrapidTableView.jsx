@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import RichTextEditor from '../common/RichTextEditor'
-import ColumnEditorFullView from '../schema/ColumnEditorFullView'
 import ColumnEditorModal from '../schema/ColumnEditorModal'
+import SavedViewsKanban from './SavedViewsKanban'
+import LocationMapCard from '../job-detail/LocationMapCard'
 import {
   MagnifyingGlassIcon,
   XMarkIcon,
@@ -22,7 +24,8 @@ import {
   ArrowDownTrayIcon,
   ViewColumnsIcon,
   Cog8ToothIcon,
-  WrenchScrewdriverIcon
+  WrenchScrewdriverIcon,
+  PlayIcon
 } from '@heroicons/react/24/outline'
 
 const CHAPTER_NAMES = {
@@ -92,6 +95,7 @@ export default function TrapidTableView({
   entries,
   onEdit,
   onDelete,
+  onBulkDelete,
   stats,
   category = null,
   customActions = null,
@@ -105,6 +109,8 @@ export default function TrapidTableView({
   tableIdNumeric = null,  // NEW: Numeric table ID for schema editor API calls
   tableName = 'Table'  // NEW: Human-readable table name for schema editor
 }) {
+  const navigate = useNavigate()
+
   // Use custom columns if provided, otherwise use default Trinity columns
   const COLUMNS = columns || DEFAULT_TRINITY_COLUMNS
 
@@ -133,6 +139,28 @@ export default function TrapidTableView({
     severity: 'all'
   })
 
+  // Users list for user column dropdown
+  const [users, setUsers] = useState([])
+
+  // Fetch users from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/api/v1/users')
+        if (response.ok) {
+          const usersData = await response.json()
+          console.log('✅ Loaded users for dropdown:', usersData.length, 'users')
+          setUsers(usersData)
+        } else {
+          console.error('❌ Failed to fetch users, status:', response.status)
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch users:', error)
+      }
+    }
+    fetchUsers()
+  }, [])
+
   // Get current user for audit trail
   const getCurrentUser = () => {
     try {
@@ -147,8 +175,17 @@ export default function TrapidTableView({
     return 'User'
   }
 
+  // Helper to get user by ID
+  const getUserById = (userId) => {
+    if (!userId) return null
+    const user = users.find(u => u.id === userId)
+    return user || null
+  }
+
   // Row selection state (Chapter 20: Always enabled for multi-select)
   const [selectedRows, setSelectedRows] = useState(new Set())
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStartRow, setDragStartRow] = useState(null)
 
   // Bulk action state - show delete only after edit clicked
   const [showDeleteButton, setShowDeleteButton] = useState(false)
@@ -160,6 +197,21 @@ export default function TrapidTableView({
   const [editingRowId, setEditingRowId] = useState(null)
   const [editingData, setEditingData] = useState({})
   const [validationError, setValidationError] = useState(null)
+
+  // GPS map picker modal state
+  const [showGpsModal, setShowGpsModal] = useState(false)
+  const [gpsModalCoords, setGpsModalCoords] = useState({ lat: -27.4705, lng: 153.0260 }) // Default to Brisbane
+
+  // Color picker modal state
+  const [showColorModal, setShowColorModal] = useState(false)
+  const [colorModalValue, setColorModalValue] = useState('#000000')
+
+  // File upload modal state
+  const [showFileModal, setShowFileModal] = useState(false)
+  const [fileModalTab, setFileModalTab] = useState('upload') // 'upload' or 'url'
+  const [fileModalValue, setFileModalValue] = useState('')
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [dragActive, setDragActive] = useState(false)
 
   // Column visibility dropdown state
   const [showColumnsDropdown, setShowColumnsDropdown] = useState(false)
@@ -183,12 +235,21 @@ export default function TrapidTableView({
     }
   })
   const [filterName, setFilterName] = useState('') // Name for saving current filter combo
+
+  // Feature flag: Use kanban-style saved views (default: true)
+  const [useKanbanSavedViews, setUseKanbanSavedViews] = useState(() => {
+    const saved = localStorage.getItem('trapidTableUseKanbanSavedViews')
+    return saved !== null ? JSON.parse(saved) : true
+  })
+
   const [selectedCascadeColumn, setSelectedCascadeColumn] = useState('') // Currently selected column in cascade filter
   const [cascadeInputValue, setCascadeInputValue] = useState('') // Input value for text-based filters
+  const [cascadeOperator, setCascadeOperator] = useState('=') // Operator for numeric comparisons (=, >, <, >=, <=, !=)
   const [columnSearchQuery, setColumnSearchQuery] = useState('') // Search query for filtering column list
   const [activeViewId, setActiveViewId] = useState(null) // Track which saved view is currently active
   const [editingViewId, setEditingViewId] = useState(null) // Track which view is being edited
-  const [showSavedViewsDropdown, setShowSavedViewsDropdown] = useState(false) // Toggle for saved views dropdown
+  const [editingFilterId, setEditingFilterId] = useState(null) // Track which filter is being edited
+  const [editingFilterValue, setEditingFilterValue] = useState('') // Track the temporary value while editing
 
   // Save filters to localStorage whenever they change (per table)
   useEffect(() => {
@@ -199,24 +260,25 @@ export default function TrapidTableView({
     }
   }, [savedFilters, tableId])
 
-  // Auto-load default view on mount
-  useEffect(() => {
-    const defaultView = savedFilters.find(view => view.isDefault)
-    if (defaultView) {
-      // Load default view's filters
-      setCascadeFilters(defaultView.filters.map(f => ({
-        id: Date.now() + Math.random(),
-        column: f.column,
-        value: f.value,
-        label: f.label
-      })))
-      // Load default view's column visibility if available
-      if (defaultView.visibleColumns) {
-        setVisibleColumns(defaultView.visibleColumns)
-      }
-      setActiveViewId(defaultView.id)
-    }
-  }, []) // Only run on mount
+  // Auto-load default view on mount - DISABLED to start with clean slate
+  // useEffect(() => {
+  //   const defaultView = savedFilters.find(view => view.isDefault)
+  //   if (defaultView) {
+  //     // Load default view's filters
+  //     setCascadeFilters(defaultView.filters.map(f => ({
+  //       id: Date.now() + Math.random(),
+  //       column: f.column,
+  //       value: f.value,
+  //       operator: f.operator || '=',
+  //       label: f.label
+  //     })))
+  //     // Load default view's column visibility if available
+  //     if (defaultView.visibleColumns) {
+  //       setVisibleColumns(defaultView.visibleColumns)
+  //     }
+  //     setActiveViewId(defaultView.id)
+  //   }
+  // }, []) // Only run on mount
 
   // Component multi-select checkbox state
   const [selectedComponents, setSelectedComponents] = useState(new Set())
@@ -232,12 +294,14 @@ export default function TrapidTableView({
   const [textEditValue, setTextEditValue] = useState('')
   const textEditTextareaRef = useRef(null)
 
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState({})
+
   // Editable modal state (for double-click row editing)
   const [showEditableModal, setShowEditableModal] = useState(false)
   const [modalEditData, setModalEditData] = useState(null)
 
   // Column schema editor state
-  const [showColumnEditorFull, setShowColumnEditorFull] = useState(false)
   const [editIndividualMode, setEditIndividualMode] = useState(false)
   const [selectedColumnForEdit, setSelectedColumnForEdit] = useState(null)
 
@@ -250,19 +314,13 @@ export default function TrapidTableView({
   const [resizingColumn, setResizingColumn] = useState(null)
   const [resizeStartX, setResizeStartX] = useState(0)
   const [resizeStartWidth, setResizeStartWidth] = useState(0)
+  const [forceUpdate, setForceUpdate] = useState(0) // Force re-render after resize
 
   // Column reordering state
   const [draggedColumn, setDraggedColumn] = useState(null)
   const [dropTargetColumn, setDropTargetColumn] = useState(null)
 
-  // Sticky horizontal scrollbar state
-  const [tableScrollWidth, setTableScrollWidth] = useState(0)
   const scrollContainerRef = useRef(null)
-  const stickyScrollbarRef = useRef(null)
-
-  // Scroll loop prevention flags (RULE #20.33)
-  const isScrollingStickyRef = useRef(false)
-  const isScrollingMainRef = useRef(false)
 
   // Load table state from localStorage on mount (Chapter 20.5B)
   useEffect(() => {
@@ -315,6 +373,8 @@ export default function TrapidTableView({
 
   const handleResizeEnd = () => {
     setResizingColumn(null)
+    // Force re-render to update column display
+    setForceUpdate(prev => prev + 1)
   }
 
   useEffect(() => {
@@ -350,75 +410,31 @@ export default function TrapidTableView({
         return 'Invalid phone format. Example: (03) 9123 4567 or 1300 123 456'
       }
     }
+    if (key === 'is_active' && value !== undefined && value !== null) {
+      // Boolean validation: must be true or false
+      if (typeof value !== 'boolean') {
+        return 'Invalid boolean value. Must be true or false'
+      }
+    }
+    if (key === 'document_link' && value) {
+      // URL validation: must be valid URL format
+      try {
+        new URL(value)
+      } catch {
+        return 'Invalid URL format. Example: https://example.com/document.pdf'
+      }
+    }
+    if (key === 'user' && value !== undefined && value !== null && value !== '') {
+      // User validation: must be a valid integer (user ID)
+      const userId = typeof value === 'string' ? parseInt(value) : value
+      if (isNaN(userId) || userId <= 0) {
+        return 'Invalid user. Please select a valid user from the dropdown'
+      }
+    }
     return null
   }
 
-  // Scroll handlers for sticky horizontal scrollbar (RULE #20.33)
-  const handleScroll = (e) => {
-    // Prevent infinite loop from sticky scrollbar
-    if (isScrollingStickyRef.current) {
-      isScrollingStickyRef.current = false
-      return
-    }
 
-    const container = e.target
-    const { scrollLeft, scrollTop } = container
-
-    // Sync horizontal sticky scrollbar
-    if (stickyScrollbarRef.current) {
-      isScrollingMainRef.current = true
-      stickyScrollbarRef.current.scrollLeft = scrollLeft
-      setTimeout(() => { isScrollingMainRef.current = false }, 0)
-    }
-
-    // Log scroll position occasionally (every 100px)
-    if (Math.floor(scrollLeft / 100) !== Math.floor((scrollLeft - 1) / 100)) {
-      console.log('📊 Lexicon scroll:', { scrollLeft, scrollTop })
-    }
-  }
-
-  const handleStickyScroll = (e) => {
-    // Prevent infinite loop from main container
-    if (isScrollingMainRef.current) {
-      isScrollingMainRef.current = false
-      return
-    }
-
-    const scrollLeft = e.target.scrollLeft
-    if (scrollContainerRef.current) {
-      isScrollingStickyRef.current = true
-      scrollContainerRef.current.scrollLeft = scrollLeft
-      setTimeout(() => { isScrollingStickyRef.current = false }, 0)
-      console.log('📊 Lexicon sticky scrollbar scrolled to:', scrollLeft)
-    }
-  }
-
-  // Track table scroll width for sticky scrollbar
-  useEffect(() => {
-    const container = scrollContainerRef.current
-    if (!container) {
-      console.log('📊 Lexicon: No scroll container ref')
-      return
-    }
-
-    const updateScrollbar = () => {
-      const { scrollWidth, clientWidth, offsetWidth } = container
-      console.log('📊 Lexicon table dimensions:', {
-        scrollWidth,
-        clientWidth,
-        offsetWidth,
-        needsHorizontalScroll: scrollWidth > clientWidth,
-        overflow: scrollWidth - clientWidth
-      })
-      setTableScrollWidth(scrollWidth)
-    }
-
-    updateScrollbar()
-    const resizeObserver = new ResizeObserver(updateScrollbar)
-    resizeObserver.observe(container)
-
-    return () => resizeObserver.disconnect()
-  }, [columnWidths])
 
   // Column reordering handlers (Chapter 20.5)
   const handleDragStart = (e, columnKey) => {
@@ -505,6 +521,49 @@ export default function TrapidTableView({
     }
     setSelectedRows(newSelected)
   }
+
+  // Drag selection handlers
+  const handleDragSelectStart = (id) => {
+    setIsDragging(true)
+    setDragStartRow(id)
+    // Select the starting row
+    const newSelected = new Set(selectedRows)
+    newSelected.add(id)
+    setSelectedRows(newSelected)
+  }
+
+  const handleDragSelectOver = (id) => {
+    if (!isDragging || !dragStartRow) return
+
+    // Find the range between drag start and current row
+    const startIndex = filteredAndSorted.findIndex(e => e.id === dragStartRow)
+    const endIndex = filteredAndSorted.findIndex(e => e.id === id)
+
+    if (startIndex === -1 || endIndex === -1) return
+
+    // Select all rows in the range
+    const [min, max] = startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex]
+    const rowsInRange = filteredAndSorted.slice(min, max + 1).map(e => e.id)
+
+    setSelectedRows(new Set(rowsInRange))
+  }
+
+  const handleDragSelectEnd = () => {
+    setIsDragging(false)
+    setDragStartRow(null)
+  }
+
+  // Add global mouseup listener to end drag selection
+  useEffect(() => {
+    const handleMouseUp = () => {
+      if (isDragging) {
+        handleDragSelectEnd()
+      }
+    }
+
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => document.removeEventListener('mouseup', handleMouseUp)
+  }, [isDragging])
 
   // Bulk action handlers (Chapter 20: Delete with confirmation)
   const handleBulkDelete = () => {
@@ -599,28 +658,66 @@ export default function TrapidTableView({
         case 'severity':
           result = result.filter(e => e.severity === value)
           break
+        case 'user':
+          // User filter - convert string to number for comparison
+          result = result.filter(e => e.user === parseInt(value))
+          break
+        default:
+          // Generic handler for other filterable columns
+          // For boolean columns, convert string "true"/"false" to boolean
+          if (value === 'true' || value === 'false') {
+            const boolValue = value === 'true'
+            result = result.filter(e => e[key] === boolValue)
+          } else {
+            // For other columns, do a simple equality check or string match
+            result = result.filter(e => {
+              const entryValue = e[key]
+              if (entryValue === null || entryValue === undefined) return false
+              if (typeof entryValue === 'string') {
+                return entryValue.toLowerCase().includes(value.toLowerCase())
+              }
+              return entryValue === value
+            })
+          }
+          break
       }
     })
 
     // Apply cascade filters - Excel-style filters applied in order
     cascadeFilters.forEach(filter => {
-      if (!filter.value) return
+      if (!filter.value && filter.value !== 0) return
 
       const key = filter.column
       const value = filter.value
+      const operator = filter.operator || '='
 
       // Generic filter that works for any column
       result = result.filter(entry => {
         const entryValue = entry[key]
+
         // Handle different value types
         if (typeof value === 'boolean') {
           return entryValue === value
         }
-        // Handle numeric comparison
+
+        // Handle numeric comparison with operators
         if (typeof entryValue === 'number' && !isNaN(parseFloat(value))) {
-          return entryValue === parseFloat(value)
+          const numValue = parseFloat(value)
+          switch (operator) {
+            case '>': return entryValue > numValue
+            case '<': return entryValue < numValue
+            case '>=': return entryValue >= numValue
+            case '<=': return entryValue <= numValue
+            case '!=': return entryValue !== numValue
+            case '=':
+            default: return entryValue === numValue
+          }
         }
+
         // Handle string comparison (case-insensitive)
+        if (operator === '!=') {
+          return String(entryValue).toLowerCase() !== String(value).toLowerCase()
+        }
         return String(entryValue).toLowerCase() === String(value).toLowerCase()
       })
     })
@@ -710,6 +807,10 @@ export default function TrapidTableView({
           aVal = a.updated_at ? new Date(a.updated_at).getTime() : 0
           bVal = b.updated_at ? new Date(b.updated_at).getTime() : 0
           break
+        case 'created_at':
+          aVal = a.created_at ? new Date(a.created_at).getTime() : 0
+          bVal = b.created_at ? new Date(b.created_at).getTime() : 0
+          break
         case 'price':
           aVal = a.price || 0
           bVal = b.price || 0
@@ -787,11 +888,150 @@ export default function TrapidTableView({
     return column ? column.label : key
   }
 
+  // Auto-format function to fix phone and mobile numbers
+  const autoFormatPhone = (value, type = 'mobile') => {
+    if (!value) return value
+
+    // Remove all non-digit characters
+    const digits = value.replace(/\D/g, '')
+
+    if (type === 'mobile') {
+      // Format Australian mobile: 0400 000 000
+      if (digits.length === 10 && digits.startsWith('04')) {
+        return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`
+      }
+    } else if (type === 'phone') {
+      // Format Australian landline: (02) 0000 0000
+      if (digits.length === 10 && /^0[2-9]/.test(digits)) {
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)} ${digits.slice(6)}`
+      }
+      // Format 1300/1800 numbers: 1300 000 000
+      if (digits.length === 10 && /^1[38]00/.test(digits)) {
+        return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`
+      }
+      // Handle 8-digit numbers - auto-detect area code
+      if (digits.length === 8) {
+        const areaCode = detectAreaCode(digits)
+        if (areaCode) {
+          return `(${areaCode}) ${digits.slice(0, 4)} ${digits.slice(4)}`
+        }
+      }
+    }
+
+    return value // Return original if can't format
+  }
+
+  // Detect area code based on 8-digit landline pattern
+  const detectAreaCode = (eightDigits) => {
+    const firstDigit = eightDigits[0]
+
+    switch (firstDigit) {
+      case '3':
+        // Brisbane/QLD
+        return '07'
+      case '6':
+        // Perth/WA (most common for 6xxx)
+        return '08'
+      case '8':
+        // Check second digit for better accuracy
+        const secondDigit = eightDigits[1]
+        if (secondDigit === '8' || secondDigit === '9') {
+          // Adelaide/Darwin
+          return '08'
+        }
+        // Melbourne/VIC
+        return '03'
+      case '9':
+        // Melbourne/VIC (most common for 9xxx)
+        return '03'
+      default:
+        // Can't determine
+        return null
+    }
+  }
+
+  // Validation function to check if cell value is valid based on column type
+  const isCellValid = (entry, columnKey, column) => {
+    // Skip validation for special columns
+    if (['select', 'id', 'user_id', 'created_at', 'updated_at'].includes(columnKey)) {
+      return true
+    }
+
+    // Skip validation for computed columns
+    if (column?.isComputed) {
+      return true
+    }
+
+    // Skip validation if value is empty/null/undefined
+    const value = entry[columnKey]
+    if (value === null || value === undefined || value === '' || value === '-') {
+      return true
+    }
+
+    // Get column type for validation
+    const columnType = column?.column_type
+
+    // Validate based on column type
+    switch (columnType) {
+      case 'email':
+        // Validate email format
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+
+      case 'phone':
+      case 'mobile':
+        // Validate phone format (basic check for numbers and common phone chars)
+        return /^[\d\s\-\+\(\)]+$/.test(value)
+
+      case 'url':
+        // Validate URL format - accept URLs with or without protocol
+        try {
+          // Try parsing as-is first
+          new URL(value)
+          return true
+        } catch {
+          // If it fails, try adding https:// protocol
+          try {
+            new URL(`https://${value}`)
+            return true
+          } catch {
+            return false
+          }
+        }
+
+      case 'number':
+      case 'whole_number':
+      case 'currency':
+      case 'percentage':
+        // Validate numeric fields
+        return !isNaN(parseFloat(value))
+
+      case 'date':
+      case 'date_and_time':
+        // Validate date format
+        return !isNaN(Date.parse(value))
+
+      default:
+        // No specific validation for other types
+        return true
+    }
+  }
+
   const renderCellContent = (entry, columnKey) => {
     switch (columnKey) {
       case 'select':
         return (
-          <div className="flex items-center justify-center">
+          <div
+            className="flex items-center justify-center"
+            onMouseDown={(e) => {
+              e.preventDefault() // Prevent text selection while dragging
+              handleDragSelectStart(entry.id)
+            }}
+            onMouseEnter={() => {
+              if (isDragging) {
+                handleDragSelectOver(entry.id)
+              }
+            }}
+          >
             <input
               type="checkbox"
               checked={selectedRows.has(entry.id)}
@@ -799,7 +1039,7 @@ export default function TrapidTableView({
                 e.stopPropagation()
                 handleSelectRow(entry.id)
               }}
-              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 pointer-events-none"
             />
           </div>
         )
@@ -1175,6 +1415,21 @@ export default function TrapidTableView({
         return <span className="text-gray-400">-</span>
 
       case 'document_link':
+        // URL column - editable in edit mode
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="url"
+              value={editingData.document_link || ''}
+              onChange={(e) => setEditingData({ ...editingData, document_link: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              placeholder="https://example.com"
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          )
+        }
+
         if (!entry.document_link) {
           return <span className="text-gray-400 text-xs">-</span>
         }
@@ -1192,6 +1447,54 @@ export default function TrapidTableView({
             </svg>
             Open Document
           </a>
+        )
+
+      case 'action_buttons':
+        // Action buttons column - demonstrates interactive row-level actions
+        // This is a REFERENCE IMPLEMENTATION for the Gold Standard table
+        return (
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                console.log('👁️ View action clicked for entry:', entry.id)
+              }}
+              className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded transition-colors"
+              title="View"
+            >
+              <EyeIcon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                console.log('✏️ Edit action clicked for entry:', entry.id)
+              }}
+              className="p-1.5 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 rounded transition-colors"
+              title="Edit"
+            >
+              <PencilIcon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                console.log('▶️ Run action clicked for entry:', entry.id)
+              }}
+              className="p-1.5 text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/20 rounded transition-colors"
+              title="Run"
+            >
+              <PlayIcon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                console.log('🗑️ Delete action clicked for entry:', entry.id)
+              }}
+              className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded transition-colors"
+              title="Delete"
+            >
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          </div>
         )
 
       case 'price':
@@ -1218,6 +1521,7 @@ export default function TrapidTableView({
           </div>
         )
 
+      case 'number':
       case 'quantity':
       case 'whole_number':
         // Number column - right-aligned
@@ -1226,15 +1530,11 @@ export default function TrapidTableView({
             <input
               type="number"
               step={columnKey === 'whole_number' ? '1' : 'any'}
-              value={editingData[columnKey] || ''}
+              value={editingData[columnKey] ?? ''}
               onChange={(e) => {
                 const value = e.target.value
-                // For whole_number, only allow integers (no decimals)
-                if (columnKey === 'whole_number') {
-                  setEditingData({ ...editingData, [columnKey]: parseInt(value) || 0 })
-                } else {
-                  setEditingData({ ...editingData, [columnKey]: parseFloat(value) || 0 })
-                }
+                // Store the raw value to allow typing decimals
+                setEditingData({ ...editingData, [columnKey]: value })
               }}
               onClick={(e) => e.stopPropagation()}
               onFocus={(e) => e.target.select()}
@@ -1248,24 +1548,372 @@ export default function TrapidTableView({
           </div>
         )
 
-      case 'email':
-        // Email column with mailto link
+      case 'currency':
+        // Currency column - right-aligned with $ sign
+        if (editingRowId === entry.id) {
+          return (
+            <div className="relative flex items-center">
+              <span className="absolute left-2 text-gray-500 dark:text-gray-400">$</span>
+              <input
+                type="number"
+                step="0.01"
+                value={editingData[columnKey] ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setEditingData({ ...editingData, [columnKey]: value })
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                className="w-full pl-6 pr-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-right"
+              />
+            </div>
+          )
+        }
+        return (
+          <div className="text-right font-medium">
+            {entry[columnKey] != null ? `$${parseFloat(entry[columnKey]).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+          </div>
+        )
+
+      case 'percentage':
+        // Percentage column - right-aligned with % sign
+        if (editingRowId === entry.id) {
+          return (
+            <div className="relative flex items-center">
+              <input
+                type="number"
+                step="0.01"
+                value={editingData[columnKey] ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setEditingData({ ...editingData, [columnKey]: value })
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                className="w-full pr-6 pl-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-right"
+              />
+              <span className="absolute right-2 text-gray-500 dark:text-gray-400">%</span>
+            </div>
+          )
+        }
+        return (
+          <div className="text-right font-medium">
+            {entry[columnKey] != null ? `${parseFloat(entry[columnKey]).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : '-'}
+          </div>
+        )
+
+      case 'date':
+        // Date column with calendar picker
         if (editingRowId === entry.id) {
           return (
             <input
-              type="email"
-              value={editingData.email || ''}
-              onChange={(e) => setEditingData({ ...editingData, email: e.target.value })}
+              type="date"
+              value={editingData[columnKey] ?? ''}
+              onChange={(e) => {
+                const value = e.target.value
+                setEditingData({ ...editingData, [columnKey]: value })
+              }}
               onClick={(e) => e.stopPropagation()}
-              onFocus={(e) => e.target.select()}
               className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             />
           )
         }
+        return (
+          <div>
+            {entry[columnKey] ? new Date(entry[columnKey]).toLocaleDateString('en-AU') : '-'}
+          </div>
+        )
+
+      case 'date_and_time':
+        // Date and time column with datetime picker
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="datetime-local"
+              value={editingData[columnKey] ?? ''}
+              onChange={(e) => {
+                const value = e.target.value
+                setEditingData({ ...editingData, [columnKey]: value })
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          )
+        }
+        return (
+          <div>
+            {entry[columnKey] ? new Date(entry[columnKey]).toLocaleString('en-AU') : '-'}
+          </div>
+        )
+
+      case 'gps_coordinates':
+        // GPS coordinates with picker button
+        if (editingRowId === entry.id) {
+          return (
+            <div className="flex items-center gap-1 min-w-0">
+              <input
+                type="text"
+                value={editingData[columnKey] ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setEditingData({ ...editingData, [columnKey]: value })
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                placeholder="lat, lng (e.g., -27.4705, 153.0260)"
+                className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // Parse existing coordinates or use default
+                  const existing = editingData[columnKey] || ''
+                  const [lat, lng] = existing.split(',').map(s => parseFloat(s.trim()))
+                  if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                    setGpsModalCoords({ lat, lng })
+                  }
+                  setShowGpsModal(true)
+                }}
+                className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex-shrink-0"
+                title="Open location picker"
+              >
+                📍 Pick
+              </button>
+            </div>
+          )
+        }
+        // Display mode - show coordinates with Google Maps link
+        if (entry[columnKey]) {
+          const coords = entry[columnKey]
+          const [lat, lng] = coords.split(',').map(s => s.trim())
+          if (lat && lng) {
+            return (
+              <a
+                href={`https://www.google.com/maps?q=${lat},${lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 underline text-sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {coords}
+              </a>
+            )
+          }
+          return <span>{coords}</span>
+        }
+        return <span className="text-gray-400">-</span>
+
+      case 'color_picker':
+        // Color picker with button to open modal
+        if (editingRowId === entry.id) {
+          const colorValue = editingData[columnKey] || '#000000'
+          return (
+            <div className="flex items-center gap-2">
+              {/* Color preview and picker button */}
+              <div
+                className="h-8 w-12 rounded border-2 border-gray-400 dark:border-gray-500 flex-shrink-0"
+                style={{ backgroundColor: colorValue }}
+                title={colorValue}
+              />
+              {/* Hex input field */}
+              <input
+                type="text"
+                value={colorValue}
+                onChange={(e) => {
+                  let value = e.target.value
+                  // Auto-add # if not present
+                  if (value && !value.startsWith('#')) {
+                    value = '#' + value
+                  }
+                  // Validate hex format
+                  if (!value || /^#[0-9A-Fa-f]{0,6}$/.test(value)) {
+                    setEditingData({ ...editingData, [columnKey]: value })
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                placeholder="#000000"
+                className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 font-mono"
+                maxLength={7}
+              />
+              {/* Pick button to open modal */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setColorModalValue(colorValue)
+                  setShowColorModal(true)
+                }}
+                className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex-shrink-0"
+                title="Open color picker"
+              >
+                🎨 Pick
+              </button>
+            </div>
+          )
+        }
+        // Display mode - show color swatch with hex value
+        if (entry[columnKey]) {
+          const color = entry[columnKey]
+          return (
+            <div className="flex items-center gap-2">
+              <div
+                className="w-6 h-6 rounded border border-gray-300 dark:border-gray-600"
+                style={{ backgroundColor: color }}
+                title={color}
+              />
+              <span className="text-sm font-mono">{color}</span>
+            </div>
+          )
+        }
+        return <span className="text-gray-400">-</span>
+
+      case 'file_upload':
+        // File upload column with modal picker
+        if (editingRowId === entry.id) {
+          const fileValue = editingData[columnKey] || ''
+          return (
+            <div className="flex items-center gap-2 min-w-0">
+              {/* Display current file path */}
+              <input
+                type="text"
+                value={fileValue}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setEditingData({ ...editingData, [columnKey]: value })
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                placeholder="No file selected"
+                className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              />
+              {/* Browse button to open modal */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setFileModalValue(fileValue)
+                  setSelectedFile(null)
+                  setFileModalTab('upload')
+                  setShowFileModal(true)
+                }}
+                className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex-shrink-0 flex items-center gap-1"
+                title="Browse files"
+              >
+                📎 Browse
+              </button>
+            </div>
+          )
+        }
+        // Display mode - show file link with icon
+        if (entry[columnKey]) {
+          const filePath = entry[columnKey]
+          const fileName = filePath.split('/').pop() || filePath
+          const fileExt = fileName.split('.').pop()?.toLowerCase() || ''
+
+          // Determine file icon based on extension
+          let fileIcon = '📄' // Default document
+          if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(fileExt)) {
+            fileIcon = '🖼️'
+          } else if (['pdf'].includes(fileExt)) {
+            fileIcon = '📕'
+          } else if (['doc', 'docx'].includes(fileExt)) {
+            fileIcon = '📘'
+          } else if (['xls', 'xlsx', 'csv'].includes(fileExt)) {
+            fileIcon = '📊'
+          } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(fileExt)) {
+            fileIcon = '📦'
+          }
+
+          return (
+            <a
+              href={filePath}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 underline text-sm flex items-center gap-1 hover:text-blue-800 dark:hover:text-blue-300"
+              onClick={(e) => e.stopPropagation()}
+              title={`Download: ${fileName}`}
+            >
+              <span>{fileIcon}</span>
+              <span className="truncate max-w-[200px]">{fileName}</span>
+            </a>
+          )
+        }
+        return <span className="text-gray-400">No file</span>
+
+      case 'email':
+        // Email column with mailto link
+        if (editingRowId === entry.id) {
+          const emailValue = editingData.email || ''
+          const isValidEmail = !emailValue || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)
+          const hasValue = emailValue.length > 0
+
+          return (
+            <div className="w-full">
+              <div className="relative flex items-center">
+                <input
+                  type="email"
+                  value={emailValue}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setEditingData({ ...editingData, email: value })
+
+                    // Validate email format
+                    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                      setValidationErrors({ ...validationErrors, email: 'Invalid email format' })
+                    } else {
+                      const newErrors = { ...validationErrors }
+                      delete newErrors.email
+                      setValidationErrors(newErrors)
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.target.select()}
+                  className={`w-full px-2 py-1 pr-8 text-sm border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 transition-all ${
+                    !isValidEmail
+                      ? 'border-red-500 focus:ring-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse'
+                      : hasValue
+                      ? 'border-green-500 focus:ring-green-500 bg-green-50 dark:bg-green-900/20'
+                      : 'border-blue-500 focus:ring-blue-500'
+                  }`}
+                />
+                {/* Clickable mailto link overlaid on valid email */}
+                {isValidEmail && hasValue && (
+                  <a
+                    href={`mailto:${emailValue}`}
+                    className="absolute left-2 right-10 text-sm text-blue-600 dark:text-blue-400 underline pointer-events-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {emailValue}
+                  </a>
+                )}
+                {/* Green checkmark for valid email */}
+                {isValidEmail && hasValue && (
+                  <svg
+                    className="absolute right-2 h-5 w-5 text-green-600 dark:text-green-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              {/* Error message for invalid email */}
+              {!isValidEmail && (
+                <div className="text-xs text-red-600 dark:text-red-400 mt-0.5 font-semibold">
+                  Invalid email format
+                </div>
+              )}
+            </div>
+          )
+        }
+        // View mode - render email with mailto link
         return entry.email ? (
           <a
             href={`mailto:${entry.email}`}
-            className="text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-blue-600 dark:text-blue-400 underline"
             onClick={(e) => e.stopPropagation()}
           >
             {entry.email}
@@ -1282,16 +1930,12 @@ export default function TrapidTableView({
               type="tel"
               value={editingData.phone || ''}
               onChange={(e) => {
-                let value = e.target.value.replace(/[\s()]/g, '') // Remove formatting
-                // Auto-format landline: (0X) XXXX XXXX
-                if (value.length === 10 && value.match(/^0[2-9]\d{8}$/)) {
-                  value = `(${value.slice(0, 2)}) ${value.slice(2, 6)} ${value.slice(6)}`
-                }
-                // Auto-format 1300/1800: 1300 XXX XXX
-                else if (value.length === 10 && value.match(/^1[38]00\d{6}$/)) {
-                  value = `${value.slice(0, 4)} ${value.slice(4, 7)} ${value.slice(7)}`
-                }
-                setEditingData({ ...editingData, phone: value })
+                setEditingData({ ...editingData, phone: e.target.value })
+              }}
+              onBlur={(e) => {
+                // Auto-format on blur
+                const formatted = autoFormatPhone(e.target.value, 'phone')
+                setEditingData({ ...editingData, phone: formatted })
               }}
               onClick={(e) => e.stopPropagation()}
               onFocus={(e) => e.target.select()}
@@ -1320,12 +1964,12 @@ export default function TrapidTableView({
               type="tel"
               value={editingData.mobile || ''}
               onChange={(e) => {
-                let value = e.target.value.replace(/\s/g, '') // Remove spaces
-                // Auto-format if 10 digits entered (Australian mobile)
-                if (value.length === 10 && value.match(/^04\d{8}$/)) {
-                  value = `${value.slice(0, 4)} ${value.slice(4, 7)} ${value.slice(7)}`
-                }
-                setEditingData({ ...editingData, mobile: value })
+                setEditingData({ ...editingData, mobile: e.target.value })
+              }}
+              onBlur={(e) => {
+                // Auto-format on blur
+                const formatted = autoFormatPhone(e.target.value, 'mobile')
+                setEditingData({ ...editingData, mobile: formatted })
               }}
               onClick={(e) => e.stopPropagation()}
               onFocus={(e) => e.target.select()}
@@ -1347,27 +1991,31 @@ export default function TrapidTableView({
         )
 
       case 'is_active':
-        // Boolean column with checkmark/x
-        if (editingRowId === entry.id) {
-          return (
-            <div className="text-center">
-              <input
-                type="checkbox"
-                checked={editingData.is_active || false}
-                onChange={(e) => setEditingData({ ...editingData, is_active: e.target.checked })}
-                onClick={(e) => e.stopPropagation()}
-                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-              />
-            </div>
-          )
-        }
+        // Boolean column with toggle-style indicator
+        const isActive = editingRowId === entry.id ? editingData.is_active : entry.is_active
+
         return (
-          <div className="text-center">
-            {entry.is_active ? (
-              <span className="text-green-600 dark:text-green-400 text-lg">✓</span>
-            ) : (
-              <span className="text-red-600 dark:text-red-400 text-lg">✗</span>
-            )}
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (editingRowId === entry.id) {
+                  // In edit mode: toggle the value
+                  setEditingData({ ...editingData, is_active: !editingData.is_active })
+                }
+              }}
+              disabled={editingRowId !== entry.id}
+              className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors ${
+                isActive
+                  ? 'bg-green-500 dark:bg-green-600'
+                  : 'bg-red-400 dark:bg-red-500'
+              } ${editingRowId === entry.id ? 'cursor-pointer' : 'cursor-default'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                isActive ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
           </div>
         )
 
@@ -1409,15 +2057,293 @@ export default function TrapidTableView({
         }
         return <span className="text-gray-400">-</span>
 
+      case 'boolean':
+        // Boolean column with toggle switch (green = checked/true, gray = unchecked/false)
+        // Always clickable - toggles immediately and saves
+        const boolValue = editingRowId === entry.id ? editingData[columnKey] : entry[columnKey]
+
+        return (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.stopPropagation()
+                const newValue = !boolValue
+
+                if (editingRowId === entry.id) {
+                  // If already in edit mode, just update editingData
+                  setEditingData({ ...editingData, [columnKey]: newValue })
+                } else {
+                  // Not in edit mode: toggle and save immediately
+                  const updatedEntry = { ...entry, [columnKey]: newValue }
+
+                  // If onEdit callback exists, call it to save the change
+                  if (onEdit) {
+                    try {
+                      await onEdit(updatedEntry)
+                    } catch (error) {
+                      console.error('Failed to update boolean value:', error)
+                    }
+                  }
+                }
+              }}
+              className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors cursor-pointer ${
+                boolValue
+                  ? 'bg-green-500 dark:bg-green-600 hover:bg-green-600 dark:hover:bg-green-700'
+                  : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+              }`}
+              title={boolValue ? 'Click to uncheck' : 'Click to check'}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                boolValue ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+        )
+
+      case 'choice':
+        // Choice/dropdown column with predefined options
+        if (editingRowId === entry.id) {
+          return (
+            <select
+              value={editingData[columnKey] || ''}
+              onChange={(e) => {
+                const value = e.target.value
+                setEditingData({ ...editingData, [columnKey]: value })
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select...</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="pending">Pending</option>
+              <option value="archived">Archived</option>
+            </select>
+          )
+        }
+        // Display mode - show the value with color coding
+        const choiceValue = entry[columnKey]
+        const choiceColors = {
+          'active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+          'inactive': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+          'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+          'archived': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+        }
+        return (
+          <div className="flex justify-center">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${choiceColors[choiceValue] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>
+              {choiceValue || '-'}
+            </span>
+          </div>
+        )
+
+      case 'user':
+        // User column - displays user information with dropdown selector
+        if (editingRowId === entry.id) {
+          // In edit mode: show dropdown to select user
+          return (
+            <select
+              value={editingData[columnKey] || ''}
+              onChange={(e) => {
+                const value = e.target.value ? parseInt(e.target.value) : null
+                setEditingData({ ...editingData, [columnKey]: value })
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select user...</option>
+              {users.map(user => (
+                <option key={user.id} value={user.id}>
+                  {user.name || user.email || `User #${user.id}`}
+                </option>
+              ))}
+            </select>
+          )
+        }
+        // Display mode - show user info with avatar
+        const userId = entry[columnKey]
+        if (userId) {
+          const user = getUserById(userId)
+          if (user) {
+            const displayName = user.name || user.email || 'Unknown User'
+            return (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-xs font-bold">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{displayName}</span>
+              </div>
+            )
+          }
+          // User ID exists but user not found in list
+          return (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-6 h-6 bg-gray-400 text-white rounded-full text-xs font-bold">
+                ?
+              </div>
+              <span className="text-gray-500 text-xs">User #{userId}</span>
+            </div>
+          )
+        }
+        return (
+          <div className="text-center text-gray-400 text-xs">-</div>
+        )
+
       default:
-        return null
+        // Generic handler for all other columns - make them editable in edit mode
+        const value = entry[columnKey]
+
+        // Get column definition to check if it's computed
+        const columnDef = COLUMNS.find(col => col.key === columnKey)
+        const isSystemColumn = columnKey === 'id' || columnKey === 'user_id'
+        const isComputedColumn = columnDef?.isComputed
+
+        // Check if this is a long text field that should have expand button
+        const isLongTextField = ['description', 'details', 'summary', 'notes', 'scenario', 'solution', 'examples', 'code_example', 'common_mistakes'].includes(columnKey)
+
+        if (editingRowId === entry.id && !isSystemColumn && !isComputedColumn) {
+          // In edit mode: show editable input with optional expand button for long text
+          if (isLongTextField) {
+            return (
+              <div className="flex items-center gap-1 w-full">
+                <input
+                  type="text"
+                  value={editingData[columnKey] || ''}
+                  onChange={(e) => setEditingData({ ...editingData, [columnKey]: e.target.value })}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.target.select()}
+                  className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setTextEditField(columnKey)
+                    setTextEditValue(editingData[columnKey] || '')
+                    setShowTextEditModal(true)
+                  }}
+                  className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors flex-shrink-0"
+                  title="Open in large editor"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                </button>
+              </div>
+            )
+          }
+
+          // For email fields: add validation
+          if (columnKey === 'email') {
+            const emailValue = editingData[columnKey] || ''
+            const isValidEmail = !emailValue || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)
+            const hasValue = emailValue.length > 0
+
+            return (
+              <div className="w-full relative">
+                <input
+                  type="email"
+                  value={emailValue}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setEditingData({ ...editingData, [columnKey]: value })
+
+                    // Validate email format
+                    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                      setValidationErrors({ ...validationErrors, [columnKey]: 'Invalid email format' })
+                    } else {
+                      const newErrors = { ...validationErrors }
+                      delete newErrors[columnKey]
+                      setValidationErrors(newErrors)
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.target.select()}
+                  className={`w-full px-2 py-1 pr-8 text-sm border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 transition-all ${
+                    !isValidEmail
+                      ? 'border-red-500 focus:ring-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse'
+                      : hasValue
+                      ? 'border-green-500 focus:ring-green-500 bg-green-50 dark:bg-green-900/20'
+                      : 'border-blue-500 focus:ring-blue-500'
+                  }`}
+                />
+                {/* Green checkmark for valid email */}
+                {isValidEmail && hasValue && (
+                  <svg
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600 dark:text-green-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {!isValidEmail && (
+                  <div className="text-xs text-red-600 dark:text-red-400 mt-0.5 font-semibold">
+                    Invalid email format
+                  </div>
+                )}
+              </div>
+            )
+          }
+
+          // For other fields: just simple input
+          return (
+            <input
+              type="text"
+              value={editingData[columnKey] || ''}
+              onChange={(e) => setEditingData({ ...editingData, [columnKey]: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          )
+        }
+
+        // Display mode: show value as text (or if system/computed column)
+        // Special handling for URL fields - make them clickable links
+        if (columnKey === 'url' && value) {
+          // Add https:// if no protocol specified
+          const href = value.startsWith('http://') || value.startsWith('https://') ? value : `https://${value}`
+          return (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {value}
+            </a>
+          )
+        }
+
+        // Special handling for email fields - make them mailto links
+        if (columnKey === 'email' && value) {
+          return (
+            <a
+              href={`mailto:${value}`}
+              className="text-blue-600 dark:text-blue-400 underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {value}
+            </a>
+          )
+        }
+
+        return value ? (
+          <span className="text-gray-900 dark:text-white">{value}</span>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )
     }
   }
 
   return (
     <>
       <style>{`
-        /* Trapid table scrollbar styling - blue theme */
+        /* Trapid table scrollbar styling - blue theme for both scrollbars */
         .trapid-table-scroll::-webkit-scrollbar {
           width: 12px;
           height: 12px;
@@ -1484,17 +2410,39 @@ export default function TrapidTableView({
                 {/* Save & Exit button - saves current row if editing */}
                 <button
                   onClick={async () => {
+                    console.log('Save & Exit clicked')
+                    console.log('Validation errors:', validationErrors)
+
+                    // Check if there are validation errors
+                    if (Object.keys(validationErrors).length > 0) {
+                      alert('Please fix validation errors before saving')
+                      return
+                    }
+
                     // Save current editing row if any
                     if (editingRowId !== null && Object.keys(editingData).length > 0) {
-                      await onEdit(editingData)
+                      const entry = entries.find(e => e.id === editingRowId)
+                      if (entry) {
+                        console.log('Original entry:', entry)
+                        console.log('Editing data (changes only):', editingData)
+                        const updatedEntry = { ...entry, ...editingData }
+                        console.log('Merged entry to save:', updatedEntry)
+                        await onEdit(updatedEntry)
+                      }
                     }
                     setEditModeActive(false)
                     setEditingRowId(null)
                     setEditingData({})
+                    setValidationErrors({})
                     setShowDeleteButton(false)
                     setSelectedRows(new Set())
                   }}
-                  className="px-6 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2 shadow-lg"
+                  disabled={Object.keys(validationErrors).length > 0}
+                  className={`px-6 py-2.5 rounded-lg font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2 shadow-lg ${
+                    Object.keys(validationErrors).length > 0
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-green-600 hover:bg-green-700'
+                  }`}
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -1505,15 +2453,16 @@ export default function TrapidTableView({
                 {/* Exit Without Saving button */}
                 <button
                   onClick={() => {
-                    if (confirm('Exit without saving? Any unsaved changes will be lost.')) {
+                    if (confirm('Exit edit mode? Any unsaved changes will be lost.')) {
                       setEditModeActive(false)
                       setEditingRowId(null)
                       setEditingData({})
+                      setValidationErrors({})
                       setShowDeleteButton(false)
                       setSelectedRows(new Set())
                     }
                   }}
-                  className="px-6 py-2.5 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2 backdrop-blur-sm"
+                  className="px-6 py-2.5 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2 backdrop-blur-sm"
                 >
                   <XMarkIcon className="h-5 w-5" />
                   Exit Without Saving
@@ -1587,46 +2536,6 @@ export default function TrapidTableView({
             {editModeActive ? '🔓 Editing' : '✏️ Edit'}
           </button>
 
-          {/* Inline Editing Buttons - Always visible when row is being edited */}
-          {editingRowId && (
-            <>
-              {/* Save button when in edit mode */}
-              <button
-                onClick={() => {
-                  const entry = filteredAndSorted.find(e => e.id === editingRowId)
-                  if (entry) {
-                    // Merge edited data with original entry
-                    const updatedEntry = { ...entry, ...editingData }
-                    onEdit(updatedEntry)
-                    setEditingRowId(null)
-                    setEditingData({})
-                    setSelectedRows(new Set())
-                    setShowDeleteButton(false)
-                    setEditModeActive(false)
-                  }
-                }}
-                className="inline-flex items-center gap-2 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
-              >
-                <CheckIcon className="h-4 w-4" />
-                Save
-              </button>
-              {/* Cancel button when in edit mode */}
-              <button
-                onClick={() => {
-                  setEditingRowId(null)
-                  setEditingData({})
-                  setShowDeleteButton(false)
-                  setEditModeActive(false)
-                  setSelectedRows(new Set())
-                }}
-                className="inline-flex items-center gap-2 px-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
-              >
-                <XMarkIcon className="h-4 w-4" />
-                Cancel
-              </button>
-            </>
-          )}
-
           {/* Delete Button - Only visible when rows selected (Export available in three-dot menu) */}
           {selectedRows.size > 0 && !editingRowId && (
             <>
@@ -1634,15 +2543,22 @@ export default function TrapidTableView({
                 onClick={() => {
                   if (confirm(`Are you sure you want to delete ${selectedRows.size} ${selectedRows.size === 1 ? 'entry' : 'entries'}?`)) {
                     const selectedEntryIds = Array.from(selectedRows)
-                    selectedEntryIds.forEach(id => {
-                      fetch(`http://localhost:3000/api/v1/trinity/${id}`, {
-                        method: 'DELETE'
-                      }).catch(error => console.error('Error deleting entry:', error))
-                    })
+                    const selectedEntries = selectedEntryIds.map(id => entries.find(e => e.id === id)).filter(Boolean)
+
+                    // Use onBulkDelete if available (no individual confirmations)
+                    if (onBulkDelete) {
+                      onBulkDelete(selectedEntries)
+                    } else {
+                      // Fallback: call onDelete for each entry (will show multiple confirmations)
+                      selectedEntries.forEach(entry => {
+                        if (onDelete) {
+                          onDelete(entry)
+                        }
+                      })
+                    }
+
                     setSelectedRows(new Set())
                     setShowDeleteButton(false)
-                    alert('Entries deleted successfully!')
-                    window.location.reload()
                   }
                 }}
                 className="inline-flex items-center gap-2 px-4 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
@@ -1720,7 +2636,7 @@ export default function TrapidTableView({
                   <MenuItem>
                     {({ focus }) => (
                       <button
-                        onClick={() => setShowColumnEditorFull(true)}
+                        onClick={() => navigate(`/tables/${tableIdNumeric}/columns?name=${encodeURIComponent(tableName)}`)}
                         className={`${
                           focus ? 'bg-gray-100 dark:bg-gray-700' : ''
                         } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
@@ -1844,7 +2760,7 @@ export default function TrapidTableView({
         {/* Filters */}
         <div className="flex items-center gap-3 flex-wrap">
           {/* Cascade Filters Button - Excel-style popup */}
-          <div className="relative group">
+          <div className="relative group flex items-center gap-2">
             <button
               onClick={() => setShowCascadeDropdown(!showCascadeDropdown)}
               className="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-200 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
@@ -1859,224 +2775,53 @@ export default function TrapidTableView({
             </button>
           </div>
 
-          {/* Saved Views Button */}
-          <div className="relative group">
+          {/* Quick Access Saved View Buttons */}
+          {savedFilters
+            .sort((a, b) => {
+              // Default view always first
+              if (a.isDefault) return -1
+              if (b.isDefault) return 1
+              return 0
+            })
+            .map((view) => (
             <button
-              onClick={() => setShowSavedViewsDropdown(!showSavedViewsDropdown)}
-              className="px-3 py-1.5 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-800 dark:text-green-200 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              key={view.id}
+              onClick={() => {
+                setCascadeFilters(view.filters.map(f => ({
+                  id: Date.now() + Math.random(),
+                  column: f.column,
+                  value: f.value,
+                  operator: f.operator || '=',
+                  label: f.label
+                })))
+                if (view.visibleColumns) {
+                  setVisibleColumns(view.visibleColumns)
+                }
+                setActiveViewId(view.id)
+              }}
+              className={`px-3 py-1.5 ${
+                activeViewId === view.id
+                  ? 'bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-800 dark:text-blue-200 border border-blue-400 dark:border-blue-600'
+                  : 'bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800'
+              } text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap`}
+              title={`${view.filters.length} filter${view.filters.length !== 1 ? 's' : ''}, ${view.visibleColumns ? Object.values(view.visibleColumns).filter(Boolean).length : 0} columns`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {view.isDefault && <span className="text-yellow-600 dark:text-yellow-400">⭐</span>}
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
               </svg>
-              Saved Views
-              {savedFilters.length > 0 && (
-                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] bg-green-600 text-white rounded-full text-[10px] font-bold">
-                  {savedFilters.length}
+              {view.name}
+              {view.filters.length > 0 && (
+                <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] ${
+                  activeViewId === view.id
+                    ? 'bg-blue-600 dark:bg-blue-500'
+                    : 'bg-green-600 dark:bg-green-700'
+                } text-white rounded-full text-[10px] font-bold`}>
+                  {view.filters.length}
                 </span>
               )}
             </button>
-
-            {/* Saved Views Dropdown Panel */}
-            {showSavedViewsDropdown && (
-              <>
-                {/* Backdrop */}
-                <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowSavedViewsDropdown(false)} />
-                {/* Dropdown positioned below button */}
-                <div
-                  className="absolute left-0 top-full mt-2 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto z-[60]"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="p-3 space-y-3">
-                    {/* Header */}
-                    <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Saved Views
-                      </span>
-                      <button
-                        onClick={() => setShowSavedViewsDropdown(false)}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                      >
-                        ✕
-                      </button>
-                    </div>
-
-                    {/* Save current view section - only show if there are active filters */}
-                    {cascadeFilters.length > 0 && (
-                      <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                          Save Current View:
-                        </label>
-                        <div className="space-y-2">
-                          <div className="flex gap-1">
-                            <input
-                              type="text"
-                              value={filterName}
-                              onChange={(e) => {
-                                const value = e.target.value
-                                if (value.length <= 20) {
-                                  setFilterName(value)
-                                }
-                              }}
-                              placeholder="View name (max 20 chars)..."
-                              maxLength={20}
-                              className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
-                            />
-                            <span className="text-[10px] text-gray-400 self-center">{filterName.length}/20</span>
-                          </div>
-                          <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              id="saved-views-set-as-default"
-                              className="rounded border-gray-300"
-                            />
-                            <span>Set as default view</span>
-                          </label>
-                          <button
-                            onClick={() => {
-                              if (!filterName.trim()) return
-                              const isDefault = document.getElementById('saved-views-set-as-default').checked
-                              const updatedFilters = isDefault
-                                ? savedFilters.map(f => ({ ...f, isDefault: false }))
-                                : savedFilters
-
-                              const newViewId = Date.now()
-                              setSavedFilters([...updatedFilters, {
-                                id: newViewId,
-                                name: filterName.trim(),
-                                filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, label: f.label })),
-                                visibleColumns: { ...visibleColumns },
-                                isDefault: isDefault
-                              }])
-                              setActiveViewId(newViewId)
-                              setFilterName('')
-                              document.getElementById('saved-views-set-as-default').checked = false
-                            }}
-                            disabled={!filterName.trim()}
-                            className="w-full px-3 py-1.5 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-800 dark:text-green-200 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Save View
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Saved views list */}
-                    {savedFilters.length > 0 ? (
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                          Your Saved Views ({savedFilters.length}):
-                        </label>
-                        <div className="space-y-1.5">
-                          {savedFilters.map((saved) => (
-                            <div
-                              key={saved.id}
-                              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded border ${
-                                activeViewId === saved.id
-                                  ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-400 dark:border-blue-600'
-                                  : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                              }`}
-                            >
-                              {editingViewId === saved.id ? (
-                                <>
-                                  <input
-                                    type="text"
-                                    defaultValue={saved.name}
-                                    maxLength={20}
-                                    onBlur={(e) => {
-                                      const newName = e.target.value.trim()
-                                      if (newName) {
-                                        setSavedFilters(savedFilters.map(f =>
-                                          f.id === saved.id ? { ...f, name: newName } : f
-                                        ))
-                                      }
-                                      setEditingViewId(null)
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') e.target.blur()
-                                      if (e.key === 'Escape') setEditingViewId(null)
-                                    }}
-                                    autoFocus
-                                    className="flex-1 text-xs px-1 py-0.5 border border-blue-400 rounded bg-white dark:bg-gray-700 dark:text-white"
-                                  />
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => {
-                                      setCascadeFilters(saved.filters.map(f => ({
-                                        id: Date.now() + Math.random(),
-                                        column: f.column,
-                                        value: f.value,
-                                        label: f.label
-                                      })))
-                                      if (saved.visibleColumns) {
-                                        setVisibleColumns(saved.visibleColumns)
-                                      }
-                                      setActiveViewId(saved.id)
-                                      setShowSavedViewsDropdown(false)
-                                    }}
-                                    className="flex-1 text-left text-xs text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-medium truncate"
-                                    title={`${saved.name} (${saved.filters.length} filters)`}
-                                  >
-                                    {saved.isDefault && <span className="text-yellow-600 dark:text-yellow-400">⭐ </span>}
-                                    {saved.name}
-                                  </button>
-                                  <button
-                                    onClick={() => setEditingViewId(saved.id)}
-                                    className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-xs"
-                                    title="Edit name"
-                                  >
-                                    ✏️
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setSavedFilters(savedFilters.map(f => ({
-                                        ...f,
-                                        isDefault: f.id === saved.id ? true : false
-                                      })))
-                                    }}
-                                    className={`text-xs ${saved.isDefault ? 'opacity-50' : 'hover:text-yellow-600'}`}
-                                    title={saved.isDefault ? "Already default" : "Set as default"}
-                                    disabled={saved.isDefault}
-                                  >
-                                    ⭐
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      if (activeViewId === saved.id) setActiveViewId(null)
-                                      setSavedFilters(savedFilters.filter(f => f.id !== saved.id))
-                                    }}
-                                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-bold"
-                                    title="Delete view"
-                                  >
-                                    ✕
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3 bg-gray-50 dark:bg-gray-700/30 rounded">
-                        No saved views yet. Apply some filters and save them as a view!
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Active View Name Badge */}
-          {activeViewId && savedFilters.find(v => v.id === activeViewId) && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs font-medium rounded-lg border border-blue-300 dark:border-blue-700">
-              <span className="truncate max-w-[150px]" title={savedFilters.find(v => v.id === activeViewId)?.name}>
-                {savedFilters.find(v => v.id === activeViewId)?.isDefault && '⭐ '}
-                {savedFilters.find(v => v.id === activeViewId)?.name}
-              </span>
-            </div>
-          )}
+          ))}
 
           {/* Update View Button - appears when active view has been modified */}
           {(() => {
@@ -2084,9 +2829,23 @@ export default function TrapidTableView({
             const activeView = savedFilters.find(v => v.id === activeViewId)
             if (!activeView) return null
 
+            // Don't show update button while:
+            // 1. Editing a filter value inline
+            // 2. The cascade dropdown is open (user may be working with filters)
+            // 3. User is typing a new view name (filterName has content)
+            if (editingFilterId || showCascadeDropdown || filterName.trim()) return null
+
             // Check if filters or columns have changed
-            const filtersChanged = JSON.stringify(cascadeFilters.map(f => ({ column: f.column, value: f.value, label: f.label })))
-              !== JSON.stringify(activeView.filters)
+            // Normalize both current and saved filters to include default operator
+            const normalizeFilter = (f) => ({
+              column: f.column,
+              value: f.value,
+              operator: f.operator || '=',
+              label: f.label
+            })
+            const currentFilters = JSON.stringify(cascadeFilters.map(normalizeFilter))
+            const savedFiltersStr = JSON.stringify(activeView.filters.map(normalizeFilter))
+            const filtersChanged = currentFilters !== savedFiltersStr
             const columnsChanged = activeView.visibleColumns && JSON.stringify(visibleColumns) !== JSON.stringify(activeView.visibleColumns)
 
             if (!filtersChanged && !columnsChanged) return null
@@ -2098,13 +2857,13 @@ export default function TrapidTableView({
                     v.id === activeViewId
                       ? {
                           ...v,
-                          filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, label: f.label })),
+                          filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label })),
                           visibleColumns: { ...visibleColumns }
                         }
                       : v
                   ))
                 }}
-                className="px-3 py-1.5 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:hover:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white text-sm font-bold rounded-lg shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 whitespace-nowrap animate-pulse"
                 title="Save changes to this view"
               >
                 💾 Update "{activeView.name}"
@@ -2119,12 +2878,12 @@ export default function TrapidTableView({
                 <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowCascadeDropdown(false)} />
                 {/* Dropdown positioned in center like a modal */}
                 <div
-                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto z-[60]"
+                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50vw] h-[90vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl overflow-y-auto z-[60]"
                   onClick={(e) => e.stopPropagation()}
                 >
-                <div className="p-3 space-y-3">
+                <div className="p-3">
                   {/* Header */}
-                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2 mb-3">
                     <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Cascade Filters
                     </span>
@@ -2136,51 +2895,67 @@ export default function TrapidTableView({
                     </button>
                   </div>
 
-                  {/* Add filter with different input types */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      Select Column & Values:
-                    </label>
-                    {/* Column search box */}
-                    <input
-                      type="text"
-                      value={columnSearchQuery}
-                      onChange={(e) => setColumnSearchQuery(e.target.value)}
-                      placeholder="Search columns..."
-                      className="w-full text-xs px-2 py-1.5 mb-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
-                    />
-                    <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 mb-2">
-                      {(() => {
-                        const filteredColumns = COLUMNS
-                          .filter(col => col.key !== 'select')
-                          .filter(col => col.label.toLowerCase().includes(columnSearchQuery.toLowerCase()))
+                  {/* Main content: 4 columns - Column Select | Value Select | Column Visibility | Saved Views */}
+                  <div className="grid grid-cols-[1fr,1.5fr,fit-content(200px),280px] gap-4 h-[calc(90vh-4rem)]">
+                    {/* LEFT COLUMN: Column Selection */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        Select Column:
+                      </label>
+                      {/* Column search box */}
+                      <input
+                        type="text"
+                        value={columnSearchQuery}
+                        onChange={(e) => setColumnSearchQuery(e.target.value)}
+                        placeholder="Search columns..."
+                        className="w-full text-xs px-2 py-1.5 mb-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
+                      />
+                      <div className="h-[calc(100%-3rem)] overflow-y-auto border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800">
+                        {(() => {
+                          const filteredColumns = COLUMNS
+                            .filter(col => col.key !== 'select')
+                            .filter(col => col.label.toLowerCase().includes(columnSearchQuery.toLowerCase()))
 
-                        return filteredColumns.length > 0 ? filteredColumns.map(col => (
-                          <button
-                            key={`cascade-${col.key}`}
-                            onClick={() => {
-                              setSelectedCascadeColumn(col.key === selectedCascadeColumn ? '' : col.key)
-                              setColumnSearchQuery('') // Clear search after selection
-                            }}
-                            className={`w-full text-left text-xs px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                              selectedCascadeColumn === col.key
-                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
-                                : 'text-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            {col.label}
-                          </button>
-                        )) : (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3">
-                            No matching columns
-                          </div>
-                        )
-                      })()}
+                          return filteredColumns.length > 0 ? filteredColumns.map((col, index) => (
+                            <button
+                              key={`cascade-${col.key}`}
+                              onClick={() => {
+                                setSelectedCascadeColumn(col.key === selectedCascadeColumn ? '' : col.key)
+                                setColumnSearchQuery('') // Clear search after selection
+                                setCascadeOperator('=') // Reset operator to default
+                                setCascadeInputValue('') // Clear input value
+                              }}
+                              className={`w-full text-left text-xs px-3 py-0.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors ${
+                                selectedCascadeColumn === col.key
+                                  ? 'bg-blue-200 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-medium'
+                                  : index % 2 === 0
+                                    ? 'bg-blue-50 dark:bg-blue-900/10 text-gray-700 dark:text-gray-300'
+                                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {col.label}
+                            </button>
+                          )) : (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3">
+                              No matching columns
+                            </div>
+                          )
+                        })()}
+                      </div>
                     </div>
 
-                    {/* Show appropriate input based on column type */}
-                    {selectedCascadeColumn && (() => {
-                      const column = COLUMNS.find(c => c.key === selectedCascadeColumn)
+                    {/* RIGHT COLUMN: Value Selection */}
+                    <div className="flex flex-col h-full">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        Select Values:
+                      </label>
+                      <div className="h-[40%] overflow-y-auto">
+                      {!selectedCascadeColumn ? (
+                        <div className="h-full flex items-center justify-center border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/30 text-xs text-gray-500 dark:text-gray-400 text-center p-4">
+                          Select a column from the left to choose values
+                        </div>
+                      ) : (() => {
+                        const column = COLUMNS.find(c => c.key === selectedCascadeColumn)
                       const columnLabel = column?.label || selectedCascadeColumn
 
                       // Boolean type - show sliding toggle switch
@@ -2235,6 +3010,98 @@ export default function TrapidTableView({
                                 Clear filter
                               </button>
                             )}
+                          </div>
+                        )
+                      }
+
+                      // Numeric fields - show operator buttons and number input
+                      // Check if this is a numeric column based on key name or if the data is numeric
+                      const numericKeywords = ['price', 'quantity', 'qty', 'amount', 'count', 'number', 'currency', 'percent', 'cost', 'total', 'sum', 'value']
+                      const isNumericColumn = numericKeywords.some(keyword =>
+                        selectedCascadeColumn.toLowerCase().includes(keyword) ||
+                        column?.label?.toLowerCase().includes(keyword)
+                      ) || column?.sumType === 'number' || column?.sumType === 'currency'
+
+                      if (isNumericColumn) {
+                        const operators = [
+                          { value: '=', label: '=' },
+                          { value: '!=', label: '≠' },
+                          { value: '>', label: '>' },
+                          { value: '<', label: '<' },
+                          { value: '>=', label: '≥' },
+                          { value: '<=', label: '≤' }
+                        ]
+
+                        return (
+                          <div className="space-y-2">
+                            {/* Operator buttons */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                Operator:
+                              </label>
+                              <div className="grid grid-cols-6 gap-1">
+                                {operators.map(op => (
+                                  <button
+                                    key={op.value}
+                                    onClick={() => setCascadeOperator(op.value)}
+                                    className={`px-2 py-1.5 text-xs font-medium rounded transition-colors ${
+                                      cascadeOperator === op.value
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                    }`}
+                                  >
+                                    {op.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Number input */}
+                            <div className="flex gap-1">
+                              <input
+                                type="number"
+                                value={cascadeInputValue}
+                                onChange={(e) => setCascadeInputValue(e.target.value)}
+                                placeholder={`Enter ${columnLabel.toLowerCase()}...`}
+                                className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && cascadeInputValue.trim()) {
+                                    const operatorLabel = operators.find(op => op.value === cascadeOperator)?.label || '='
+                                    setCascadeFilters([...cascadeFilters, {
+                                      id: Date.now(),
+                                      column: selectedCascadeColumn,
+                                      value: cascadeInputValue.trim(),
+                                      operator: cascadeOperator,
+                                      label: `${columnLabel} ${operatorLabel} ${cascadeInputValue.trim()}`
+                                    }])
+                                    setCascadeInputValue('')
+                                    setCascadeOperator('=')
+                                    setSelectedCascadeColumn('')
+                                  }
+                                }}
+                              />
+                              <button
+                                onClick={() => {
+                                  if (cascadeInputValue.trim()) {
+                                    const operatorLabel = operators.find(op => op.value === cascadeOperator)?.label || '='
+                                    setCascadeFilters([...cascadeFilters, {
+                                      id: Date.now(),
+                                      column: selectedCascadeColumn,
+                                      value: cascadeInputValue.trim(),
+                                      operator: cascadeOperator,
+                                      label: `${columnLabel} ${operatorLabel} ${cascadeInputValue.trim()}`
+                                    }])
+                                    setCascadeInputValue('')
+                                    setCascadeOperator('=')
+                                    setSelectedCascadeColumn('')
+                                  }
+                                }}
+                                disabled={!cascadeInputValue.trim()}
+                                className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Add
+                              </button>
+                            </div>
                           </div>
                         )
                       }
@@ -2322,95 +3189,512 @@ export default function TrapidTableView({
                                 <span className="text-xs text-gray-700 dark:text-gray-300">{val}</span>
                               </label>
                             )) : (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
-                                No matches found
+                              <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3 space-y-1">
+                                <div className="font-medium">No matches found</div>
+                                {uniqueValues.length === 0 ? (
+                                  <div className="text-xs">
+                                    No values available in this column for the currently filtered rows.
+                                    {cascadeFilters.length > 0 && ' Try removing or adjusting previous filters.'}
+                                  </div>
+                                ) : cascadeInputValue && (
+                                  <div className="text-xs">
+                                    No values match "{cascadeInputValue}". Try a different search term.
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
                         </div>
                       )
                     })()}
-                  </div>
+                      </div>
 
-                  {/* Active filters list */}
-                  {cascadeFilters.length > 0 ? (
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                        Active Filters ({cascadeFilters.length}):
-                      </label>
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                        {cascadeFilters.map((filter, index) => (
-                          <div
-                            key={filter.id}
-                            className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-2.5 py-1.5 rounded border border-gray-200 dark:border-gray-600"
-                          >
-                            <div className="flex flex-col gap-0.5">
-                              <button
-                                onClick={() => {
-                                  if (index === 0) return
-                                  const newFilters = [...cascadeFilters]
-                                  const temp = newFilters[index]
-                                  newFilters[index] = newFilters[index - 1]
-                                  newFilters[index - 1] = temp
-                                  setCascadeFilters(newFilters)
-                                }}
-                                disabled={index === 0}
-                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
-                              >
-                                ▲
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (index === cascadeFilters.length - 1) return
-                                  const newFilters = [...cascadeFilters]
-                                  const temp = newFilters[index]
-                                  newFilters[index] = newFilters[index + 1]
-                                  newFilters[index + 1] = temp
-                                  setCascadeFilters(newFilters)
-                                }}
-                                disabled={index === cascadeFilters.length - 1}
-                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
-                              >
-                                ▼
-                              </button>
-                            </div>
-                            <span className="flex-1 text-xs text-gray-700 dark:text-gray-300">
-                              <span className="font-semibold text-purple-600 dark:text-purple-400">{index + 1}.</span> {filter.label}
-                            </span>
+                      {/* Active filters list - moved under Select Values */}
+                      <div className="flex-1 mt-2 overflow-y-auto">
+                      {cascadeFilters.length > 0 ? (
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                              Active Filters ({cascadeFilters.length}):
+                            </label>
                             <button
-                              onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.id !== filter.id))}
-                              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-bold"
+                              onClick={() => setCascadeFilters([])}
+                              className="px-2 py-0.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-[10px] font-medium rounded transition-colors"
                             >
-                              ✕
+                              Clear All
                             </button>
                           </div>
+                          <div className="space-y-1 max-h-48 overflow-y-auto">
+                            {cascadeFilters.map((filter, index) => (
+                              <div
+                                key={filter.id}
+                                className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded border border-gray-200 dark:border-gray-600"
+                              >
+                                <div className="flex flex-col gap-0.5">
+                                  <button
+                                    onClick={() => {
+                                      if (index === 0) return
+                                      const newFilters = [...cascadeFilters]
+                                      const temp = newFilters[index]
+                                      newFilters[index] = newFilters[index - 1]
+                                      newFilters[index - 1] = temp
+                                      setCascadeFilters(newFilters)
+                                    }}
+                                    disabled={index === 0}
+                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none"
+                                  >
+                                    ▲
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (index === cascadeFilters.length - 1) return
+                                      const newFilters = [...cascadeFilters]
+                                      const temp = newFilters[index]
+                                      newFilters[index] = newFilters[index + 1]
+                                      newFilters[index + 1] = temp
+                                      setCascadeFilters(newFilters)
+                                    }}
+                                    disabled={index === cascadeFilters.length - 1}
+                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none"
+                                  >
+                                    ▼
+                                  </button>
+                                </div>
+                                <span className="flex-1 text-[11px] text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                                  <span className="font-semibold text-purple-600 dark:text-purple-400">{index + 1}.</span>
+                                  <span className="font-medium text-blue-600 dark:text-blue-400">
+                                    {COLUMNS.find(col => col.key === filter.column)?.label || filter.column}:
+                                  </span>
+                                  {editingFilterId === filter.id ? (
+                                    <input
+                                      type="text"
+                                      value={editingFilterValue}
+                                      onChange={(e) => setEditingFilterValue(e.target.value)}
+                                      onBlur={(e) => {
+                                        const newValue = e.target.value.trim()
+                                        if (newValue) {
+                                          const columnLabel = COLUMNS.find(col => col.key === filter.column)?.label || filter.column
+                                          // Match the original label format
+                                          const operatorMap = { '=': '=', '!=': '≠', '>': '>', '<': '<', '>=': '≥', '<=': '≤' }
+                                          const operatorLabel = operatorMap[filter.operator] || filter.operator
+                                          const newLabel = filter.operator && filter.operator !== '='
+                                            ? `${columnLabel} ${operatorLabel} ${newValue}`
+                                            : `${columnLabel}: ${newValue}`
+
+                                          setCascadeFilters(cascadeFilters.map(f =>
+                                            f.id === filter.id
+                                              ? { ...f, value: newValue, label: newLabel }
+                                              : f
+                                          ))
+                                        }
+                                        setEditingFilterId(null)
+                                        setEditingFilterValue('')
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') e.target.blur()
+                                        if (e.key === 'Escape') {
+                                          setEditingFilterId(null)
+                                          setEditingFilterValue('')
+                                        }
+                                      }}
+                                      autoFocus
+                                      className="flex-1 px-1 py-0.5 border border-blue-400 rounded bg-white dark:bg-gray-700 dark:text-white text-[11px] font-semibold min-w-[60px]"
+                                    />
+                                  ) : (
+                                    <span
+                                      className="font-semibold cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 px-1 rounded"
+                                      onClick={() => {
+                                        setEditingFilterId(filter.id)
+                                        setEditingFilterValue(filter.value)
+                                      }}
+                                      title="Click to edit value"
+                                    >
+                                      {filter.operator && filter.operator !== '=' && <span className="text-orange-600 dark:text-orange-400">{filter.operator} </span>}
+                                      {filter.value}
+                                    </span>
+                                  )}
+                                </span>
+                                <button
+                                  onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.id !== filter.id))}
+                                  className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs font-bold"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-2 bg-gray-50 dark:bg-gray-700/30 rounded">
+                          No filters applied
+                        </div>
+                      )}
+                      </div>
+                    </div>
+
+                    {/* COLUMN 3: Column Visibility */}
+                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 h-full overflow-y-auto w-fit max-w-[200px]">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                          Show/Hide Columns:
+                        </label>
+                        <button
+                          onClick={() => {
+                            const allVisible = COLUMNS.filter(col => col.key !== 'select').every(col => visibleColumns[col.key] !== false)
+                            const newVisibility = {}
+                            COLUMNS.filter(col => col.key !== 'select').forEach(col => {
+                              newVisibility[col.key] = !allVisible
+                            })
+                            setVisibleColumns({ ...visibleColumns, ...newVisibility })
+                          }}
+                          className="px-2 py-0.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-[10px] font-medium rounded transition-colors"
+                        >
+                          {COLUMNS.filter(col => col.key !== 'select').every(col => visibleColumns[col.key] !== false) ? 'Deselect All' : 'Select All'}
+                        </button>
+                      </div>
+                      <div className="space-y-0.5">
+                        {COLUMNS.filter(col => col.key !== 'select')
+                          .sort((a, b) => a.label.localeCompare(b.label))
+                          .map((column, index) => (
+                          <label key={column.key} className={`flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 px-2 py-0.5 cursor-pointer ${
+                            index % 2 === 0 ? 'bg-blue-50 dark:bg-blue-900/10' : 'bg-white dark:bg-gray-800'
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns[column.key] !== false}
+                              onChange={(e) => {
+                                setVisibleColumns({
+                                  ...visibleColumns,
+                                  [column.key]: e.target.checked
+                                })
+                              }}
+                              className="rounded border-gray-300"
+                            />
+                            <span className="flex-1">{column.label}</span>
+                          </label>
                         ))}
                       </div>
-
-                      {/* Clear all button */}
-                      <button
-                        onClick={() => setCascadeFilters([])}
-                        className="w-full mt-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-xs font-medium rounded transition-colors"
-                      >
-                        Clear All Filters
-                      </button>
                     </div>
-                  ) : (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3 bg-gray-50 dark:bg-gray-700/30 rounded">
-                      No filters applied
-                    </div>
-                  )}
 
-                  {/* Note about saved views */}
-                  {cascadeFilters.length > 0 && (
-                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                      <div className="text-xs text-center py-2 px-3 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 rounded border border-green-200 dark:border-green-800">
-                        💡 Click the green <strong>"Saved Views"</strong> button to save or load filter combinations
+                    {/* COLUMN 4: Saved Views Section */}
+                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 h-full overflow-hidden flex flex-col">
+                    {useKanbanSavedViews ? (
+                      <div className="flex-1 min-h-0">
+                        {/* NEW: Kanban-style drag-and-drop saved views */}
+                        <SavedViewsKanban
+                          savedFilters={savedFilters}
+                          setSavedFilters={setSavedFilters}
+                          activeViewId={activeViewId}
+                          setActiveViewId={setActiveViewId}
+                          setCascadeFilters={setCascadeFilters}
+                          setVisibleColumns={setVisibleColumns}
+                          setShowCascadeDropdown={setShowCascadeDropdown}
+                          filterName={filterName}
+                          setFilterName={setFilterName}
+                          cascadeFilters={cascadeFilters}
+                          visibleColumns={visibleColumns}
+                          editingViewId={editingViewId}
+                          setEditingViewId={setEditingViewId}
+                        />
                       </div>
+                    ) : (
+                      <div className="space-y-3 overflow-y-auto">
+                      {/* OLD: Classic list-style saved views */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          Saved Views
+                        </span>
+                        {savedFilters.length > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] bg-green-600 text-white rounded-full text-[10px] font-bold">
+                            {savedFilters.length}
+                          </span>
+                        )}
+                      </div>
+
+                    {/* Update existing view button - only show if active view has been modified */}
+                    {(() => {
+                      if (!activeViewId || cascadeFilters.length === 0) return null
+                      const activeView = savedFilters.find(v => v.id === activeViewId)
+                      if (!activeView) return null
+
+                      // Check if filters or columns have changed
+                      const normalizeFilter = (f) => ({
+                        column: f.column,
+                        value: f.value,
+                        operator: f.operator || '=',
+                        label: f.label
+                      })
+                      const currentFilters = JSON.stringify(cascadeFilters.map(normalizeFilter))
+                      const savedFiltersStr = JSON.stringify(activeView.filters.map(normalizeFilter))
+                      const filtersChanged = currentFilters !== savedFiltersStr
+                      const columnsChanged = activeView.visibleColumns && JSON.stringify(visibleColumns) !== JSON.stringify(activeView.visibleColumns)
+
+                      if (!filtersChanged && !columnsChanged) return null
+
+                      return (
+                        <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
+                          <button
+                            onClick={() => {
+                              setSavedFilters(savedFilters.map(v =>
+                                v.id === activeViewId
+                                  ? {
+                                      ...v,
+                                      filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label })),
+                                      visibleColumns: { ...visibleColumns }
+                                    }
+                                  : v
+                              ))
+                              // Clear active filters and view
+                              setCascadeFilters([])
+                              setActiveViewId(null)
+                              setShowCascadeDropdown(false)
+                            }}
+                            className="w-full px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white text-sm font-bold rounded-lg shadow-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 whitespace-nowrap"
+                            title="Save changes to this view and close"
+                          >
+                            💾 Update "{activeView.name}"
+                          </button>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Save current view section - only show if there are active filters */}
+                    {cascadeFilters.length > 0 && (
+                      <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
+                        <div className="mb-2">
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
+                            Save Current View:
+                          </label>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex gap-1">
+                            <input
+                              type="text"
+                              value={filterName}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                if (value.length <= 20) {
+                                  setFilterName(value)
+                                }
+                              }}
+                              placeholder="View name (max 20 chars)..."
+                              maxLength={20}
+                              className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
+                            />
+                            <span className="text-[10px] text-gray-400 self-center">{filterName.length}/20</span>
+                          </div>
+                          <div className="text-[10px] text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1.5 rounded border border-blue-200 dark:border-blue-800">
+                            Will save: {cascadeFilters.length} filter{cascadeFilters.length !== 1 ? 's' : ''} + {Object.values(visibleColumns).filter(Boolean).length} visible column{Object.values(visibleColumns).filter(Boolean).length !== 1 ? 's' : ''}
+                          </div>
+                          <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              id="cascade-saved-views-set-as-default"
+                              className="rounded border-gray-300"
+                            />
+                            <span>Set as default view</span>
+                          </label>
+                          <button
+                            onClick={() => {
+                              if (!filterName.trim()) return
+                              const isDefault = document.getElementById('cascade-saved-views-set-as-default').checked
+                              const updatedFilters = isDefault
+                                ? savedFilters.map(f => ({ ...f, isDefault: false }))
+                                : savedFilters
+
+                              const newViewId = Date.now()
+                              setSavedFilters([...updatedFilters, {
+                                id: newViewId,
+                                name: filterName.trim(),
+                                filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label })),
+                                visibleColumns: { ...visibleColumns },
+                                isDefault: isDefault
+                              }])
+                              setActiveViewId(newViewId)
+                              setFilterName('')
+                              document.getElementById('cascade-saved-views-set-as-default').checked = false
+                            }}
+                            disabled={!filterName.trim()}
+                            className="w-full px-3 py-1.5 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-800 dark:text-green-200 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Save View
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Saved views list */}
+                    {savedFilters.length > 0 ? (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                          Your Saved Views ({savedFilters.length}):
+                        </label>
+                        <div className="space-y-1.5">
+                          {savedFilters.map((saved, index) => (
+                            <div
+                              key={saved.id}
+                              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded border ${
+                                activeViewId === saved.id
+                                  ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-400 dark:border-blue-600'
+                                  : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                              }`}
+                            >
+                              {editingViewId === saved.id ? (
+                                <>
+                                  <input
+                                    type="text"
+                                    defaultValue={saved.name}
+                                    maxLength={20}
+                                    onBlur={(e) => {
+                                      const newName = e.target.value.trim()
+                                      if (newName) {
+                                        setSavedFilters(savedFilters.map(f =>
+                                          f.id === saved.id ? { ...f, name: newName } : f
+                                        ))
+                                      }
+                                      setEditingViewId(null)
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') e.target.blur()
+                                      if (e.key === 'Escape') setEditingViewId(null)
+                                    }}
+                                    autoFocus
+                                    className="flex-1 text-xs px-1 py-0.5 border border-blue-400 rounded bg-white dark:bg-gray-700 dark:text-white"
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  <div className="flex-1 flex flex-col gap-0.5">
+                                    <button
+                                      onClick={() => {
+                                        setCascadeFilters(saved.filters.map(f => ({
+                                          id: Date.now() + Math.random(),
+                                          column: f.column,
+                                          value: f.value,
+                                          operator: f.operator || '=',
+                                          label: f.label
+                                        })))
+                                        if (saved.visibleColumns) {
+                                          setVisibleColumns(saved.visibleColumns)
+                                        }
+                                        setActiveViewId(saved.id)
+                                        setShowCascadeDropdown(false)
+                                      }}
+                                      className="text-left text-xs text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-medium truncate"
+                                      title={`${saved.name} - ${saved.filters.length} filters, ${saved.visibleColumns ? Object.values(saved.visibleColumns).filter(Boolean).length : 0} columns visible`}
+                                    >
+                                      {saved.isDefault && <span className="text-yellow-600 dark:text-yellow-400">⭐ </span>}
+                                      {saved.name}
+                                    </button>
+                                    <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                                      {saved.filters.length} filter{saved.filters.length !== 1 ? 's' : ''} • {saved.visibleColumns ? Object.values(saved.visibleColumns).filter(Boolean).length : 0} column{saved.visibleColumns && Object.values(saved.visibleColumns).filter(Boolean).length !== 1 ? 's' : ''}
+                                    </div>
+                                  </div>
+                                  {/* Up/Down arrows for reordering */}
+                                  <div className="flex flex-col gap-0.5">
+                                    <button
+                                      onClick={() => {
+                                        if (index === 0) return
+                                        const newFilters = [...savedFilters]
+                                        const temp = newFilters[index]
+                                        newFilters[index] = newFilters[index - 1]
+                                        newFilters[index - 1] = temp
+                                        setSavedFilters(newFilters)
+                                      }}
+                                      disabled={index === 0}
+                                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none"
+                                      title="Move up"
+                                    >
+                                      ▲
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        if (index === savedFilters.length - 1) return
+                                        const newFilters = [...savedFilters]
+                                        const temp = newFilters[index]
+                                        newFilters[index] = newFilters[index + 1]
+                                        newFilters[index + 1] = temp
+                                        setSavedFilters(newFilters)
+                                      }}
+                                      disabled={index === savedFilters.length - 1}
+                                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none"
+                                      title="Move down"
+                                    >
+                                      ▼
+                                    </button>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      // Load the view for editing
+                                      setCascadeFilters(saved.filters.map(f => ({
+                                        id: Date.now() + Math.random(),
+                                        column: f.column,
+                                        value: f.value,
+                                        operator: f.operator || '=',
+                                        label: f.label
+                                      })))
+                                      if (saved.visibleColumns) {
+                                        setVisibleColumns(saved.visibleColumns)
+                                      }
+                                      setActiveViewId(saved.id)
+                                      // Don't close dropdown - keep it open so user can see what they're editing
+                                    }}
+                                    className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-xs"
+                                    title="Load view to edit filters and columns"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingViewId(saved.id)}
+                                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-xs"
+                                    title="Rename view"
+                                  >
+                                    📝
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSavedFilters(savedFilters.map(f => ({
+                                        ...f,
+                                        isDefault: f.id === saved.id ? true : false
+                                      })))
+                                    }}
+                                    className={`text-xs ${saved.isDefault ? 'opacity-50' : 'hover:text-yellow-600'}`}
+                                    title={saved.isDefault ? "Already default" : "Set as default"}
+                                    disabled={saved.isDefault}
+                                  >
+                                    ⭐
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (activeViewId === saved.id) setActiveViewId(null)
+                                      setSavedFilters(savedFilters.filter(f => f.id !== saved.id))
+                                    }}
+                                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-bold"
+                                    title="Delete view"
+                                  >
+                                    ✕
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3 bg-gray-50 dark:bg-gray-700/30 rounded">
+                        No saved views yet. Apply some filters and save them as a view!
+                      </div>
+                    )}
                     </div>
-                  )}
+                    )}
+                    {/* END COLUMN 4 */}
+                    </div>
+                  </div>
+                  {/* END MAIN GRID */}
                 </div>
+                {/* END PADDING WRAPPER */}
                 </div>
+                {/* END MODAL WRAPPER */}
               </>
             )}
           </div>
@@ -2425,11 +3709,8 @@ export default function TrapidTableView({
         {/* Table with Sticky Gradient Headers (Chapter 20.2) */}
         <div
           ref={scrollContainerRef}
-          onScroll={handleScroll}
-          className="trapid-table-scroll flex-1 overflow-y-auto overflow-x-scroll relative bg-white dark:bg-gray-900"
+          className="trapid-table-scroll flex-1 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900"
           style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#2563EB #FFFFFF',
             maxHeight: 'calc(100vh - 320px)', // Footer always visible
             minHeight: '600px' // Minimum 10 rows visible to prevent dropdown cutoff
           }}
@@ -2440,6 +3721,9 @@ export default function TrapidTableView({
               {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
                 const column = COLUMNS.find(c => c.key === colKey)
                 if (!column) return null
+
+                // Check if this is a system-generated column
+                const isSystemGenerated = ['id', 'created_at', 'updated_at'].includes(colKey)
 
                 return (
                   <th
@@ -2464,10 +3748,14 @@ export default function TrapidTableView({
                       // Visual drop indicator - green border when this is the drop target
                       borderLeft: dropTargetColumn === colKey ? '4px solid #10b981' : undefined,
                       borderRight: dropTargetColumn === colKey ? '4px solid #10b981' : undefined,
+                      // System-generated columns get red background
+                      backgroundColor: isSystemGenerated ? (dropTargetColumn === colKey ? '#059669' : '#dc2626') : undefined,
                     }}
                     className={`group align-top ${colKey === 'select' ? 'px-1 py-4' : 'px-6 pt-4 pb-2'} ${colKey === 'select' ? 'text-center' : 'text-left'} text-white tracking-wide transition-colors ${
-                      column.sortable ? 'cursor-pointer hover:bg-blue-700 dark:hover:bg-blue-900' : ''
-                    } ${draggedColumn === colKey ? 'bg-blue-700 dark:bg-blue-900 opacity-50' : ''} ${
+                      column.sortable && !isSystemGenerated ? 'cursor-pointer hover:bg-blue-700 dark:hover:bg-blue-900' : ''
+                    } ${column.sortable && isSystemGenerated ? 'cursor-pointer hover:bg-red-700 dark:hover:bg-red-800' : ''} ${
+                      draggedColumn === colKey && !isSystemGenerated ? 'bg-blue-700 dark:bg-blue-900 opacity-50' : ''
+                    } ${draggedColumn === colKey && isSystemGenerated ? 'bg-red-700 dark:bg-red-800 opacity-50' : ''} ${
                       dropTargetColumn === colKey ? 'bg-green-600 dark:bg-green-700' : ''
                     }`}
                   >
@@ -2509,6 +3797,7 @@ export default function TrapidTableView({
                             </div>
                           )}
                           <span>{column.label}</span>
+                          {isSystemGenerated && <span className="ml-1 text-sm">🔒</span>}
                           {column.sortable && <SortIcon column={colKey} />}
                           {/* Schema Editor Cog Icon - only show in Edit Individual mode */}
                           {editIndividualMode && enableSchemaEditor && colKey !== 'select' && (
@@ -2521,12 +3810,16 @@ export default function TrapidTableView({
                                   id: colKey,
                                   name: column.label,
                                   column_name: colKey,
-                                  column_type: 'string', // TODO: Determine actual type
+                                  column_type: column.column_type || 'single_line_text', // Use column type from config
                                   required: false
                                 })
                               }}
-                              className="ml-2 p-1 rounded hover:bg-blue-500 dark:hover:bg-blue-700 transition-colors"
-                              title="Edit column schema"
+                              className={`ml-2 p-1 rounded transition-colors ${
+                                isSystemGenerated
+                                  ? 'hover:bg-red-500 dark:hover:bg-red-700'
+                                  : 'hover:bg-blue-500 dark:hover:bg-blue-700'
+                              }`}
+                              title={isSystemGenerated ? 'Edit system-generated column schema' : 'Edit column schema'}
                             >
                               <Cog8ToothIcon className="h-4 w-4 text-orange-300 hover:text-white" />
                             </button>
@@ -2557,6 +3850,19 @@ export default function TrapidTableView({
                             onClick={(e) => e.stopPropagation()}
                             className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white placeholder-blue-200 dark:placeholder-blue-300"
                           />
+                        )}
+
+                        {showFilters && column.filterType === 'boolean' && (
+                          <select
+                            value={columnFilters[colKey] || ''}
+                            onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white"
+                          >
+                            <option value="">All</option>
+                            <option value="true">✓ Checked</option>
+                            <option value="false">✗ Unchecked</option>
+                          </select>
                         )}
 
                         {showFilters && column.filterType === 'dropdown' && colKey !== 'component' && (
@@ -2622,6 +3928,11 @@ export default function TrapidTableView({
                                 <option key="critical" value="critical">Critical</option>
                               </>
                             )}
+                            {colKey === 'user' && users.map(user => (
+                              <option key={user.id} value={user.id}>
+                                {user.name || user.email || `User #${user.id}`}
+                              </option>
+                            ))}
                             {colKey === 'trinity' && (
                               <>
                                 <option key="inline-trinity-bible" value="bible">📖 Bible</option>
@@ -2772,11 +4083,11 @@ export default function TrapidTableView({
                           return;
                         }
 
-                        // In edit mode: make ALL cells editable on click (except select and computed)
-                        if (editModeActive && colKey !== 'select' && !column.isComputed) {
+                        // In edit mode: make ALL cells editable on click (except select, id, user_id, and computed)
+                        if (editModeActive && colKey !== 'select' && colKey !== 'id' && colKey !== 'user_id' && !column.isComputed) {
                           e.stopPropagation();
                           if (editingRowId !== entry.id) {
-                            // Validate current editing data before switching rows
+                            // Validate and save current editing data before switching rows
                             if (editingRowId !== null && Object.keys(editingData).length > 0) {
                               const errors = []
                               Object.keys(editingData).forEach(key => {
@@ -2788,10 +4099,19 @@ export default function TrapidTableView({
                                 setTimeout(() => setValidationError(null), 4000) // Clear after 4 seconds
                                 return // Don't switch rows if validation fails
                               }
+
+                              // Auto-save the current row before switching
+                              if (onEdit) {
+                                onEdit(editingData).catch(err => {
+                                  console.error('Failed to auto-save row:', err)
+                                  setValidationError('Failed to save changes')
+                                  setTimeout(() => setValidationError(null), 4000)
+                                })
+                              }
                             }
                             setValidationError(null)
                             setEditingRowId(entry.id);
-                            setEditingData(entry);
+                            setEditingData(entry); // Populate with current values so they show in edit mode
                             setSelectedRows(new Set([entry.id]));
                           }
                         }
@@ -2803,7 +4123,9 @@ export default function TrapidTableView({
                         fontSize: '14px',
                         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                       }}
-                      className={`group relative ${colKey === 'select' ? 'px-1 py-1' : 'px-3 py-1'} ${
+                      className={`group relative ${colKey === 'select' ? 'px-1 py-2' : 'px-3 py-2'} ${
+                        // Validation: bright red background with white text for invalid cells (not in edit mode)
+                        !editModeActive && !isCellValid(entry, colKey, column) ? 'bg-red-600 text-white dark:bg-red-600 dark:text-white' :
                         // Gray out computed columns when in edit mode
                         editModeActive && column.isComputed ? 'text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-white'
                       } ${
@@ -2812,8 +4134,8 @@ export default function TrapidTableView({
                         // Non-edit mode: highlight clickable title/content cells
                         ['title', 'content'].includes(colKey) && !editModeActive ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20' : ''
                       } ${
-                        // Edit mode: make all cells clickable except select and computed
-                        editModeActive && colKey !== 'select' && !column.isComputed ? 'cursor-pointer' : ''
+                        // Edit mode: make all cells clickable except select, id, user_id, and computed
+                        editModeActive && colKey !== 'select' && colKey !== 'id' && colKey !== 'user_id' && !column.isComputed ? 'cursor-pointer' : ''
                       } whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
                     >
                       {renderCellContent(entry, colKey)}
@@ -2905,28 +4227,6 @@ export default function TrapidTableView({
         </table>
       </div>
       {/* End bordered container */}
-
-      {/* Sticky horizontal scrollbar (RULE #20.33) */}
-      {tableScrollWidth > 0 && (
-        <div
-          ref={stickyScrollbarRef}
-          className="sticky bottom-0 left-0 right-0 z-20 overflow-x-auto overflow-y-hidden bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700"
-          style={{ height: '20px' }}
-          onScroll={(e) => {
-            if (isScrollingMainRef.current) {
-              isScrollingMainRef.current = false
-              return
-            }
-            const { scrollLeft } = e.target
-            if (scrollContainerRef.current) {
-              isScrollingStickyRef.current = true
-              scrollContainerRef.current.scrollLeft = scrollLeft
-            }
-          }}
-        >
-          <div style={{ width: `${tableScrollWidth}px`, height: '1px' }}></div>
-        </div>
-      )}
       </div>
 
       {/* Full Entry Details Modal */}
@@ -3173,7 +4473,7 @@ export default function TrapidTableView({
                   Edit
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(null); onDelete(selectedEntry); }}
+                  onClick={(e) => { e.stopPropagation(); onDelete(selectedEntry); setSelectedEntry(null); }}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
                 >
                   <TrashIcon className="w-4 h-4" />
@@ -3209,7 +4509,7 @@ export default function TrapidTableView({
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Edit {textEditField === 'title' ? 'Title' : 'Content'}
+                  Edit {getColumnLabel(textEditField)}
                 </h3>
                 <button
                   onClick={() => setShowTextEditModal(false)}
@@ -3223,23 +4523,179 @@ export default function TrapidTableView({
 
               {/* Body */}
               <div className="flex-1 px-6 py-4 overflow-y-auto">
-                <RichTextEditor
+                {/* Simple Formatting Buttons */}
+                <div className="mb-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (textarea) {
+                        const pos = textarea.selectionStart
+                        const newValue = textEditValue.substring(0, pos) + '- ' + textEditValue.substring(pos)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          textarea.focus()
+                          textarea.selectionStart = pos + 2
+                          textarea.selectionEnd = pos + 2
+                        }, 0)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                  >
+                    • Bullet
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (textarea) {
+                        const pos = textarea.selectionStart
+                        const newValue = textEditValue.substring(0, pos) + '1. ' + textEditValue.substring(pos)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          textarea.focus()
+                          textarea.selectionStart = pos + 3
+                          textarea.selectionEnd = pos + 3
+                        }, 0)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                  >
+                    1. Number
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (textarea) {
+                        const start = textarea.selectionStart
+                        const end = textarea.selectionEnd
+                        const selectedText = textEditValue.substring(start, end) || 'text'
+                        const newValue = textEditValue.substring(0, start) + '**' + selectedText + '**' + textEditValue.substring(end)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          textarea.focus()
+                          textarea.selectionStart = start + 2
+                          textarea.selectionEnd = start + 2 + selectedText.length
+                        }, 0)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm font-bold bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (textarea) {
+                        const start = textarea.selectionStart
+                        const end = textarea.selectionEnd
+                        const selectedText = textEditValue.substring(start, end) || 'text'
+                        const newValue = textEditValue.substring(0, start) + '*' + selectedText + '*' + textEditValue.substring(end)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          textarea.focus()
+                          textarea.selectionStart = start + 1
+                          textarea.selectionEnd = start + 1 + selectedText.length
+                        }, 0)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm italic bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                  >
+                    I
+                  </button>
+                </div>
+
+                <textarea
+                  ref={textEditTextareaRef}
                   value={textEditValue}
-                  onChange={(html) => setTextEditValue(html)}
-                  placeholder={`Enter ${textEditField === 'title' ? 'title' : 'content'}...`}
+                  onChange={(e) => setTextEditValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Handle Enter key for auto-continuing lists
+                    if (e.key === 'Enter') {
+                      const start = e.target.selectionStart
+                      const value = textEditValue
+                      const lines = value.substring(0, start).split('\n')
+                      const currentLine = lines[lines.length - 1]
+
+                      // Check if current line is a numbered list item (e.g., "1. text" or "2. text")
+                      const numberedMatch = currentLine.match(/^(\d+)\.\s/)
+                      if (numberedMatch) {
+                        e.preventDefault()
+                        const currentNum = parseInt(numberedMatch[1])
+                        const nextNum = currentNum + 1
+                        const newValue = value.substring(0, start) + '\n' + nextNum + '. ' + value.substring(start)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          e.target.selectionStart = e.target.selectionEnd = start + nextNum.toString().length + 3
+                        }, 0)
+                        return
+                      }
+
+                      // Check if current line is a bullet point (e.g., "- text")
+                      const bulletMatch = currentLine.match(/^-\s/)
+                      if (bulletMatch) {
+                        e.preventDefault()
+                        const newValue = value.substring(0, start) + '\n- ' + value.substring(start)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          e.target.selectionStart = e.target.selectionEnd = start + 3
+                        }, 0)
+                        return
+                      }
+                    }
+
+                    // Handle Tab key for indentation
+                    if (e.key === 'Tab') {
+                      e.preventDefault()
+                      const start = e.target.selectionStart
+                      const end = e.target.selectionEnd
+                      const value = textEditValue
+
+                      if (e.shiftKey) {
+                        // Shift+Tab: Remove indentation
+                        const lines = value.substring(0, start).split('\n')
+                        const currentLine = lines[lines.length - 1]
+                        if (currentLine.startsWith('  ')) {
+                          const newValue = value.substring(0, start - 2) + value.substring(start)
+                          setTextEditValue(newValue)
+                          setTimeout(() => {
+                            e.target.selectionStart = e.target.selectionEnd = start - 2
+                          }, 0)
+                        }
+                      } else {
+                        // Tab: Add indentation (2 spaces)
+                        const newValue = value.substring(0, start) + '  ' + value.substring(end)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          e.target.selectionStart = e.target.selectionEnd = start + 2
+                        }, 0)
+                      }
+                    }
+                  }}
+                  placeholder={`Enter ${getColumnLabel(textEditField).toLowerCase()}...`}
+                  className="w-full h-96 px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono whitespace-pre-wrap"
+                  style={{ tabSize: 2 }}
                 />
 
                 {/* Statistics */}
                 <div className="mt-4 flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{textEditValue.replace(/<[^>]*>/g, '').length}</span>
+                    <span className="font-medium">{textEditValue.length}</span>
                     <span className="text-xs">characters</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
-                      {textEditValue.replace(/<[^>]*>/g, '').trim().split(/\s+/).filter(w => w.length > 0).length}
+                      {textEditValue.trim().split(/\s+/).filter(w => w.length > 0).length}
                     </span>
                     <span className="text-xs">words</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      {textEditValue.split('\n').length}
+                    </span>
+                    <span className="text-xs">lines</span>
                   </div>
                 </div>
               </div>
@@ -3253,17 +4709,506 @@ export default function TrapidTableView({
                 </button>
                 <button
                   onClick={() => {
-                    if (textEditField === 'title') {
-                      setEditingData({ ...editingData, title: textEditValue })
-                    } else if (textEditField === 'content') {
-                      setEditingData({ ...editingData, description: textEditValue })
+                    // Update any field dynamically
+                    // For number fields, convert back to number
+                    let value = textEditValue
+                    if (['quantity', 'whole_number', 'price', 'discount'].includes(textEditField)) {
+                      value = textEditField === 'whole_number' ? parseInt(textEditValue) || 0 : parseFloat(textEditValue) || 0
                     }
+                    setEditingData({ ...editingData, [textEditField]: value })
                     setShowTextEditModal(false)
                   }}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                 >
                   Save
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GPS Location Picker Modal - Using LocationMapCard */}
+      {showGpsModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" onClick={() => setShowGpsModal(false)}>
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 transition-opacity" aria-hidden="true" />
+
+            {/* Modal Dialog */}
+            <div
+              className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full border border-gray-200 dark:border-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Pick GPS Location
+                </h3>
+                <button
+                  onClick={() => setShowGpsModal(false)}
+                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Body - Manual Input + LocationMapCard */}
+              <div className="p-6 space-y-4">
+                {/* Manual Input Section */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Manual Entry
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Latitude (e.g., -27.4705)"
+                      value={gpsModalCoords.lat || ''}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        if (value === '' || !isNaN(parseFloat(value))) {
+                          setGpsModalCoords({ ...gpsModalCoords, lat: value === '' ? '' : parseFloat(value) })
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Longitude (e.g., 153.0260)"
+                      value={gpsModalCoords.lng || ''}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        if (value === '' || !isNaN(parseFloat(value))) {
+                          setGpsModalCoords({ ...gpsModalCoords, lng: value === '' ? '' : parseFloat(value) })
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => {
+                        if (gpsModalCoords.lat && gpsModalCoords.lng) {
+                          setEditingData({ ...editingData, gps_coordinates: `${gpsModalCoords.lat}, ${gpsModalCoords.lng}` })
+                        }
+                      }}
+                      className="px-4 py-2 text-sm font-medium bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors"
+                    >
+                      Use These
+                    </button>
+                  </div>
+                </div>
+
+                {/* Map Picker Section */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Pick on Map (Click map, search address, or use current location button)
+                  </label>
+                  <LocationMapCard
+                    jobId={null}
+                    location=""
+                    latitude={gpsModalCoords.lat}
+                    longitude={gpsModalCoords.lng}
+                    onLocationUpdate={(location, lat, lng) => {
+                      // Update coordinates when user picks a location on the map
+                      setEditingData({ ...editingData, gps_coordinates: `${lat}, ${lng}` })
+                      setGpsModalCoords({ lat: parseFloat(lat), lng: parseFloat(lng) })
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 rounded-b-xl flex justify-between items-center gap-3">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Current: {editingData.gps_coordinates || 'Not set'}
+                </div>
+                <button
+                  onClick={() => setShowGpsModal(false)}
+                  className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Color Picker Modal */}
+      {showColorModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" onClick={() => setShowColorModal(false)}>
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 transition-opacity" aria-hidden="true" />
+
+            {/* Modal Dialog */}
+            <div
+              className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full border border-gray-200 dark:border-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Pick a Color
+                </h3>
+                <button
+                  onClick={() => setShowColorModal(false)}
+                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-6">
+                {/* Large Color Preview */}
+                <div className="flex justify-center">
+                  <div
+                    className="w-48 h-48 rounded-lg border-4 border-gray-300 dark:border-gray-600 shadow-lg"
+                    style={{ backgroundColor: colorModalValue }}
+                  />
+                </div>
+
+                {/* Color Wheel Picker */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Visual Color Picker
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="color"
+                      value={colorModalValue}
+                      onChange={(e) => setColorModalValue(e.target.value)}
+                      className="h-16 w-32 rounded border-2 border-gray-300 dark:border-gray-600 cursor-pointer"
+                    />
+                    <div className="flex-1 text-sm text-gray-600 dark:text-gray-400">
+                      Click the color box to open your browser's color picker wheel
+                    </div>
+                  </div>
+                </div>
+
+                {/* Manual Hex Input */}
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Manual Hex Entry
+                  </label>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={colorModalValue}
+                      onChange={(e) => {
+                        let value = e.target.value
+                        if (value && !value.startsWith('#')) {
+                          value = '#' + value
+                        }
+                        if (!value || /^#[0-9A-Fa-f]{0,6}$/.test(value)) {
+                          setColorModalValue(value)
+                        }
+                      }}
+                      placeholder="#000000"
+                      className="flex-1 px-4 py-3 text-lg font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                      maxLength={7}
+                    />
+                    <button
+                      onClick={() => {
+                        if (colorModalValue) {
+                          setEditingData({ ...editingData, color_picker: colorModalValue })
+                          setShowColorModal(false)
+                        }
+                      }}
+                      className="px-6 py-3 text-sm font-medium bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors"
+                    >
+                      Use This Color
+                    </button>
+                  </div>
+                </div>
+
+                {/* Common Colors */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Quick Colors
+                  </label>
+                  <div className="grid grid-cols-8 gap-2">
+                    {['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3', '#000000',
+                      '#FFFFFF', '#808080', '#FF1493', '#00CED1', '#FFD700', '#32CD32', '#FF4500', '#8B4513'].map(color => (
+                      <button
+                        key={color}
+                        onClick={() => setColorModalValue(color)}
+                        className="h-10 w-10 rounded border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 transition-colors"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 rounded-b-xl flex justify-between items-center gap-3">
+                <div className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+                  Current: {colorModalValue}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowColorModal(false)}
+                    className="px-4 py-2 text-sm font-medium bg-gray-300 text-gray-700 hover:bg-gray-400 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (colorModalValue) {
+                        setEditingData({ ...editingData, color_picker: colorModalValue })
+                      }
+                      setShowColorModal(false)
+                    }}
+                    className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+                  >
+                    Apply Color
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* File Upload Modal */}
+      {showFileModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" onClick={() => setShowFileModal(false)}>
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 transition-opacity" aria-hidden="true" />
+
+            {/* Modal Dialog */}
+            <div
+              className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full border border-gray-200 dark:border-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Upload File or Add Link
+                </h3>
+                <button
+                  onClick={() => setShowFileModal(false)}
+                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Tab Navigation */}
+              <div className="flex border-b border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setFileModalTab('upload')}
+                  className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+                    fileModalTab === 'upload'
+                      ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  📤 Upload File
+                </button>
+                <button
+                  onClick={() => setFileModalTab('url')}
+                  className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+                    fileModalTab === 'url'
+                      ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  🔗 Add URL
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6">
+                {fileModalTab === 'upload' ? (
+                  <div className="space-y-4">
+                    {/* Drag & Drop Zone */}
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                        dragActive
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                      }`}
+                      onDragEnter={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setDragActive(true)
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setDragActive(false)
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setDragActive(false)
+                        const file = e.dataTransfer.files?.[0]
+                        if (file) {
+                          setSelectedFile(file)
+                          // Mock path - in production, upload to server here
+                          const mockPath = `/uploads/${file.name}`
+                          setFileModalValue(mockPath)
+                        }
+                      }}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-6xl">📁</div>
+                        <div>
+                          <p className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                            Drag & drop your file here
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            or click the button below to browse
+                          </p>
+                        </div>
+                        <label className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer font-medium">
+                          Choose File
+                          <input
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) {
+                                setSelectedFile(file)
+                                // Mock path - in production, upload to server here
+                                const mockPath = `/uploads/${file.name}`
+                                setFileModalValue(mockPath)
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* File Preview */}
+                    {selectedFile && (
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="text-3xl">
+                              {selectedFile.type.startsWith('image/') ? '🖼️' :
+                               selectedFile.type === 'application/pdf' ? '📕' :
+                               selectedFile.type.includes('word') ? '📘' :
+                               selectedFile.type.includes('sheet') || selectedFile.type.includes('excel') ? '📊' :
+                               selectedFile.type.includes('zip') || selectedFile.type.includes('compressed') ? '📦' :
+                               '📄'}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">{selectedFile.name}</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {(selectedFile.size / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedFile(null)
+                              setFileModalValue('')
+                            }}
+                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            title="Remove file"
+                          >
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TODO Note */}
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        <strong>Note:</strong> File upload to server not yet implemented. Currently sets mock path <code className="bg-yellow-100 dark:bg-yellow-800 px-1 rounded">/uploads/filename</code>
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* URL Input */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Enter File URL or Path
+                      </label>
+                      <input
+                        type="text"
+                        value={fileModalValue}
+                        onChange={(e) => setFileModalValue(e.target.value)}
+                        placeholder="https://example.com/document.pdf or /uploads/file.pdf"
+                        className="w-full px-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Examples */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Examples:</p>
+                      <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                        <li>• Google Drive: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">https://drive.google.com/file/d/...</code></li>
+                        <li>• Dropbox: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">https://www.dropbox.com/s/...</code></li>
+                        <li>• Server path: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">/uploads/document.pdf</code></li>
+                      </ul>
+                    </div>
+
+                    {/* Preview if valid URL */}
+                    {fileModalValue && (
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-3">
+                          <div className="text-3xl">🔗</div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 dark:text-white">Link Preview</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{fileModalValue}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 rounded-b-xl flex justify-between items-center gap-3">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {selectedFile ? `Selected: ${selectedFile.name}` : fileModalValue ? `Path: ${fileModalValue}` : 'No file selected'}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowFileModal(false)}
+                    className="px-4 py-2 text-sm font-medium bg-gray-300 text-gray-700 hover:bg-gray-400 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (fileModalValue) {
+                        setEditingData({ ...editingData, file_upload: fileModalValue })
+                      }
+                      setShowFileModal(false)
+                    }}
+                    disabled={!fileModalValue}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      fileModalValue
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    Use This File
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -3435,18 +5380,6 @@ export default function TrapidTableView({
             </div>
           </div>
         </div>
-      )}
-
-      {/* Column Editor Full View */}
-      {showColumnEditorFull && tableIdNumeric && (
-        <ColumnEditorFullView
-          tableId={tableIdNumeric}
-          tableName={tableName}
-          onClose={() => {
-            setShowColumnEditorFull(false)
-            // Optionally reload data here if needed
-          }}
-        />
       )}
 
       {/* Column Editor Individual Modal */}

@@ -1,7 +1,7 @@
 {
   "name": "trapid-frontend",
   "private": true,
-  "version": "1.99.1100",
+  "version": "1.99.1258",
   "type": "module",
   "scripts": {
     "dev": "node scripts/increment-version.js && vite",
@@ -22,6 +22,7 @@
     "@heroicons/react": "^2.2.0",
     "@jitsi/react-sdk": "^1.4.4",
     "@mapbox/mapbox-gl-geocoder": "^5.1.2",
+    "@sentry/react": "^10.26.0",
     "@tiptap/extension-placeholder": "^3.10.7",
     "@tiptap/react": "^3.10.7",
     "@tiptap/starter-kit": "^3.10.7",

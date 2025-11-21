@@ -10,11 +10,49 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_21_215052) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
+
+  create_table "account_mappings", force: :cascade do |t|
+    t.bigint "accounting_integration_id", null: false
+    t.bigint "keepr_account_id", null: false
+    t.string "external_account_id", null: false
+    t.string "external_account_name"
+    t.string "external_account_code"
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["accounting_integration_id", "keepr_account_id"], name: "index_account_mappings_uniqueness", unique: true
+    t.index ["accounting_integration_id"], name: "index_account_mappings_on_accounting_integration_id"
+    t.index ["external_account_id"], name: "index_account_mappings_on_external_account_id"
+    t.index ["is_active"], name: "index_account_mappings_on_is_active"
+    t.index ["keepr_account_id"], name: "index_account_mappings_on_keepr_account_id"
+  end
+
+  create_table "accounting_integrations", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.string "system_type", null: false
+    t.text "oauth_token"
+    t.text "refresh_token"
+    t.datetime "token_expires_at"
+    t.string "organization_id"
+    t.string "tenant_id"
+    t.datetime "last_sync_at"
+    t.string "sync_status"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "account_mappings", default: {}
+    t.jsonb "sync_settings", default: {}
+    t.text "sync_error_message"
+    t.index ["contact_id", "system_type"], name: "index_accounting_integrations_on_contact_id_and_system_type", unique: true
+    t.index ["contact_id"], name: "index_accounting_integrations_on_contact_id"
+    t.index ["last_sync_at"], name: "index_accounting_integrations_on_last_sync_at"
+    t.index ["system_type"], name: "index_accounting_integrations_on_system_type"
+  end
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -69,9 +107,94 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.integer "priority", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.bigint "last_run_by_id"
     t.index ["active"], name: "index_agent_definitions_on_active"
     t.index ["agent_id"], name: "index_agent_definitions_on_agent_id", unique: true
     t.index ["agent_type"], name: "index_agent_definitions_on_agent_type"
+    t.index ["created_by_id"], name: "index_agent_definitions_on_created_by_id"
+    t.index ["last_run_by_id"], name: "index_agent_definitions_on_last_run_by_id"
+    t.index ["updated_by_id"], name: "index_agent_definitions_on_updated_by_id"
+  end
+
+  create_table "asset_insurance", force: :cascade do |t|
+    t.bigint "asset_id", null: false
+    t.string "insurance_company", null: false
+    t.string "policy_number", null: false
+    t.string "insurance_type"
+    t.date "start_date", null: false
+    t.date "expiry_date", null: false
+    t.decimal "premium_amount", precision: 10, scale: 2
+    t.string "premium_frequency"
+    t.decimal "coverage_amount", precision: 12, scale: 2
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_asset_insurance_on_asset_id"
+    t.index ["expiry_date"], name: "index_asset_insurance_on_expiry_date"
+    t.index ["policy_number"], name: "index_asset_insurance_on_policy_number"
+  end
+
+  create_table "asset_service_history", force: :cascade do |t|
+    t.bigint "asset_id", null: false
+    t.string "service_type", null: false
+    t.date "service_date", null: false
+    t.string "service_provider"
+    t.text "description"
+    t.decimal "cost", precision: 10, scale: 2
+    t.integer "odometer_reading"
+    t.date "next_service_date"
+    t.integer "next_service_odometer"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_asset_service_history_on_asset_id"
+    t.index ["next_service_date"], name: "index_asset_service_history_on_next_service_date"
+    t.index ["service_date"], name: "index_asset_service_history_on_service_date"
+  end
+
+  create_table "assets", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "description", null: false
+    t.string "asset_type", null: false
+    t.string "make"
+    t.string "model"
+    t.integer "year"
+    t.string "vin"
+    t.string "registration"
+    t.date "purchase_date"
+    t.decimal "purchase_price", precision: 12, scale: 2
+    t.decimal "current_value", precision: 12, scale: 2
+    t.decimal "depreciation_rate", precision: 5, scale: 2
+    t.string "status", default: "active"
+    t.date "disposal_date"
+    t.decimal "disposal_value", precision: 12, scale: 2
+    t.text "notes"
+    t.string "photo_url"
+    t.boolean "needs_attention", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_type"], name: "index_assets_on_asset_type"
+    t.index ["company_id"], name: "index_assets_on_company_id"
+    t.index ["needs_attention"], name: "index_assets_on_needs_attention"
+    t.index ["registration"], name: "index_assets_on_registration", unique: true, where: "(registration IS NOT NULL)"
+    t.index ["status"], name: "index_assets_on_status"
+  end
+
+  create_table "bank_accounts", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "account_name", null: false
+    t.string "bank_name", null: false
+    t.string "bsb", null: false
+    t.string "account_number", null: false
+    t.string "account_type"
+    t.boolean "is_primary", default: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "is_primary"], name: "index_bank_accounts_on_company_id_and_is_primary", unique: true, where: "(is_primary = true)"
+    t.index ["company_id"], name: "index_bank_accounts_on_company_id"
   end
 
   create_table "bug_hunter_test_runs", force: :cascade do |t|
@@ -135,6 +258,104 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.index ["table_id"], name: "index_columns_on_table_id"
   end
 
+  create_table "companies", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "company_group"
+    t.string "acn"
+    t.string "abn"
+    t.string "tfn"
+    t.string "status", default: "active"
+    t.date "date_incorporated"
+    t.text "registered_office_address"
+    t.text "principal_place_of_business"
+    t.boolean "is_trustee", default: false
+    t.string "trust_name"
+    t.string "gst_registration_status"
+    t.string "asic_username"
+    t.string "asic_password"
+    t.string "asic_recovery_question"
+    t.string "asic_recovery_answer"
+    t.date "asic_last_review_date"
+    t.date "asic_next_review_date"
+    t.text "notes"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["abn"], name: "index_companies_on_abn", unique: true, where: "(abn IS NOT NULL)"
+    t.index ["acn"], name: "index_companies_on_acn", unique: true, where: "(acn IS NOT NULL)"
+    t.index ["company_group"], name: "index_companies_on_company_group"
+    t.index ["name"], name: "index_companies_on_name"
+    t.index ["status"], name: "index_companies_on_status"
+  end
+
+  create_table "company_activities", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.bigint "user_id"
+    t.string "activity_type", null: false
+    t.text "description"
+    t.jsonb "changes", default: {}
+    t.string "related_type"
+    t.bigint "related_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["activity_type"], name: "index_company_activities_on_activity_type"
+    t.index ["company_id"], name: "index_company_activities_on_company_id"
+    t.index ["created_at"], name: "index_company_activities_on_created_at"
+    t.index ["related_type", "related_id"], name: "index_company_activities_on_related_type_and_related_id"
+    t.index ["user_id"], name: "index_company_activities_on_user_id"
+  end
+
+  create_table "company_compliance_items", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.string "item_type", null: false
+    t.date "due_date", null: false
+    t.boolean "completed", default: false
+    t.datetime "completed_at"
+    t.string "reminder_days"
+    t.datetime "last_reminder_sent_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "due_date", "completed"], name: "idx_on_company_id_due_date_completed_3b39c7e9ad"
+    t.index ["company_id"], name: "index_company_compliance_items_on_company_id"
+    t.index ["completed"], name: "index_company_compliance_items_on_completed"
+    t.index ["due_date"], name: "index_company_compliance_items_on_due_date"
+    t.index ["item_type"], name: "index_company_compliance_items_on_item_type"
+  end
+
+  create_table "company_directors", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "position"
+    t.date "appointment_date"
+    t.date "resignation_date"
+    t.boolean "is_current", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "contact_id"], name: "index_company_directors_on_company_id_and_contact_id", unique: true, where: "(is_current = true)"
+    t.index ["company_id"], name: "index_company_directors_on_company_id"
+    t.index ["contact_id"], name: "index_company_directors_on_contact_id"
+    t.index ["is_current"], name: "index_company_directors_on_is_current"
+  end
+
+  create_table "company_documents", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.string "document_type", null: false
+    t.date "document_date"
+    t.string "file_url"
+    t.string "file_name"
+    t.integer "file_size"
+    t.datetime "uploaded_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_company_documents_on_company_id"
+    t.index ["document_date"], name: "index_company_documents_on_document_date"
+    t.index ["document_type"], name: "index_company_documents_on_document_type"
+  end
+
   create_table "company_settings", force: :cascade do |t|
     t.string "company_name"
     t.string "abn"
@@ -151,6 +372,40 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.boolean "twilio_enabled", default: false
     t.string "timezone", default: "Australia/Brisbane"
     t.jsonb "working_days"
+  end
+
+  create_table "company_xero_accounts", force: :cascade do |t|
+    t.bigint "company_xero_connection_id", null: false
+    t.string "xero_account_id", null: false
+    t.string "account_code"
+    t.string "account_name"
+    t.string "account_type"
+    t.string "tax_type"
+    t.string "description"
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_code"], name: "index_company_xero_accounts_on_account_code"
+    t.index ["company_xero_connection_id"], name: "index_company_xero_accounts_on_company_xero_connection_id"
+    t.index ["company_xero_connection_id"], name: "index_xero_accounts_on_connection_id"
+    t.index ["is_active"], name: "index_company_xero_accounts_on_is_active"
+    t.index ["xero_account_id"], name: "index_company_xero_accounts_on_xero_account_id"
+  end
+
+  create_table "company_xero_connections", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.string "tenant_id", null: false
+    t.string "tenant_name"
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "token_expires_at"
+    t.datetime "last_sync_at"
+    t.boolean "connected", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_company_xero_connections_on_company_id", unique: true
+    t.index ["connected"], name: "index_company_xero_connections_on_connected"
+    t.index ["tenant_id"], name: "index_company_xero_connections_on_tenant_id"
   end
 
   create_table "construction_contacts", force: :cascade do |t|
@@ -377,9 +632,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.datetime "portal_welcome_sent_at"
     t.decimal "trapid_rating", precision: 3, scale: 2
     t.integer "total_ratings_count", default: 0
+    t.boolean "is_director", default: false
+    t.string "director_tfn"
+    t.date "director_date_of_birth"
+    t.string "director_position"
+    t.boolean "is_beneficial_owner", default: false
+    t.decimal "shareholding_percentage", precision: 5, scale: 2
     t.index ["contact_types"], name: "index_contacts_on_contact_types", using: :gin
     t.index ["email"], name: "index_contacts_on_email"
     t.index ["is_active"], name: "index_contacts_on_is_active"
+    t.index ["is_beneficial_owner"], name: "index_contacts_on_is_beneficial_owner"
+    t.index ["is_director"], name: "index_contacts_on_is_director"
     t.index ["portal_enabled"], name: "index_contacts_on_portal_enabled"
     t.index ["primary_contact_type"], name: "index_contacts_on_primary_contact_type"
     t.index ["rating"], name: "index_contacts_on_rating"
@@ -510,6 +773,65 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.index ["name"], name: "index_external_integrations_on_name", unique: true
   end
 
+  create_table "feature_trackers", force: :cascade do |t|
+    t.string "chapter", null: false
+    t.string "feature_name", null: false
+    t.text "detail_point_1"
+    t.text "detail_point_2"
+    t.text "detail_point_3"
+    t.boolean "system_complete", default: false, null: false
+    t.boolean "dev_checked", default: false, null: false
+    t.boolean "tester_checked", default: false, null: false
+    t.boolean "user_checked", default: false, null: false
+    t.integer "sort_order", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "ui_checked", default: false, null: false
+    t.integer "dev_progress", default: 0, null: false
+    t.boolean "buildertrend_has"
+    t.boolean "buildexact_has"
+    t.boolean "jacks_has", default: false, null: false
+    t.boolean "wunderbuilt_has", default: false, null: false
+    t.boolean "databuild_has", default: false, null: false
+    t.boolean "simpro_has", default: false, null: false
+    t.boolean "smarterbuild_has", default: false, null: false
+    t.boolean "clickhome_has", default: false, null: false
+    t.boolean "trapid_has", default: false, null: false
+    t.boolean "clickup_has"
+    t.index ["chapter"], name: "index_feature_trackers_on_chapter"
+    t.index ["sort_order"], name: "index_feature_trackers_on_sort_order"
+  end
+
+  create_table "financial_transactions", force: :cascade do |t|
+    t.string "transaction_type", null: false
+    t.decimal "amount", precision: 10, scale: 2, null: false
+    t.date "transaction_date", null: false
+    t.text "description"
+    t.string "category"
+    t.string "status", default: "draft", null: false
+    t.bigint "construction_id"
+    t.bigint "user_id", null: false
+    t.bigint "company_id", null: false
+    t.bigint "keepr_journal_id"
+    t.string "external_system_id"
+    t.string "external_system_type"
+    t.datetime "synced_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_financial_transactions_on_category"
+    t.index ["company_id", "status"], name: "index_financial_transactions_on_company_id_and_status"
+    t.index ["company_id", "transaction_date"], name: "idx_on_company_id_transaction_date_f27cab6995"
+    t.index ["company_id"], name: "index_financial_transactions_on_company_id"
+    t.index ["construction_id", "transaction_date"], name: "idx_on_construction_id_transaction_date_ea10ae6511"
+    t.index ["construction_id"], name: "index_financial_transactions_on_construction_id"
+    t.index ["external_system_type", "external_system_id"], name: "index_fin_trans_on_external_system"
+    t.index ["keepr_journal_id"], name: "index_financial_transactions_on_keepr_journal_id"
+    t.index ["status"], name: "index_financial_transactions_on_status"
+    t.index ["transaction_date"], name: "index_financial_transactions_on_transaction_date"
+    t.index ["transaction_type"], name: "index_financial_transactions_on_transaction_type"
+    t.index ["user_id"], name: "index_financial_transactions_on_user_id"
+  end
+
   create_table "folder_template_items", force: :cascade do |t|
     t.bigint "folder_template_id", null: false
     t.string "name", null: false
@@ -541,26 +863,30 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
   end
 
   create_table "gold_standard_items", force: :cascade do |t|
-    t.string "category"
-    t.string "section"
     t.string "email"
     t.string "phone"
-    t.boolean "is_active"
-    t.decimal "discount"
-    t.decimal "price"
-    t.integer "quantity"
-    t.text "content"
-    t.string "component"
-    t.string "status"
-    t.string "updated_by"
-    t.jsonb "metadata"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "whole_number"
     t.string "mobile"
-    t.string "title"
-    t.string "category_type"
-    t.string "document_link"
+    t.string "action_buttons"
+    t.string "single_line_text", limit: 255
+    t.text "multiple_lines_text"
+    t.string "url", limit: 500
+    t.decimal "number", precision: 10, scale: 2
+    t.decimal "currency", precision: 10, scale: 2
+    t.decimal "percentage", precision: 5, scale: 2
+    t.date "date"
+    t.datetime "date_and_time", precision: nil
+    t.string "gps_coordinates", limit: 100
+    t.string "color_picker", limit: 7
+    t.text "file_upload"
+    t.boolean "boolean"
+    t.string "choice", limit: 50
+    t.string "lookup", limit: 255
+    t.text "multiple_lookups"
+    t.integer "user"
+    t.string "computed", limit: 255
   end
 
   create_table "grok_plans", force: :cascade do |t|
@@ -638,6 +964,93 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.text "aussie_slang"
     t.index ["display_order"], name: "index_inspiring_quotes_on_display_order"
     t.index ["is_active"], name: "index_inspiring_quotes_on_is_active"
+  end
+
+  create_table "keepr_accounts", id: :serial, force: :cascade do |t|
+    t.integer "number", null: false
+    t.string "ancestry"
+    t.string "name", null: false
+    t.integer "kind", null: false
+    t.integer "keepr_group_id"
+    t.string "accountable_type"
+    t.integer "accountable_id"
+    t.integer "keepr_tax_id"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
+    t.index ["accountable_type", "accountable_id"], name: "index_keepr_accounts_on_accountable_type_and_accountable_id"
+    t.index ["ancestry"], name: "index_keepr_accounts_on_ancestry"
+    t.index ["keepr_group_id"], name: "index_keepr_accounts_on_keepr_group_id"
+    t.index ["keepr_tax_id"], name: "index_keepr_accounts_on_keepr_tax_id"
+    t.index ["number"], name: "index_keepr_accounts_on_number"
+  end
+
+  create_table "keepr_cost_centers", id: :serial, force: :cascade do |t|
+    t.string "number", null: false
+    t.string "name", null: false
+    t.text "note"
+  end
+
+  create_table "keepr_groups", id: :serial, force: :cascade do |t|
+    t.integer "target", null: false
+    t.string "number"
+    t.string "name", null: false
+    t.boolean "is_result", default: false, null: false
+    t.string "ancestry"
+    t.index ["ancestry"], name: "index_keepr_groups_on_ancestry"
+  end
+
+  create_table "keepr_journals", id: :serial, force: :cascade do |t|
+    t.string "number"
+    t.date "date", null: false
+    t.string "subject"
+    t.string "accountable_type"
+    t.integer "accountable_id"
+    t.text "note"
+    t.boolean "permanent", default: false, null: false
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
+    t.index ["accountable_type", "accountable_id"], name: "index_keepr_journals_on_accountable_type_and_accountable_id"
+    t.index ["date"], name: "index_keepr_journals_on_date"
+  end
+
+  create_table "keepr_postings", id: :serial, force: :cascade do |t|
+    t.integer "keepr_account_id", null: false
+    t.integer "keepr_journal_id", null: false
+    t.decimal "amount", precision: 8, scale: 2, null: false
+    t.integer "keepr_cost_center_id"
+    t.string "accountable_type"
+    t.integer "accountable_id"
+    t.index ["accountable_type", "accountable_id"], name: "index_keepr_postings_on_accountable_type_and_accountable_id"
+    t.index ["keepr_account_id"], name: "index_keepr_postings_on_keepr_account_id"
+    t.index ["keepr_cost_center_id"], name: "index_keepr_postings_on_keepr_cost_center_id"
+    t.index ["keepr_journal_id"], name: "index_keepr_postings_on_keepr_journal_id"
+  end
+
+  create_table "keepr_taxes", id: :serial, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "description"
+    t.decimal "value", precision: 8, scale: 2, null: false
+    t.integer "keepr_account_id", null: false
+    t.index ["keepr_account_id"], name: "index_keepr_taxes_on_keepr_account_id"
+  end
+
+  create_table "kudos_events", force: :cascade do |t|
+    t.bigint "subcontractor_account_id", null: false
+    t.bigint "quote_response_id"
+    t.bigint "purchase_order_id"
+    t.string "event_type", null: false
+    t.datetime "expected_time"
+    t.datetime "actual_time"
+    t.decimal "points_awarded", precision: 10, scale: 2, default: "0.0"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_kudos_events_on_created_at"
+    t.index ["event_type"], name: "index_kudos_events_on_event_type"
+    t.index ["purchase_order_id"], name: "index_kudos_events_on_purchase_order_id"
+    t.index ["quote_response_id"], name: "index_kudos_events_on_quote_response_id"
+    t.index ["subcontractor_account_id", "event_type"], name: "index_kudos_events_on_subcontractor_account_id_and_event_type"
+    t.index ["subcontractor_account_id"], name: "index_kudos_events_on_subcontractor_account_id"
   end
 
   create_table "maintenance_requests", force: :cascade do |t|
@@ -813,6 +1226,62 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_outlook_credentials_on_user_id"
+  end
+
+  create_table "pay_now_requests", force: :cascade do |t|
+    t.bigint "purchase_order_id", null: false
+    t.bigint "contact_id", null: false
+    t.bigint "requested_by_portal_user_id"
+    t.decimal "original_amount", precision: 15, scale: 2, null: false
+    t.decimal "discount_percentage", precision: 5, scale: 2, default: "5.0", null: false
+    t.decimal "discount_amount", precision: 15, scale: 2, null: false
+    t.decimal "discounted_amount", precision: 15, scale: 2, null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "reviewed_by_supervisor_id"
+    t.datetime "supervisor_reviewed_at"
+    t.text "supervisor_notes"
+    t.bigint "approved_by_builder_id"
+    t.datetime "builder_approved_at"
+    t.text "builder_notes"
+    t.bigint "payment_id"
+    t.datetime "paid_at"
+    t.text "supplier_notes"
+    t.date "requested_payment_date"
+    t.datetime "rejected_at"
+    t.text "rejection_reason"
+    t.bigint "pay_now_weekly_limit_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["approved_by_builder_id"], name: "index_pay_now_requests_on_approved_by_builder_id"
+    t.index ["contact_id", "status"], name: "index_pay_now_requests_on_contact_and_status"
+    t.index ["contact_id"], name: "index_pay_now_requests_on_contact_id"
+    t.index ["created_at"], name: "index_pay_now_requests_on_created_at"
+    t.index ["pay_now_weekly_limit_id"], name: "index_pay_now_requests_on_pay_now_weekly_limit_id"
+    t.index ["payment_id"], name: "index_pay_now_requests_on_payment_id"
+    t.index ["purchase_order_id", "status"], name: "index_pay_now_requests_on_po_and_status"
+    t.index ["purchase_order_id"], name: "index_pay_now_requests_on_purchase_order_id"
+    t.index ["requested_by_portal_user_id"], name: "index_pay_now_requests_on_requested_by_portal_user_id"
+    t.index ["requested_payment_date"], name: "index_pay_now_requests_on_requested_payment_date"
+    t.index ["reviewed_by_supervisor_id"], name: "index_pay_now_requests_on_reviewed_by_supervisor_id"
+    t.index ["status", "created_at"], name: "index_pay_now_requests_on_status_and_created_at"
+    t.index ["status"], name: "index_pay_now_requests_on_status"
+  end
+
+  create_table "pay_now_weekly_limits", force: :cascade do |t|
+    t.decimal "total_limit", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "used_amount", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "remaining_amount", precision: 15, scale: 2, default: "0.0", null: false
+    t.date "week_start_date", null: false
+    t.date "week_end_date", null: false
+    t.boolean "active", default: true, null: false
+    t.bigint "set_by_id"
+    t.decimal "previous_limit", precision: 15, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active", "week_start_date"], name: "index_pay_now_weekly_limits_on_active_and_week"
+    t.index ["active"], name: "index_pay_now_weekly_limits_on_active"
+    t.index ["set_by_id"], name: "index_pay_now_weekly_limits_on_set_by_id"
+    t.index ["week_start_date"], name: "index_pay_now_weekly_limits_on_week_start_date"
   end
 
   create_table "payments", force: :cascade do |t|
@@ -1124,17 +1593,84 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.bigint "estimate_id"
     t.boolean "visible_to_supplier", default: false
     t.jsonb "payment_schedule"
+    t.bigint "quote_response_id"
+    t.datetime "arrived_at"
+    t.datetime "completed_at"
+    t.index ["arrived_at"], name: "index_purchase_orders_on_arrived_at"
+    t.index ["completed_at"], name: "index_purchase_orders_on_completed_at"
     t.index ["construction_id", "status"], name: "index_purchase_orders_on_construction_and_status"
     t.index ["construction_id"], name: "index_purchase_orders_on_construction_id"
     t.index ["creates_schedule_tasks"], name: "index_purchase_orders_on_creates_schedule_tasks"
     t.index ["estimate_id"], name: "index_purchase_orders_on_estimate_id"
     t.index ["payment_status"], name: "index_purchase_orders_on_payment_status"
     t.index ["purchase_order_number"], name: "index_purchase_orders_on_purchase_order_number", unique: true
+    t.index ["quote_response_id"], name: "index_purchase_orders_on_quote_response_id"
     t.index ["required_date"], name: "index_purchase_orders_on_required_date"
     t.index ["required_on_site_date"], name: "index_purchase_orders_on_required_on_site_date"
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
     t.index ["visible_to_supplier"], name: "index_purchase_orders_on_visible_to_supplier"
+  end
+
+  create_table "quote_request_contacts", force: :cascade do |t|
+    t.bigint "quote_request_id", null: false
+    t.bigint "contact_id", null: false
+    t.datetime "notified_at"
+    t.string "notification_method"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_quote_request_contacts_on_contact_id"
+    t.index ["notified_at"], name: "index_quote_request_contacts_on_notified_at"
+    t.index ["quote_request_id", "contact_id"], name: "index_quote_request_contacts_unique", unique: true
+    t.index ["quote_request_id"], name: "index_quote_request_contacts_on_quote_request_id"
+  end
+
+  create_table "quote_requests", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.bigint "created_by_id", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.string "trade_category"
+    t.date "requested_date"
+    t.decimal "budget_min", precision: 12, scale: 2
+    t.decimal "budget_max", precision: 12, scale: 2
+    t.string "status", default: "draft", null: false
+    t.bigint "selected_quote_response_id"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id", "status"], name: "index_quote_requests_on_construction_id_and_status"
+    t.index ["construction_id"], name: "index_quote_requests_on_construction_id"
+    t.index ["created_at"], name: "index_quote_requests_on_created_at"
+    t.index ["created_by_id"], name: "index_quote_requests_on_created_by_id"
+    t.index ["requested_date"], name: "index_quote_requests_on_requested_date"
+    t.index ["selected_quote_response_id"], name: "index_quote_requests_on_selected_quote_response_id"
+    t.index ["status"], name: "index_quote_requests_on_status"
+    t.index ["trade_category"], name: "index_quote_requests_on_trade_category"
+  end
+
+  create_table "quote_responses", force: :cascade do |t|
+    t.bigint "quote_request_id", null: false
+    t.bigint "contact_id", null: false
+    t.bigint "responded_by_portal_user_id"
+    t.decimal "price", precision: 12, scale: 2, null: false
+    t.string "timeframe"
+    t.text "notes"
+    t.string "status", default: "pending", null: false
+    t.datetime "submitted_at"
+    t.datetime "decision_at"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id", "status"], name: "index_quote_responses_on_contact_id_and_status"
+    t.index ["contact_id"], name: "index_quote_responses_on_contact_id"
+    t.index ["created_at"], name: "index_quote_responses_on_created_at"
+    t.index ["quote_request_id", "status"], name: "index_quote_responses_on_quote_request_id_and_status"
+    t.index ["quote_request_id"], name: "index_quote_responses_on_quote_request_id"
+    t.index ["responded_by_portal_user_id"], name: "index_quote_responses_on_responded_by_portal_user_id"
+    t.index ["status"], name: "index_quote_responses_on_status"
+    t.index ["submitted_at"], name: "index_quote_responses_on_submitted_at"
   end
 
   create_table "rain_logs", force: :cascade do |t|
@@ -1301,6 +1837,277 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.index ["name"], name: "index_schedule_templates_on_name"
   end
 
+  create_table "sm_dependencies", force: :cascade do |t|
+    t.bigint "predecessor_task_id", null: false
+    t.bigint "successor_task_id", null: false
+    t.string "dependency_type", limit: 10, null: false
+    t.integer "lag_days", default: 0, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "deleted_at", precision: nil
+    t.boolean "deleted_by_rollover", default: false
+    t.string "deleted_reason", limit: 100
+    t.bigint "created_by_id"
+    t.bigint "deleted_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_sm_dependencies_on_active"
+    t.index ["created_by_id"], name: "index_sm_dependencies_on_created_by_id"
+    t.index ["deleted_by_id"], name: "index_sm_dependencies_on_deleted_by_id"
+    t.index ["predecessor_task_id", "successor_task_id"], name: "idx_sm_deps_unique_active", unique: true, where: "(active = true)"
+    t.index ["predecessor_task_id"], name: "idx_sm_deps_predecessor_active", where: "(active = true)"
+    t.index ["predecessor_task_id"], name: "index_sm_dependencies_on_predecessor_task_id"
+    t.index ["successor_task_id"], name: "idx_sm_deps_successor_active", where: "(active = true)"
+    t.index ["successor_task_id"], name: "index_sm_dependencies_on_successor_task_id"
+    t.check_constraint "predecessor_task_id <> successor_task_id", name: "no_self_dependency"
+  end
+
+  create_table "sm_hold_logs", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.bigint "hold_task_id", null: false
+    t.bigint "hold_reason_id"
+    t.string "event_type", limit: 20, null: false
+    t.datetime "hold_started_at", precision: nil
+    t.bigint "hold_started_by_id"
+    t.datetime "hold_released_at", precision: nil
+    t.bigint "hold_released_by_id"
+    t.text "hold_release_reason"
+    t.integer "supplier_confirms_cleared", default: 0
+    t.integer "dependencies_cleared", default: 0
+    t.integer "tasks_affected", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id"], name: "index_sm_hold_logs_on_construction_id"
+    t.index ["event_type"], name: "index_sm_hold_logs_on_event_type"
+    t.index ["hold_reason_id"], name: "index_sm_hold_logs_on_hold_reason_id"
+    t.index ["hold_released_by_id"], name: "index_sm_hold_logs_on_hold_released_by_id"
+    t.index ["hold_started_by_id"], name: "index_sm_hold_logs_on_hold_started_by_id"
+    t.index ["hold_task_id"], name: "index_sm_hold_logs_on_hold_task_id"
+  end
+
+  create_table "sm_hold_reasons", force: :cascade do |t|
+    t.string "name", limit: 100, null: false
+    t.text "description"
+    t.string "color", limit: 20, default: "#EF4444"
+    t.string "icon", limit: 50, default: "pause"
+    t.integer "sequence_order", default: 0, null: false
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["is_active"], name: "index_sm_hold_reasons_on_is_active"
+    t.index ["name"], name: "index_sm_hold_reasons_on_name", unique: true
+    t.index ["sequence_order"], name: "index_sm_hold_reasons_on_sequence_order"
+  end
+
+  create_table "sm_resource_allocations", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "resource_id", null: false
+    t.decimal "allocated_hours", precision: 10, scale: 2
+    t.decimal "allocated_quantity", precision: 10, scale: 2
+    t.date "allocation_date"
+    t.string "status", limit: 20, default: "planned"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["allocation_date"], name: "index_sm_resource_allocations_on_allocation_date"
+    t.index ["resource_id"], name: "index_sm_resource_allocations_on_resource_id"
+    t.index ["status"], name: "index_sm_resource_allocations_on_status"
+    t.index ["task_id", "resource_id", "allocation_date"], name: "idx_sm_allocations_unique", unique: true
+    t.index ["task_id"], name: "index_sm_resource_allocations_on_task_id"
+  end
+
+  create_table "sm_resources", force: :cascade do |t|
+    t.string "resource_type", limit: 20, null: false
+    t.string "name", limit: 255, null: false
+    t.string "code", limit: 50
+    t.text "description"
+    t.bigint "user_id"
+    t.bigint "contact_id"
+    t.string "trade", limit: 100
+    t.decimal "hourly_rate", precision: 10, scale: 2
+    t.bigint "asset_id"
+    t.decimal "daily_rate", precision: 10, scale: 2
+    t.string "unit", limit: 50
+    t.decimal "unit_cost", precision: 10, scale: 2
+    t.boolean "is_active", default: true
+    t.decimal "availability_hours_per_day", precision: 4, scale: 2, default: "8.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_sm_resources_on_asset_id"
+    t.index ["code"], name: "index_sm_resources_on_code", unique: true, where: "(code IS NOT NULL)"
+    t.index ["contact_id"], name: "index_sm_resources_on_contact_id"
+    t.index ["is_active"], name: "index_sm_resources_on_is_active"
+    t.index ["resource_type"], name: "index_sm_resources_on_resource_type"
+    t.index ["user_id"], name: "index_sm_resources_on_user_id"
+  end
+
+  create_table "sm_rollover_logs", force: :cascade do |t|
+    t.uuid "rollover_batch_id", null: false
+    t.datetime "rollover_timestamp", precision: nil, null: false
+    t.bigint "task_id", null: false
+    t.date "old_start_date"
+    t.date "new_start_date"
+    t.date "old_end_date"
+    t.date "new_end_date"
+    t.jsonb "deleted_dependencies", default: []
+    t.string "confirm_status_change", limit: 255
+    t.boolean "hold_cleared", default: false
+    t.integer "supplier_confirms_cleared", default: 0
+    t.bigint "construction_id", null: false
+    t.integer "cascade_depth"
+    t.boolean "cross_job_cascade", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id"], name: "index_sm_rollover_logs_on_construction_id"
+    t.index ["rollover_batch_id"], name: "index_sm_rollover_logs_on_rollover_batch_id"
+    t.index ["rollover_timestamp"], name: "index_sm_rollover_logs_on_rollover_timestamp"
+    t.index ["task_id"], name: "index_sm_rollover_logs_on_task_id"
+  end
+
+  create_table "sm_settings", force: :cascade do |t|
+    t.time "rollover_time", default: "2000-01-01 00:00:00", null: false
+    t.string "rollover_timezone", limit: 50, default: "Australia/Brisbane", null: false
+    t.boolean "rollover_enabled", default: true
+    t.boolean "notify_on_hold", default: true
+    t.boolean "notify_on_supplier_confirm", default: true
+    t.boolean "notify_on_rollover", default: true
+    t.bigint "default_template_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "sm_spawn_logs", force: :cascade do |t|
+    t.bigint "parent_task_id", null: false
+    t.bigint "spawned_task_id", null: false
+    t.string "spawn_type", limit: 50, null: false
+    t.string "spawn_trigger", limit: 50, null: false
+    t.datetime "spawned_at", precision: nil, default: -> { "now()" }, null: false
+    t.bigint "spawned_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["parent_task_id"], name: "index_sm_spawn_logs_on_parent_task_id"
+    t.index ["spawn_type"], name: "index_sm_spawn_logs_on_spawn_type"
+    t.index ["spawned_by_id"], name: "index_sm_spawn_logs_on_spawned_by_id"
+    t.index ["spawned_task_id"], name: "index_sm_spawn_logs_on_spawned_task_id"
+  end
+
+  create_table "sm_tasks", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.bigint "template_row_id"
+    t.bigint "parent_task_id"
+    t.integer "task_number", null: false
+    t.string "name", limit: 255, null: false
+    t.text "description"
+    t.decimal "sequence_order", precision: 10, scale: 2, null: false
+    t.date "start_date", null: false
+    t.date "end_date", null: false
+    t.integer "duration_days", null: false
+    t.string "status", limit: 50, default: "not_started", null: false
+    t.datetime "started_at", precision: nil
+    t.datetime "completed_at", precision: nil
+    t.boolean "passed"
+    t.boolean "confirm", default: false
+    t.boolean "supplier_confirm", default: false
+    t.boolean "manually_positioned", default: false
+    t.datetime "manually_positioned_at", precision: nil
+    t.string "confirm_status", limit: 50
+    t.datetime "confirm_requested_at", precision: nil
+    t.datetime "supplier_confirmed_at", precision: nil
+    t.bigint "supplier_confirmed_by_id"
+    t.boolean "is_hold_task", default: false
+    t.bigint "hold_reason_id"
+    t.datetime "hold_started_at", precision: nil
+    t.bigint "hold_started_by_id"
+    t.datetime "hold_released_at", precision: nil
+    t.bigint "hold_released_by_id"
+    t.text "hold_release_reason"
+    t.bigint "purchase_order_id"
+    t.bigint "assigned_user_id"
+    t.bigint "supplier_id"
+    t.string "trade", limit: 100
+    t.string "stage", limit: 100
+    t.integer "documentation_category_ids", default: [], array: true
+    t.boolean "show_in_docs_tab", default: false
+    t.jsonb "linked_task_ids", default: []
+    t.boolean "spawn_photo_task", default: false
+    t.boolean "spawn_scan_task", default: false
+    t.jsonb "spawn_office_tasks", default: []
+    t.boolean "pass_fail_enabled", default: false
+    t.bigint "checklist_id"
+    t.integer "order_time_days"
+    t.integer "call_time_days"
+    t.boolean "order_reminder_sent", default: false
+    t.boolean "call_reminder_sent", default: false
+    t.boolean "require_photo", default: false
+    t.boolean "require_certificate", default: false
+    t.boolean "require_supervisor_check", default: false
+    t.boolean "po_required", default: false
+    t.boolean "critical_po", default: false
+    t.bigint "created_by_id"
+    t.bigint "updated_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_user_id"], name: "index_sm_tasks_on_assigned_user_id"
+    t.index ["checklist_id"], name: "index_sm_tasks_on_checklist_id"
+    t.index ["confirm_status"], name: "index_sm_tasks_on_confirm_status"
+    t.index ["construction_id", "task_number"], name: "index_sm_tasks_on_construction_id_and_task_number", unique: true
+    t.index ["construction_id"], name: "index_sm_tasks_on_construction_id"
+    t.index ["created_by_id"], name: "index_sm_tasks_on_created_by_id"
+    t.index ["hold_reason_id"], name: "index_sm_tasks_on_hold_reason_id"
+    t.index ["hold_released_by_id"], name: "index_sm_tasks_on_hold_released_by_id"
+    t.index ["hold_started_by_id"], name: "index_sm_tasks_on_hold_started_by_id"
+    t.index ["is_hold_task"], name: "index_sm_tasks_on_is_hold_task", where: "(is_hold_task = true)"
+    t.index ["parent_task_id"], name: "index_sm_tasks_on_parent_task_id"
+    t.index ["purchase_order_id"], name: "index_sm_tasks_on_purchase_order_id"
+    t.index ["sequence_order"], name: "index_sm_tasks_on_sequence_order"
+    t.index ["start_date"], name: "index_sm_tasks_on_start_date"
+    t.index ["status"], name: "index_sm_tasks_on_status"
+    t.index ["supplier_confirmed_by_id"], name: "index_sm_tasks_on_supplier_confirmed_by_id"
+    t.index ["supplier_id"], name: "index_sm_tasks_on_supplier_id"
+    t.index ["template_row_id"], name: "index_sm_tasks_on_template_row_id"
+    t.index ["trade"], name: "index_sm_tasks_on_trade"
+    t.index ["updated_by_id"], name: "index_sm_tasks_on_updated_by_id"
+  end
+
+  create_table "sm_time_entries", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "resource_id", null: false
+    t.bigint "allocation_id"
+    t.date "entry_date", null: false
+    t.time "start_time"
+    t.time "end_time"
+    t.integer "break_minutes", default: 0
+    t.decimal "total_hours", precision: 10, scale: 2, null: false
+    t.string "entry_type", limit: 20, default: "regular"
+    t.text "description"
+    t.bigint "approved_by_id"
+    t.datetime "approved_at", precision: nil
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["allocation_id"], name: "index_sm_time_entries_on_allocation_id"
+    t.index ["approved_by_id"], name: "index_sm_time_entries_on_approved_by_id"
+    t.index ["created_by_id"], name: "index_sm_time_entries_on_created_by_id"
+    t.index ["entry_date"], name: "index_sm_time_entries_on_entry_date"
+    t.index ["entry_type"], name: "index_sm_time_entries_on_entry_type"
+    t.index ["resource_id"], name: "index_sm_time_entries_on_resource_id"
+    t.index ["task_id", "resource_id", "entry_date"], name: "idx_sm_time_entries_task_resource_date"
+    t.index ["task_id"], name: "index_sm_time_entries_on_task_id"
+  end
+
+  create_table "sm_working_drawing_pages", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.integer "page_number", null: false
+    t.text "image_url", null: false
+    t.string "category", limit: 100, null: false
+    t.decimal "ai_confidence", precision: 5, scale: 4
+    t.boolean "category_overridden", default: false
+    t.string "manual_category", limit: 100
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_sm_working_drawing_pages_on_category"
+    t.index ["task_id", "page_number"], name: "index_sm_working_drawing_pages_on_task_id_and_page_number", unique: true
+    t.index ["task_id"], name: "index_sm_working_drawing_pages_on_task_id"
+  end
+
   create_table "sms_messages", force: :cascade do |t|
     t.bigint "contact_id", null: false
     t.bigint "user_id"
@@ -1445,6 +2252,46 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
+  create_table "subcontractor_accounts", force: :cascade do |t|
+    t.bigint "portal_user_id", null: false
+    t.string "account_tier", default: "free", null: false
+    t.datetime "activated_at"
+    t.bigint "invited_by_contact_id"
+    t.decimal "kudos_score", precision: 10, scale: 2, default: "0.0"
+    t.integer "jobs_completed_count", default: 0
+    t.boolean "accounting_system_connected", default: false
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_tier"], name: "index_subcontractor_accounts_on_account_tier"
+    t.index ["activated_at"], name: "index_subcontractor_accounts_on_activated_at"
+    t.index ["invited_by_contact_id"], name: "index_subcontractor_accounts_on_invited_by_contact_id"
+    t.index ["kudos_score"], name: "index_subcontractor_accounts_on_kudos_score"
+    t.index ["portal_user_id"], name: "index_subcontractor_accounts_on_portal_user_id"
+  end
+
+  create_table "subcontractor_invoices", force: :cascade do |t|
+    t.bigint "purchase_order_id", null: false
+    t.bigint "contact_id", null: false
+    t.bigint "accounting_integration_id"
+    t.decimal "amount", precision: 12, scale: 2, null: false
+    t.string "external_invoice_id"
+    t.string "status", default: "draft", null: false
+    t.datetime "synced_at"
+    t.datetime "paid_at"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["accounting_integration_id"], name: "index_subcontractor_invoices_on_accounting_integration_id"
+    t.index ["contact_id", "status"], name: "index_subcontractor_invoices_on_contact_id_and_status"
+    t.index ["contact_id"], name: "index_subcontractor_invoices_on_contact_id"
+    t.index ["external_invoice_id"], name: "index_subcontractor_invoices_on_external_invoice_id"
+    t.index ["paid_at"], name: "index_subcontractor_invoices_on_paid_at"
+    t.index ["purchase_order_id", "status"], name: "index_subcontractor_invoices_on_purchase_order_id_and_status"
+    t.index ["purchase_order_id"], name: "index_subcontractor_invoices_on_purchase_order_id"
+    t.index ["status"], name: "index_subcontractor_invoices_on_status"
+  end
+
   create_table "supervisor_checklist_templates", force: :cascade do |t|
     t.string "name", null: false
     t.text "description"
@@ -1524,6 +2371,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.index ["match_type"], name: "index_suppliers_on_match_type"
     t.index ["name"], name: "index_suppliers_on_name", unique: true
     t.index ["supplier_code"], name: "index_suppliers_on_supplier_code", unique: true
+  end
+
+  create_table "table_protections", force: :cascade do |t|
+    t.string "table_name", null: false
+    t.boolean "is_protected", default: true, null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["table_name"], name: "index_table_protections_on_table_name", unique: true
   end
 
   create_table "tables", force: :cascade do |t|
@@ -1800,14 +2656,327 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.string "uid"
     t.text "oauth_token"
     t.datetime "oauth_expires_at"
+    t.boolean "wphs_appointee", default: false, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["role"], name: "index_users_on_role"
+    t.index ["wphs_appointee"], name: "index_users_on_wphs_appointee"
   end
 
   create_table "versions", force: :cascade do |t|
     t.integer "current_version", default: 101, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "whs_action_items", force: :cascade do |t|
+    t.string "actionable_type", null: false
+    t.bigint "actionable_id", null: false
+    t.bigint "assigned_to_user_id"
+    t.bigint "created_by_id", null: false
+    t.bigint "project_task_id"
+    t.string "title", null: false
+    t.text "description"
+    t.string "action_type", null: false
+    t.string "priority", default: "medium", null: false
+    t.string "status", default: "open", null: false
+    t.date "due_date"
+    t.datetime "completed_at"
+    t.text "completion_notes"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["actionable_type", "actionable_id"], name: "index_whs_action_items_on_actionable"
+    t.index ["assigned_to_user_id"], name: "index_whs_action_items_on_assigned_to_user_id"
+    t.index ["created_by_id"], name: "index_whs_action_items_on_created_by_id"
+    t.index ["due_date"], name: "index_whs_action_items_on_due_date"
+    t.index ["priority"], name: "index_whs_action_items_on_priority"
+    t.index ["project_task_id"], name: "index_whs_action_items_on_project_task_id"
+    t.index ["status"], name: "index_whs_action_items_on_status"
+  end
+
+  create_table "whs_incidents", force: :cascade do |t|
+    t.bigint "construction_id"
+    t.bigint "reported_by_user_id", null: false
+    t.bigint "investigated_by_user_id"
+    t.string "incident_number", null: false
+    t.datetime "incident_date", null: false
+    t.datetime "report_date", null: false
+    t.string "location_description"
+    t.string "status", default: "reported", null: false
+    t.string "incident_category", null: false
+    t.string "incident_type"
+    t.string "severity_level", null: false
+    t.text "what_happened", null: false
+    t.string "activity_being_performed"
+    t.string "equipment_involved"
+    t.string "weather_conditions"
+    t.string "time_of_day"
+    t.string "lighting_conditions"
+    t.jsonb "contributing_factors", default: []
+    t.string "injured_person_name"
+    t.string "injured_person_company"
+    t.string "injured_person_role"
+    t.string "injury_type"
+    t.string "body_part_affected"
+    t.boolean "first_aid_given", default: false
+    t.boolean "medical_treatment_required", default: false
+    t.string "hospital_attended"
+    t.integer "time_lost_hours"
+    t.date "likely_return_date"
+    t.jsonb "witnesses", default: []
+    t.text "immediate_actions_taken"
+    t.date "investigation_date"
+    t.text "immediate_cause"
+    t.text "underlying_causes"
+    t.text "recommendations"
+    t.jsonb "photo_urls", default: []
+    t.jsonb "evidence_urls", default: []
+    t.boolean "workcov_notification_required", default: false
+    t.boolean "notifiable_incident", default: false
+    t.date "workcov_notification_date"
+    t.string "workcov_reference_number"
+    t.datetime "closed_at"
+    t.text "closure_notes"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id", "status"], name: "index_whs_incidents_on_construction_id_and_status"
+    t.index ["construction_id"], name: "index_whs_incidents_on_construction_id"
+    t.index ["incident_category"], name: "index_whs_incidents_on_incident_category"
+    t.index ["incident_date"], name: "index_whs_incidents_on_incident_date"
+    t.index ["incident_number"], name: "index_whs_incidents_on_incident_number", unique: true
+    t.index ["investigated_by_user_id"], name: "index_whs_incidents_on_investigated_by_user_id"
+    t.index ["reported_by_user_id"], name: "index_whs_incidents_on_reported_by_user_id"
+    t.index ["severity_level"], name: "index_whs_incidents_on_severity_level"
+    t.index ["status"], name: "index_whs_incidents_on_status"
+    t.index ["workcov_notification_required"], name: "index_whs_incidents_on_workcov_notification_required"
+  end
+
+  create_table "whs_induction_templates", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "induction_type", null: false
+    t.text "description"
+    t.boolean "active", default: true
+    t.decimal "version", precision: 3, scale: 1, default: "1.0"
+    t.jsonb "content_sections", default: []
+    t.integer "expiry_months"
+    t.boolean "requires_renewal", default: false
+    t.boolean "has_quiz", default: false
+    t.integer "min_passing_score"
+    t.text "acknowledgment_statement"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_whs_induction_templates_on_active"
+    t.index ["induction_type"], name: "index_whs_induction_templates_on_induction_type"
+    t.index ["name"], name: "index_whs_induction_templates_on_name"
+  end
+
+  create_table "whs_inductions", force: :cascade do |t|
+    t.bigint "whs_induction_template_id", null: false
+    t.bigint "construction_id"
+    t.bigint "user_id"
+    t.bigint "conducted_by_user_id", null: false
+    t.string "certificate_number", null: false
+    t.string "induction_type", null: false
+    t.string "status", default: "valid", null: false
+    t.string "worker_name", null: false
+    t.string "worker_company"
+    t.string "worker_contact"
+    t.datetime "completion_date", null: false
+    t.date "expiry_date"
+    t.integer "quiz_score"
+    t.boolean "passed", default: true
+    t.text "worker_signature"
+    t.text "supervisor_signature"
+    t.text "acknowledgment_statement"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["certificate_number"], name: "index_whs_inductions_on_certificate_number", unique: true
+    t.index ["conducted_by_user_id"], name: "index_whs_inductions_on_conducted_by_user_id"
+    t.index ["construction_id"], name: "index_whs_inductions_on_construction_id"
+    t.index ["expiry_date"], name: "index_whs_inductions_on_expiry_date"
+    t.index ["status"], name: "index_whs_inductions_on_status"
+    t.index ["user_id"], name: "index_whs_inductions_on_user_id"
+    t.index ["worker_name", "induction_type"], name: "index_whs_inductions_on_worker_name_and_induction_type"
+  end
+
+  create_table "whs_inspection_items", force: :cascade do |t|
+    t.bigint "whs_inspection_id", null: false
+    t.string "item_description", null: false
+    t.string "category"
+    t.string "result"
+    t.boolean "photo_required", default: false
+    t.boolean "notes_required", default: false
+    t.integer "weight", default: 1
+    t.integer "position", default: 0
+    t.text "notes"
+    t.jsonb "photo_urls", default: []
+    t.boolean "action_required", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["action_required"], name: "index_whs_inspection_items_on_action_required"
+    t.index ["result"], name: "index_whs_inspection_items_on_result"
+    t.index ["whs_inspection_id"], name: "index_whs_inspection_items_on_whs_inspection_id"
+  end
+
+  create_table "whs_inspection_templates", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "inspection_type"
+    t.string "category"
+    t.text "description"
+    t.integer "pass_threshold_percentage", default: 80
+    t.boolean "active", default: true
+    t.jsonb "checklist_items", default: []
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_whs_inspection_templates_on_active"
+    t.index ["inspection_type"], name: "index_whs_inspection_templates_on_inspection_type"
+    t.index ["name"], name: "index_whs_inspection_templates_on_name"
+  end
+
+  create_table "whs_inspections", force: :cascade do |t|
+    t.bigint "construction_id"
+    t.bigint "whs_inspection_template_id"
+    t.bigint "inspector_user_id"
+    t.bigint "created_by_id", null: false
+    t.bigint "meeting_id"
+    t.string "inspection_number", null: false
+    t.string "inspection_type", null: false
+    t.string "status", default: "scheduled", null: false
+    t.string "title"
+    t.text "description"
+    t.date "scheduled_date"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.string "weather_conditions"
+    t.text "site_conditions"
+    t.integer "total_items", default: 0
+    t.integer "pass_count", default: 0
+    t.integer "fail_count", default: 0
+    t.integer "na_count", default: 0
+    t.decimal "compliance_score", precision: 5, scale: 2
+    t.boolean "overall_pass", default: false
+    t.boolean "critical_issues_found", default: false
+    t.text "inspector_signature"
+    t.text "overall_notes"
+    t.boolean "follow_up_required", default: false
+    t.date "follow_up_date"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id", "status"], name: "index_whs_inspections_on_construction_id_and_status"
+    t.index ["construction_id"], name: "index_whs_inspections_on_construction_id"
+    t.index ["created_by_id"], name: "index_whs_inspections_on_created_by_id"
+    t.index ["critical_issues_found"], name: "index_whs_inspections_on_critical_issues_found"
+    t.index ["inspection_number"], name: "index_whs_inspections_on_inspection_number", unique: true
+    t.index ["inspection_type"], name: "index_whs_inspections_on_inspection_type"
+    t.index ["inspector_user_id"], name: "index_whs_inspections_on_inspector_user_id"
+    t.index ["meeting_id"], name: "index_whs_inspections_on_meeting_id"
+    t.index ["scheduled_date"], name: "index_whs_inspections_on_scheduled_date"
+    t.index ["status"], name: "index_whs_inspections_on_status"
+  end
+
+  create_table "whs_settings", force: :cascade do |t|
+    t.string "setting_key", null: false
+    t.text "setting_value"
+    t.string "setting_type", default: "string"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["setting_key"], name: "index_whs_settings_on_setting_key", unique: true
+  end
+
+  create_table "whs_swms", force: :cascade do |t|
+    t.bigint "construction_id"
+    t.bigint "created_by_id", null: false
+    t.bigint "approved_by_id"
+    t.bigint "superseded_by_id"
+    t.string "swms_number", null: false
+    t.string "title", null: false
+    t.decimal "version", precision: 3, scale: 1, default: "1.0", null: false
+    t.string "status", default: "draft", null: false
+    t.boolean "company_wide", default: false, null: false
+    t.text "activity_description"
+    t.string "location_area"
+    t.string "high_risk_type"
+    t.date "start_date"
+    t.integer "expected_duration_days"
+    t.integer "workers_involved"
+    t.string "supervisor_responsible"
+    t.text "emergency_procedures"
+    t.text "emergency_contact_numbers"
+    t.string "first_aid_location"
+    t.string "fire_extinguisher_location"
+    t.string "emergency_assembly_point"
+    t.text "evacuation_procedures"
+    t.text "legislative_references"
+    t.jsonb "ppe_requirements", default: {}
+    t.jsonb "required_qualifications", default: []
+    t.datetime "approved_at"
+    t.datetime "superseded_at"
+    t.string "rejection_reason"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["approved_by_id"], name: "index_whs_swms_on_approved_by_id"
+    t.index ["company_wide"], name: "index_whs_swms_on_company_wide"
+    t.index ["construction_id", "status"], name: "index_whs_swms_on_construction_id_and_status"
+    t.index ["construction_id"], name: "index_whs_swms_on_construction_id"
+    t.index ["created_by_id"], name: "index_whs_swms_on_created_by_id"
+    t.index ["high_risk_type"], name: "index_whs_swms_on_high_risk_type"
+    t.index ["status"], name: "index_whs_swms_on_status"
+    t.index ["superseded_by_id"], name: "index_whs_swms_on_superseded_by_id"
+    t.index ["swms_number"], name: "index_whs_swms_on_swms_number", unique: true
+  end
+
+  create_table "whs_swms_acknowledgments", force: :cascade do |t|
+    t.bigint "whs_swms_id", null: false
+    t.bigint "user_id"
+    t.string "worker_name", null: false
+    t.string "worker_company"
+    t.string "worker_role"
+    t.text "signature_data"
+    t.datetime "acknowledged_at", null: false
+    t.string "ip_address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["acknowledged_at"], name: "index_whs_swms_acknowledgments_on_acknowledged_at"
+    t.index ["user_id"], name: "index_whs_swms_acknowledgments_on_user_id"
+    t.index ["whs_swms_id"], name: "index_whs_swms_acknowledgments_on_whs_swms_id"
+  end
+
+  create_table "whs_swms_controls", force: :cascade do |t|
+    t.bigint "whs_swms_hazard_id", null: false
+    t.text "control_description", null: false
+    t.string "control_type", null: false
+    t.string "responsibility"
+    t.integer "residual_likelihood"
+    t.integer "residual_consequence"
+    t.integer "residual_risk_score"
+    t.string "residual_risk_level"
+    t.integer "position", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["control_type"], name: "index_whs_swms_controls_on_control_type"
+    t.index ["whs_swms_hazard_id"], name: "index_whs_swms_controls_on_whs_swms_hazard_id"
+  end
+
+  create_table "whs_swms_hazards", force: :cascade do |t|
+    t.bigint "whs_swms_id", null: false
+    t.text "hazard_description", null: false
+    t.integer "likelihood", null: false
+    t.integer "consequence", null: false
+    t.integer "risk_score", null: false
+    t.string "risk_level"
+    t.text "affected_persons"
+    t.integer "position", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["risk_level"], name: "index_whs_swms_hazards_on_risk_level"
+    t.index ["whs_swms_id"], name: "index_whs_swms_hazards_on_whs_swms_id"
   end
 
   create_table "workflow_definitions", force: :cascade do |t|
@@ -1898,12 +3067,30 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "account_mappings", "accounting_integrations"
+  add_foreign_key "account_mappings", "keepr_accounts"
+  add_foreign_key "accounting_integrations", "contacts"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "agent_definitions", "users", column: "created_by_id"
+  add_foreign_key "agent_definitions", "users", column: "last_run_by_id", on_delete: :nullify
+  add_foreign_key "agent_definitions", "users", column: "updated_by_id"
+  add_foreign_key "asset_insurance", "assets"
+  add_foreign_key "asset_service_history", "assets"
+  add_foreign_key "assets", "companies"
+  add_foreign_key "bank_accounts", "companies"
   add_foreign_key "chat_messages", "constructions"
   add_foreign_key "chat_messages", "projects"
   add_foreign_key "chat_messages", "users"
   add_foreign_key "columns", "tables"
+  add_foreign_key "company_activities", "companies"
+  add_foreign_key "company_activities", "users"
+  add_foreign_key "company_compliance_items", "companies"
+  add_foreign_key "company_directors", "companies"
+  add_foreign_key "company_directors", "contacts"
+  add_foreign_key "company_documents", "companies"
+  add_foreign_key "company_xero_accounts", "company_xero_connections"
+  add_foreign_key "company_xero_connections", "companies"
   add_foreign_key "construction_contacts", "constructions"
   add_foreign_key "construction_contacts", "contacts"
   add_foreign_key "construction_documentation_tabs", "constructions"
@@ -1920,10 +3107,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
   add_foreign_key "estimate_line_items", "estimates"
   add_foreign_key "estimate_reviews", "estimates"
   add_foreign_key "estimates", "constructions"
+  add_foreign_key "financial_transactions", "companies"
+  add_foreign_key "financial_transactions", "constructions"
+  add_foreign_key "financial_transactions", "keepr_journals"
+  add_foreign_key "financial_transactions", "users"
   add_foreign_key "folder_template_items", "folder_template_items", column: "parent_id"
   add_foreign_key "folder_template_items", "folder_templates"
   add_foreign_key "folder_templates", "users", column: "created_by_id"
   add_foreign_key "grok_plans", "users"
+  add_foreign_key "kudos_events", "purchase_orders"
+  add_foreign_key "kudos_events", "quote_responses"
+  add_foreign_key "kudos_events", "subcontractor_accounts"
   add_foreign_key "maintenance_requests", "constructions"
   add_foreign_key "maintenance_requests", "contacts", column: "supplier_contact_id"
   add_foreign_key "maintenance_requests", "purchase_orders"
@@ -1940,6 +3134,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
   add_foreign_key "one_drive_credentials", "constructions"
   add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
   add_foreign_key "outlook_credentials", "users"
+  add_foreign_key "pay_now_requests", "contacts"
+  add_foreign_key "pay_now_requests", "pay_now_weekly_limits"
+  add_foreign_key "pay_now_requests", "payments"
+  add_foreign_key "pay_now_requests", "portal_users", column: "requested_by_portal_user_id"
+  add_foreign_key "pay_now_requests", "purchase_orders"
+  add_foreign_key "pay_now_requests", "users", column: "approved_by_builder_id"
+  add_foreign_key "pay_now_requests", "users", column: "reviewed_by_supervisor_id"
+  add_foreign_key "pay_now_weekly_limits", "users", column: "set_by_id"
   add_foreign_key "payments", "purchase_orders"
   add_foreign_key "payments", "users", column: "created_by_id"
   add_foreign_key "portal_access_logs", "portal_users"
@@ -1965,6 +3167,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
   add_foreign_key "purchase_orders", "constructions"
   add_foreign_key "purchase_orders", "contacts", column: "supplier_id", name: "fk_rails_purchase_orders_contact"
   add_foreign_key "purchase_orders", "estimates"
+  add_foreign_key "purchase_orders", "quote_responses"
+  add_foreign_key "quote_request_contacts", "contacts"
+  add_foreign_key "quote_request_contacts", "quote_requests"
+  add_foreign_key "quote_requests", "constructions"
+  add_foreign_key "quote_requests", "quote_responses", column: "selected_quote_response_id"
+  add_foreign_key "quote_requests", "users", column: "created_by_id"
+  add_foreign_key "quote_responses", "contacts"
+  add_foreign_key "quote_responses", "portal_users", column: "responded_by_portal_user_id"
+  add_foreign_key "quote_responses", "quote_requests"
   add_foreign_key "rain_logs", "constructions"
   add_foreign_key "rain_logs", "users", column: "created_by_user_id"
   add_foreign_key "schedule_task_checklist_items", "schedule_tasks"
@@ -1975,6 +3186,45 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
   add_foreign_key "schedule_template_rows", "schedule_templates"
   add_foreign_key "schedule_template_rows", "suppliers"
   add_foreign_key "schedule_templates", "users", column: "created_by_id"
+  add_foreign_key "sm_dependencies", "sm_tasks", column: "predecessor_task_id", on_delete: :cascade
+  add_foreign_key "sm_dependencies", "sm_tasks", column: "successor_task_id", on_delete: :cascade
+  add_foreign_key "sm_dependencies", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "sm_dependencies", "users", column: "deleted_by_id", on_delete: :nullify
+  add_foreign_key "sm_hold_logs", "constructions", on_delete: :cascade
+  add_foreign_key "sm_hold_logs", "sm_hold_reasons", column: "hold_reason_id", on_delete: :nullify
+  add_foreign_key "sm_hold_logs", "sm_tasks", column: "hold_task_id", on_delete: :cascade
+  add_foreign_key "sm_hold_logs", "users", column: "hold_released_by_id", on_delete: :nullify
+  add_foreign_key "sm_hold_logs", "users", column: "hold_started_by_id", on_delete: :nullify
+  add_foreign_key "sm_resource_allocations", "sm_resources", column: "resource_id", on_delete: :cascade
+  add_foreign_key "sm_resource_allocations", "sm_tasks", column: "task_id", on_delete: :cascade
+  add_foreign_key "sm_resources", "assets", on_delete: :nullify
+  add_foreign_key "sm_resources", "contacts", on_delete: :nullify
+  add_foreign_key "sm_resources", "users", on_delete: :nullify
+  add_foreign_key "sm_rollover_logs", "constructions", on_delete: :cascade
+  add_foreign_key "sm_rollover_logs", "sm_tasks", column: "task_id", on_delete: :cascade
+  add_foreign_key "sm_settings", "schedule_templates", column: "default_template_id", on_delete: :nullify
+  add_foreign_key "sm_spawn_logs", "sm_tasks", column: "parent_task_id", on_delete: :cascade
+  add_foreign_key "sm_spawn_logs", "sm_tasks", column: "spawned_task_id", on_delete: :cascade
+  add_foreign_key "sm_spawn_logs", "users", column: "spawned_by_id", on_delete: :nullify
+  add_foreign_key "sm_tasks", "constructions", on_delete: :cascade
+  add_foreign_key "sm_tasks", "contacts", column: "supplier_id", on_delete: :nullify
+  add_foreign_key "sm_tasks", "purchase_orders", on_delete: :nullify
+  add_foreign_key "sm_tasks", "schedule_template_rows", column: "template_row_id", on_delete: :nullify
+  add_foreign_key "sm_tasks", "sm_hold_reasons", column: "hold_reason_id", on_delete: :nullify
+  add_foreign_key "sm_tasks", "sm_tasks", column: "parent_task_id", on_delete: :nullify
+  add_foreign_key "sm_tasks", "supervisor_checklist_templates", column: "checklist_id", on_delete: :nullify
+  add_foreign_key "sm_tasks", "users", column: "assigned_user_id", on_delete: :nullify
+  add_foreign_key "sm_tasks", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "sm_tasks", "users", column: "hold_released_by_id", on_delete: :nullify
+  add_foreign_key "sm_tasks", "users", column: "hold_started_by_id", on_delete: :nullify
+  add_foreign_key "sm_tasks", "users", column: "supplier_confirmed_by_id", on_delete: :nullify
+  add_foreign_key "sm_tasks", "users", column: "updated_by_id", on_delete: :nullify
+  add_foreign_key "sm_time_entries", "sm_resource_allocations", column: "allocation_id", on_delete: :nullify
+  add_foreign_key "sm_time_entries", "sm_resources", column: "resource_id", on_delete: :cascade
+  add_foreign_key "sm_time_entries", "sm_tasks", column: "task_id", on_delete: :cascade
+  add_foreign_key "sm_time_entries", "users", column: "approved_by_id", on_delete: :nullify
+  add_foreign_key "sm_time_entries", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "sm_working_drawing_pages", "sm_tasks", column: "task_id", on_delete: :cascade
   add_foreign_key "sms_messages", "contacts"
   add_foreign_key "sms_messages", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
@@ -1983,6 +3233,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "subcontractor_accounts", "contacts", column: "invited_by_contact_id"
+  add_foreign_key "subcontractor_accounts", "portal_users"
+  add_foreign_key "subcontractor_invoices", "accounting_integrations"
+  add_foreign_key "subcontractor_invoices", "contacts"
+  add_foreign_key "subcontractor_invoices", "purchase_orders"
   add_foreign_key "supplier_contacts", "contacts"
   add_foreign_key "supplier_contacts", "suppliers"
   add_foreign_key "supplier_ratings", "constructions"
@@ -1993,6 +3248,28 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
   add_foreign_key "task_dependencies", "project_tasks", column: "successor_task_id"
   add_foreign_key "task_updates", "project_tasks"
   add_foreign_key "task_updates", "users"
+  add_foreign_key "whs_action_items", "project_tasks"
+  add_foreign_key "whs_action_items", "users", column: "assigned_to_user_id"
+  add_foreign_key "whs_action_items", "users", column: "created_by_id"
+  add_foreign_key "whs_incidents", "constructions"
+  add_foreign_key "whs_incidents", "users", column: "investigated_by_user_id"
+  add_foreign_key "whs_incidents", "users", column: "reported_by_user_id"
+  add_foreign_key "whs_inductions", "constructions"
+  add_foreign_key "whs_inductions", "users"
+  add_foreign_key "whs_inductions", "users", column: "conducted_by_user_id"
+  add_foreign_key "whs_inspection_items", "whs_inspections"
+  add_foreign_key "whs_inspections", "constructions"
+  add_foreign_key "whs_inspections", "meetings"
+  add_foreign_key "whs_inspections", "users", column: "created_by_id"
+  add_foreign_key "whs_inspections", "users", column: "inspector_user_id"
+  add_foreign_key "whs_swms", "constructions"
+  add_foreign_key "whs_swms", "users", column: "approved_by_id"
+  add_foreign_key "whs_swms", "users", column: "created_by_id"
+  add_foreign_key "whs_swms", "whs_swms", column: "superseded_by_id"
+  add_foreign_key "whs_swms_acknowledgments", "users"
+  add_foreign_key "whs_swms_acknowledgments", "whs_swms"
+  add_foreign_key "whs_swms_controls", "whs_swms_hazards"
+  add_foreign_key "whs_swms_hazards", "whs_swms"
   add_foreign_key "workflow_instances", "workflow_definitions"
   add_foreign_key "workflow_steps", "workflow_instances"
 end

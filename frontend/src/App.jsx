@@ -34,6 +34,7 @@ const ImportPage = lazy(() => import('./pages/ImportPage'))
 const TablePage = lazy(() => import('./pages/TablePage'))
 const SchemaPage = lazy(() => import('./pages/SchemaPage'))
 const TableStandardTest = lazy(() => import('./pages/TableStandardTest'))
+const ColumnEditorPage = lazy(() => import('./pages/ColumnEditorPage'))
 const XeroCallbackPage = lazy(() => import('./pages/XeroCallbackPage'))
 const XeroSyncPage = lazy(() => import('./pages/XeroSyncPage'))
 const OutlookPage = lazy(() => import('./pages/OutlookPage'))
@@ -44,6 +45,7 @@ const PublicHolidaysPage = lazy(() => import('./pages/PublicHolidaysPage'))
 
 // Heavy components: Lazy load with priority (biggest bundle impact)
 const MasterSchedulePage = lazy(() => import('./pages/MasterSchedulePage')) // 3,952 lines Gantt!
+const SmGanttPage = lazy(() => import('./pages/SmGanttPage')) // SM Gantt v2 (new system)
 const PDFMeasurementTestPage = lazy(() => import('./pages/PDFMeasurementTestPage')) // PDF library
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage')) // PDF library
 const TrinityPage = lazy(() => import('./pages/TrinityPage')) // Trinity documentation viewer
@@ -54,6 +56,27 @@ const TrainingSessionPage = lazy(() => import('./pages/TrainingSessionPage')) //
 const MeetingsPage = lazy(() => import('./pages/MeetingsPage')) // Meeting management
 const MeetingTypesPage = lazy(() => import('./pages/MeetingTypesPage')) // Meeting types configuration
 const SamPage = lazy(() => import('./pages/SamPage')) // Sam page
+
+// Corporate pages
+const CorporateDashboardPage = lazy(() => import('./pages/CorporateDashboardPage'))
+
+// WHS (Workplace Health & Safety) pages
+const WhsDashboardPage = lazy(() => import('./pages/WhsDashboardPage'))
+const WhsSwmsPage = lazy(() => import('./pages/WhsSwmsPage'))
+const WhsInspectionsPage = lazy(() => import('./pages/WhsInspectionsPage'))
+const WhsIncidentsPage = lazy(() => import('./pages/WhsIncidentsPage'))
+const WhsInductionsPage = lazy(() => import('./pages/WhsInductionsPage'))
+const WhsActionItemsPage = lazy(() => import('./pages/WhsActionItemsPage'))
+const CompaniesPage = lazy(() => import('./pages/CompaniesPage'))
+const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
+const DirectorsRegistryPage = lazy(() => import('./pages/DirectorsRegistryPage'))
+const AssetsPage = lazy(() => import('./pages/AssetsPage'))
+const AssetDetailPage = lazy(() => import('./pages/AssetDetailPage'))
+const XeroDashboardPage = lazy(() => import('./pages/XeroDashboardPage'))
+
+// Financial pages
+const FinancialPage = lazy(() => import('./pages/FinancialPage'))
+const FinancialReportsPage = lazy(() => import('./pages/FinancialReportsPage'))
 
 // Designer pages (admin tools)
 const DesignerHome = lazy(() => import('./pages/designer/DesignerHome'))
@@ -113,10 +136,25 @@ function App() {
         <Route path="/pdf-measure-test" element={<AppLayout><PDFMeasurementTestPage /></AppLayout>} />
         <Route path="/jobs/:id/setup" element={<AppLayout><JobSetupPage /></AppLayout>} />
         <Route path="/jobs/:id/schedule" element={<AppLayout><MasterSchedulePage /></AppLayout>} />
+        <Route path="/jobs/:id/sm-gantt" element={<AppLayout><SmGanttPage /></AppLayout>} />
         <Route path="/jobs/:id/:tab" element={<AppLayout><JobDetailPage /></AppLayout>} />
         <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
         <Route path="/meetings" element={<AppLayout><MeetingsPage /></AppLayout>} />
         <Route path="/meeting-types" element={<AppLayout><MeetingTypesPage /></AppLayout>} />
+
+        {/* WHS (Workplace Health & Safety) Routes */}
+        <Route path="/whs" element={<AppLayout><WhsDashboardPage /></AppLayout>} />
+        <Route path="/whs/dashboard" element={<Navigate to="/whs" replace />} />
+        <Route path="/whs/swms" element={<AppLayout><WhsSwmsPage /></AppLayout>} />
+        <Route path="/whs/inspections" element={<AppLayout><WhsInspectionsPage /></AppLayout>} />
+        <Route path="/whs/incidents" element={<AppLayout><WhsIncidentsPage /></AppLayout>} />
+        <Route path="/whs/inductions" element={<AppLayout><WhsInductionsPage /></AppLayout>} />
+        <Route path="/whs/action-items" element={<AppLayout><WhsActionItemsPage /></AppLayout>} />
+
+        {/* Financial Routes */}
+        <Route path="/financial" element={<AppLayout><FinancialPage /></AppLayout>} />
+        <Route path="/financial/transactions" element={<Navigate to="/financial" replace />} />
+        <Route path="/financial/reports" element={<AppLayout><FinancialReportsPage /></AppLayout>} />
         <Route path="/sam" element={<AppLayout><SamPage /></AppLayout>} />
         <Route path="/price-books" element={<AppLayout><PriceBooksPageWithTabs /></AppLayout>} />
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
@@ -136,6 +174,7 @@ function App() {
         <Route path="/purchase-orders/:id" element={<AppLayout><PurchaseOrderDetailPage /></AppLayout>} />
         <Route path="/import" element={<AppLayout><ImportPage /></AppLayout>} />
         <Route path="/tables/:id" element={<AppLayout><TablePage /></AppLayout>} />
+        <Route path="/tables/:tableId/columns" element={<ColumnEditorPage />} />
         <Route path="/designer" element={<AppLayout><DesignerHome /></AppLayout>} />
         <Route path="/designer/tables/new" element={<AppLayout><TableBuilder /></AppLayout>} />
         <Route path="/designer/tables/:id" element={<AppLayout><TableSettings /></AppLayout>} />
@@ -159,6 +198,20 @@ function App() {
         <Route path="/admin/public-holidays" element={<AppLayout><PublicHolidaysPage /></AppLayout>} />
         <Route path="/training" element={<AppLayout><TrainingPage /></AppLayout>} />
         <Route path="/training/:sessionId" element={<TrainingSessionPage />} />
+
+        {/* Corporate routes */}
+        <Route path="/corporate" element={<AppLayout><CorporateDashboardPage /></AppLayout>} />
+        <Route path="/corporate/dashboard" element={<AppLayout><CorporateDashboardPage /></AppLayout>} />
+        <Route path="/corporate/companies" element={<AppLayout><CompaniesPage /></AppLayout>} />
+        <Route path="/corporate/companies/new" element={<AppLayout><CompanyDetailPage /></AppLayout>} />
+        <Route path="/corporate/companies/:id" element={<AppLayout><CompanyDetailPage /></AppLayout>} />
+        <Route path="/corporate/companies/:id/edit" element={<AppLayout><CompanyDetailPage /></AppLayout>} />
+        <Route path="/corporate/directors" element={<AppLayout><DirectorsRegistryPage /></AppLayout>} />
+        <Route path="/corporate/assets" element={<AppLayout><AssetsPage /></AppLayout>} />
+        <Route path="/corporate/assets/new" element={<AppLayout><AssetDetailPage /></AppLayout>} />
+        <Route path="/corporate/assets/:id" element={<AppLayout><AssetDetailPage /></AppLayout>} />
+        <Route path="/corporate/assets/:id/edit" element={<AppLayout><AssetDetailPage /></AppLayout>} />
+        <Route path="/corporate/xero" element={<AppLayout><XeroDashboardPage /></AppLayout>} />
           </Routes>
         </Suspense>
       </BrowserRouter>

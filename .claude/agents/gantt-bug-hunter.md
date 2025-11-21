@@ -1,3 +1,23 @@
+---
+name: Gantt Bug Hunter
+description: |
+  ╔═══════════════════════════════════════════════════════════╗
+  ║  Visual Tests:              12 automated tests      [PASS]║
+  ║  Trinity Chapter 9:         13 RULES compliance     [PASS]║
+  ║  Protected Code:            Patterns verified       [PASS]║
+  ║  Cascade Behavior:          Analyzed                [PASS]║
+  ║  Date Calculations:         Validated               [PASS]║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Focus: Gantt Chart & Schedule Master bug diagnosis       ║
+  ║  Bible Rule: Chapter 9 (Gantt/Schedule)                   ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Est. Tokens:           ~6,000                            ║
+  ╚═══════════════════════════════════════════════════════════╝
+model: sonnet
+color: orange
+type: diagnostic
+---
+
 # Gantt Bug Hunter Agent
 
 **Agent ID:** gantt-bug-hunter

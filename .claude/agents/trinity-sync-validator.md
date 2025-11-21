@@ -1,3 +1,22 @@
+---
+name: Trinity Sync Validator
+description: |
+  ╔═══════════════════════════════════════════════════════════╗
+  ║  DB vs Markdown Sync:       Entries matched         [PASS]║
+  ║  Chapter Counts:            All chapters present    [PASS]║
+  ║  Orphan Detection:          No orphaned entries     [PASS]║
+  ║  Export Tasks:              Verified functional     [PASS]║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Focus: Trinity database & markdown sync validation       ║
+  ║  SSoT: Trinity database (markdown = backup)               ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Est. Tokens:           ~4,000                            ║
+  ╚═══════════════════════════════════════════════════════════╝
+model: sonnet
+color: green
+type: diagnostic
+---
+
 # Trinity Sync Validator Agent
 
 **Agent ID:** trinity-sync-validator

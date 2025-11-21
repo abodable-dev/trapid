@@ -13,6 +13,9 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     namespace :v1 do
+      # Feature Trackers
+      resources :feature_trackers, only: [:index, :create, :update, :destroy]
+
       # Authentication routes
       post 'auth/signup', to: 'authentication#signup'
       post 'auth/login', to: 'authentication#login'
@@ -179,6 +182,12 @@ Rails.application.routes.draw do
 
       # Gold Standard Items (Demo/Reference Price Book)
       resources :gold_standard_items, only: [:index, :create, :update, :destroy]
+
+      # Column Types - Single Source of Truth from Gold Standard Reference Table
+      resources :column_types, only: [:index, :show, :update]
+
+      # Gold Table Sync Check - Compare column types across all sources
+      get 'gold_table_sync', to: 'gold_table_sync#index'
 
       # Suppliers management
       resources :suppliers do
@@ -348,6 +357,12 @@ Rails.application.routes.draw do
       # User roles
       resources :roles, only: [:index]
 
+      # Permissions management
+      get 'permissions', to: 'permissions#index'
+      get 'permissions/roles', to: 'permissions#roles'
+      get 'permissions/user/:id', to: 'permissions#user_permissions'
+      post 'permissions/grant', to: 'permissions#grant'
+
       # Contact types
       resources :contact_types, only: [:index]
 
@@ -402,6 +417,97 @@ Rails.application.routes.draw do
           end
         end
       end
+
+      # ============================================
+      # SM Gantt (Schedule Master v2)
+      # ============================================
+
+      # SM Tasks (nested under constructions)
+      resources :constructions, only: [] do
+        resources :sm_tasks, only: [:index, :create] do
+          collection do
+            get :gantt_data
+            post :copy_from_template
+          end
+        end
+      end
+
+      # SM Tasks (non-nested routes)
+      resources :sm_tasks, only: [:show, :update, :destroy] do
+        member do
+          post :start
+          post :complete
+          post :hold
+          post :release_hold
+        end
+
+        # Dependencies (nested under sm_tasks)
+        resources :dependencies, controller: 'sm_dependencies', only: [:index, :create]
+      end
+
+      # SM Dependencies (non-nested routes)
+      resources :sm_dependencies, only: [:show, :update, :destroy] do
+        member do
+          post :restore
+        end
+      end
+
+      # SM Hold Reasons (admin)
+      resources :sm_hold_reasons, only: [:index, :show, :create, :update, :destroy] do
+        collection do
+          post :reorder
+          post :seed_defaults
+        end
+      end
+
+      # SM Settings (singleton - admin)
+      resource :sm_settings, only: [:show, :update]
+
+      # ============================================
+      # SM Gantt Phase 2 - Resource Allocation
+      # ============================================
+
+      # SM Resources (people, equipment, materials)
+      resources :sm_resources, only: [:index, :show, :create, :update, :destroy] do
+        collection do
+          get :availability
+        end
+      end
+
+      # SM Resource Allocations (nested under tasks)
+      resources :sm_tasks, only: [] do
+        resources :resource_allocations, controller: 'sm_resource_allocations', only: [:index, :create]
+        resources :time_entries, controller: 'sm_time_entries', only: [:index, :create]
+      end
+
+      # SM Resource Allocations (non-nested)
+      resources :sm_resource_allocations, only: [:show, :update, :destroy] do
+        member do
+          post :confirm
+          post :start
+          post :complete
+        end
+        collection do
+          get 'by_resource/:resource_id', action: :by_resource
+          get :gantt_data
+        end
+      end
+
+      # SM Time Entries (non-nested)
+      resources :sm_time_entries, only: [:show, :update, :destroy] do
+        member do
+          post :approve
+        end
+        collection do
+          post :bulk_approve
+          get 'by_resource/:resource_id', action: :by_resource
+          get :timesheet
+        end
+      end
+
+      # ============================================
+      # End SM Gantt
+      # ============================================
 
       # Public Holidays
       resources :public_holidays, only: [:index, :create, :destroy] do
@@ -512,6 +618,265 @@ Rails.application.routes.draw do
 
       # Unreal Variables management
       resources :unreal_variables
+
+      # Corporate Entity Management
+      resources :companies do
+        collection do
+          post :import
+        end
+        member do
+          get :directors
+          post :add_director
+          delete 'directors/:director_id', to: 'companies#remove_director'
+          get :compliance_items
+          get :activities
+          get :documents
+          get :assets
+        end
+      end
+
+      # Bank Accounts
+      resources :bank_accounts
+
+      # Assets
+      resources :assets do
+        member do
+          get :service_history
+          post :add_service
+          get :insurance
+          post :insurance, to: 'assets#update_insurance'
+          put :insurance, to: 'assets#update_insurance'
+        end
+      end
+
+      # Company Documents
+      resources :company_documents do
+        member do
+          get :download
+        end
+      end
+
+      # Company Xero Connections
+      resources :company_xero_connections, only: [:index, :show, :destroy] do
+        collection do
+          get :auth_url
+          post :callback
+        end
+        member do
+          post :sync_accounts
+          get :status
+          delete :disconnect, to: 'company_xero_connections#disconnect'
+        end
+      end
+
+      # Company Compliance Items
+      resources :company_compliance_items, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :mark_completed
+        end
+      end
+
+      # WHS (Workplace Health & Safety) Module
+      # SWMS (Safe Work Method Statements)
+      resources :whs_swms, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :submit_for_approval
+          post :approve
+          post :reject
+          post :supersede
+          post :acknowledge
+        end
+      end
+
+      # WHS Inspections
+      resources :whs_inspections, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :start
+          post :complete
+        end
+      end
+
+      # WHS Inspection Templates
+      resources :whs_inspection_templates, only: [:index, :show, :create, :update, :destroy]
+
+      # WHS Incidents
+      resources :whs_incidents, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :investigate
+          post :close
+          post :notify_workcov
+        end
+      end
+
+      # WHS Inductions
+      resources :whs_inductions, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :complete
+          post :mark_expired
+        end
+      end
+
+      # WHS Induction Templates
+      resources :whs_induction_templates, only: [:index, :show, :create, :update, :destroy]
+
+      # WHS Action Items
+      resources :whs_action_items, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :start
+          post :complete
+          post :cancel
+        end
+      end
+
+      # WHS Settings
+      resources :whs_settings, only: [:index, :show, :create, :update, :destroy] do
+        collection do
+          get 'key/:key', action: :show_by_key
+          patch 'key/:key', action: :update_by_key
+        end
+      end
+
+      # Financial Tracking & Reporting
+      resources :financial_transactions do
+        member do
+          post :post # Post a draft transaction
+        end
+        collection do
+          get :summary
+          get :categories
+        end
+      end
+
+      # Financial Reports
+      get 'financial_reports/balance_sheet', to: 'financial_reports#balance_sheet'
+      get 'financial_reports/profit_loss', to: 'financial_reports#profit_loss'
+      get 'financial_reports/job_profitability', to: 'financial_reports#job_profitability'
+      get 'financial_reports/account_balances', to: 'financial_reports#account_balances'
+      get 'financial_reports/trial_balance', to: 'financial_reports#trial_balance'
+
+      # Financial Exports
+      get 'financial_exports/transactions', to: 'financial_exports#transactions'
+      get 'financial_exports/balance_sheet', to: 'financial_exports#balance_sheet'
+      get 'financial_exports/profit_loss', to: 'financial_exports#profit_loss'
+      get 'financial_exports/job_profitability', to: 'financial_exports#job_profitability'
+      get 'financial_exports/chart_of_accounts', to: 'financial_exports#chart_of_accounts'
+      get 'financial_exports/accountant_package', to: 'financial_exports#accountant_package'
+
+      # Chart of Accounts
+      resources :chart_of_accounts, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          get :balance
+        end
+        collection do
+          get :kinds
+        end
+      end
+
+      # Pay Now Requests (admin/supervisor interface)
+      resources :pay_now_requests, only: [:index, :show] do
+        member do
+          post :approve
+          post :reject
+        end
+        collection do
+          get :dashboard_stats
+          get :pending_approval
+        end
+      end
+
+      # Pay Now Weekly Limits (builder settings)
+      resources :pay_now_weekly_limits, only: [] do
+        collection do
+          get :current
+          post :set_limit
+          get :history
+          get :usage_report
+        end
+      end
+
+      # Subcontractor Portal routes (for external subcontractor access)
+      namespace :portal do
+        # Portal authentication
+        post 'auth/login', to: 'authentication#login'
+        post 'auth/signup', to: 'authentication#signup'
+        post 'auth/forgot_password', to: 'authentication#forgot_password'
+        post 'auth/reset_password', to: 'authentication#reset_password'
+        get 'auth/me', to: 'authentication#me'
+
+        # Quote requests (subcontractor view)
+        resources :quote_requests, only: [:index, :show] do
+          member do
+            post :reject
+          end
+        end
+
+        # Quote responses (submit and manage quotes)
+        resources :quote_responses, only: [:create, :update, :show]
+
+        # Jobs tracking
+        resources :jobs, only: [:index, :show] do
+          member do
+            post :mark_arrival
+            post :mark_complete
+            post :upload_photos
+            post :report_issue
+          end
+        end
+
+        # Invoices
+        resources :invoices, only: [:index, :show, :create, :update, :destroy] do
+          member do
+            post :retry_sync
+          end
+          collection do
+            get :stats
+          end
+        end
+
+        # Accounting integrations
+        resources :accounting_integrations, only: [:index, :show, :destroy] do
+          collection do
+            get :oauth_url
+            post :oauth_callback
+          end
+          member do
+            post :refresh
+            get :test_connection
+          end
+        end
+
+        # Kudos system
+        resources :kudos, only: [:index] do
+          collection do
+            get :leaderboard
+            get :events
+            get :trends
+            post :recalculate
+          end
+        end
+
+        # Pay Now requests (supplier early payment)
+        resources :pay_now_requests, only: [:index, :show, :create, :destroy] do
+          member do
+            post :upload_documents
+          end
+          collection do
+            get :eligible_purchase_orders
+          end
+        end
+      end
+
+      # Quote Requests (internal builder interface)
+      resources :quote_requests do
+        member do
+          post :accept_quote
+          post :close
+          post :convert_to_po
+        end
+        collection do
+          get :stats
+        end
+      end
 
       # External integrations (API endpoints for third-party systems)
       namespace :external do
