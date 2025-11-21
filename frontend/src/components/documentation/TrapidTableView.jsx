@@ -3221,8 +3221,8 @@ export default function TrapidTableView({
                           return;
                         }
 
-                        // In edit mode: make ALL cells editable on click (except select and computed)
-                        if (editModeActive && colKey !== 'select' && !column.isComputed) {
+                        // In edit mode: make ALL cells editable on click (except select, id, user_id, and computed)
+                        if (editModeActive && colKey !== 'select' && colKey !== 'id' && colKey !== 'user_id' && !column.isComputed) {
                           e.stopPropagation();
                           if (editingRowId !== entry.id) {
                             // Validate current editing data before switching rows
@@ -3261,8 +3261,8 @@ export default function TrapidTableView({
                         // Non-edit mode: highlight clickable title/content cells
                         ['title', 'content'].includes(colKey) && !editModeActive ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20' : ''
                       } ${
-                        // Edit mode: make all cells clickable except select and computed
-                        editModeActive && colKey !== 'select' && !column.isComputed ? 'cursor-pointer' : ''
+                        // Edit mode: make all cells clickable except select, id, user_id, and computed
+                        editModeActive && colKey !== 'select' && colKey !== 'id' && colKey !== 'user_id' && !column.isComputed ? 'cursor-pointer' : ''
                       } whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
                     >
                       {renderCellContent(entry, colKey)}
