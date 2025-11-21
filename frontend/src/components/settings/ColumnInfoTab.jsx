@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { CheckCircleIcon, InformationCircleIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { COLUMN_TYPES, getColumnTypeEmoji, clearColumnTypesCache } from '../../constants/columnTypes'
+import api from '../../api'
 
 // Fallback function - Convert COLUMN_TYPES to column info format
 // Used if API call fails
@@ -279,13 +280,7 @@ export default function ColumnInfoTab() {
     const fetchColumnTypes = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/v1/column_types')
-
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`)
-        }
-
-        const data = await response.json()
+        const data = await api.get('/api/v1/column_types')
 
         if (data.success && data.data) {
           // Transform API response to column info format
@@ -379,21 +374,9 @@ export default function ColumnInfoTab() {
       setColumns(updatedColumns)
 
       // Update via API
-      const response = await fetch(`/api/v1/column_types/${column.columnName}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          [field]: editValue
-        })
+      const data = await api.patch(`/api/v1/column_types/${column.columnName}`, {
+        [field]: editValue
       })
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
-      }
-
-      const data = await response.json()
 
       if (data.success) {
         console.log('✅ Saved to Gold Standard table:', data.message)

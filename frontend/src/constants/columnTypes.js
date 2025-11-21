@@ -15,6 +15,7 @@ import {
   ArrowsRightLeftIcon,
   WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline'
+import api from '../api'
 
 /**
  * IMPORTANT: This is a FALLBACK ONLY for when the API is unavailable.
@@ -385,13 +386,7 @@ const CACHE_TTL = 3600000 // 1 hour in milliseconds
  */
 export const fetchColumnTypesFromAPI = async () => {
   try {
-    const response = await fetch('/api/v1/column_types')
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`)
-    }
-
-    const data = await response.json()
+    const data = await api.get('/api/v1/column_types')
 
     if (data.success && data.data) {
       return data.data
