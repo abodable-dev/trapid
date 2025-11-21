@@ -176,6 +176,13 @@ export default function TrapidTableView({
   const [showColorModal, setShowColorModal] = useState(false)
   const [colorModalValue, setColorModalValue] = useState('#000000')
 
+  // File upload modal state
+  const [showFileModal, setShowFileModal] = useState(false)
+  const [fileModalTab, setFileModalTab] = useState('upload') // 'upload' or 'url'
+  const [fileModalValue, setFileModalValue] = useState('')
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [dragActive, setDragActive] = useState(false)
+
   // Column visibility dropdown state
   const [showColumnsDropdown, setShowColumnsDropdown] = useState(false)
 
@@ -1694,12 +1701,12 @@ export default function TrapidTableView({
         return <span className="text-gray-400">-</span>
 
       case 'file_upload':
-        // File upload column with upload button and file link
+        // File upload column with modal picker
         if (editingRowId === entry.id) {
           const fileValue = editingData[columnKey] || ''
           return (
-            <div className="flex items-center gap-2">
-              {/* Text input for file path/URL */}
+            <div className="flex items-center gap-2 min-w-0">
+              {/* Display current file path */}
               <input
                 type="text"
                 value={fileValue}
@@ -1709,33 +1716,24 @@ export default function TrapidTableView({
                 }}
                 onClick={(e) => e.stopPropagation()}
                 onFocus={(e) => e.target.select()}
-                placeholder="/uploads/document.pdf or https://..."
+                placeholder="No file selected"
                 className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               />
-              {/* File upload button */}
-              <label
-                className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors cursor-pointer flex-shrink-0 flex items-center gap-1"
-                title="Upload file"
+              {/* Browse button to open modal */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setFileModalValue(fileValue)
+                  setSelectedFile(null)
+                  setFileModalTab('upload')
+                  setShowFileModal(true)
+                }}
+                className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex-shrink-0 flex items-center gap-1"
+                title="Browse files"
               >
-                📎 Upload
-                <input
-                  type="file"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      // For now, just set the filename as placeholder
-                      // In production, this would upload to server and get back a URL
-                      const mockPath = `/uploads/${file.name}`
-                      setEditingData({ ...editingData, [columnKey]: mockPath })
-
-                      // TODO: Implement actual file upload to server
-                      console.log('File selected:', file.name, 'Size:', file.size, 'Type:', file.type)
-                    }
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </label>
+                📎 Browse
+              </button>
             </div>
           )
         }
@@ -4742,6 +4740,244 @@ export default function TrapidTableView({
                     className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
                   >
                     Apply Color
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* File Upload Modal */}
+      {showFileModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" onClick={() => setShowFileModal(false)}>
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 transition-opacity" aria-hidden="true" />
+
+            {/* Modal Dialog */}
+            <div
+              className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full border border-gray-200 dark:border-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Upload File or Add Link
+                </h3>
+                <button
+                  onClick={() => setShowFileModal(false)}
+                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Tab Navigation */}
+              <div className="flex border-b border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setFileModalTab('upload')}
+                  className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+                    fileModalTab === 'upload'
+                      ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  📤 Upload File
+                </button>
+                <button
+                  onClick={() => setFileModalTab('url')}
+                  className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+                    fileModalTab === 'url'
+                      ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  🔗 Add URL
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6">
+                {fileModalTab === 'upload' ? (
+                  <div className="space-y-4">
+                    {/* Drag & Drop Zone */}
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                        dragActive
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                      }`}
+                      onDragEnter={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setDragActive(true)
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setDragActive(false)
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setDragActive(false)
+                        const file = e.dataTransfer.files?.[0]
+                        if (file) {
+                          setSelectedFile(file)
+                          // Mock path - in production, upload to server here
+                          const mockPath = `/uploads/${file.name}`
+                          setFileModalValue(mockPath)
+                        }
+                      }}
+                    >
+                      <div className="space-y-4">
+                        <div className="text-6xl">📁</div>
+                        <div>
+                          <p className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                            Drag & drop your file here
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            or click the button below to browse
+                          </p>
+                        </div>
+                        <label className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer font-medium">
+                          Choose File
+                          <input
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) {
+                                setSelectedFile(file)
+                                // Mock path - in production, upload to server here
+                                const mockPath = `/uploads/${file.name}`
+                                setFileModalValue(mockPath)
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* File Preview */}
+                    {selectedFile && (
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="text-3xl">
+                              {selectedFile.type.startsWith('image/') ? '🖼️' :
+                               selectedFile.type === 'application/pdf' ? '📕' :
+                               selectedFile.type.includes('word') ? '📘' :
+                               selectedFile.type.includes('sheet') || selectedFile.type.includes('excel') ? '📊' :
+                               selectedFile.type.includes('zip') || selectedFile.type.includes('compressed') ? '📦' :
+                               '📄'}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">{selectedFile.name}</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {(selectedFile.size / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedFile(null)
+                              setFileModalValue('')
+                            }}
+                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            title="Remove file"
+                          >
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TODO Note */}
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        <strong>Note:</strong> File upload to server not yet implemented. Currently sets mock path <code className="bg-yellow-100 dark:bg-yellow-800 px-1 rounded">/uploads/filename</code>
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* URL Input */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Enter File URL or Path
+                      </label>
+                      <input
+                        type="text"
+                        value={fileModalValue}
+                        onChange={(e) => setFileModalValue(e.target.value)}
+                        placeholder="https://example.com/document.pdf or /uploads/file.pdf"
+                        className="w-full px-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Examples */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Examples:</p>
+                      <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                        <li>• Google Drive: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">https://drive.google.com/file/d/...</code></li>
+                        <li>• Dropbox: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">https://www.dropbox.com/s/...</code></li>
+                        <li>• Server path: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">/uploads/document.pdf</code></li>
+                      </ul>
+                    </div>
+
+                    {/* Preview if valid URL */}
+                    {fileModalValue && (
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-3">
+                          <div className="text-3xl">🔗</div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 dark:text-white">Link Preview</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{fileModalValue}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 rounded-b-xl flex justify-between items-center gap-3">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {selectedFile ? `Selected: ${selectedFile.name}` : fileModalValue ? `Path: ${fileModalValue}` : 'No file selected'}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowFileModal(false)}
+                    className="px-4 py-2 text-sm font-medium bg-gray-300 text-gray-700 hover:bg-gray-400 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (fileModalValue) {
+                        setEditingData({ ...editingData, file_upload: fileModalValue })
+                      }
+                      setShowFileModal(false)
+                    }}
+                    disabled={!fileModalValue}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      fileModalValue
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    Use This File
                   </button>
                 </div>
               </div>
