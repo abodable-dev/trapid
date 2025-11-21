@@ -20,7 +20,8 @@ import {
   ExclamationTriangleIcon,
   AcademicCapIcon,
   CheckCircleIcon,
-  BanknotesIcon
+  BanknotesIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../api'
 
@@ -41,6 +42,7 @@ const TablesTab = lazy(() => import('../components/settings/TablesTab'))
 const SchemaPage = lazy(() => import('./SchemaPage'))
 const GitBranchVisualization = lazy(() => import('../components/settings/GitBranchVisualization'))
 const AgentStatus = lazy(() => import('../components/settings/AgentStatus'))
+const SmGanttSetupTab = lazy(() => import('../components/sm-gantt/SmGanttSetupTab'))
 
 // Loading fallback component for lazy-loaded tabs
 function TabLoadingFallback() {
@@ -260,11 +262,12 @@ export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Map tab names to indices - REORGANIZED: 16 tabs (added financial)
+  // Map tab names to indices - REORGANIZED: 17 tabs (added sm-gantt-v2)
   const tabs = [
     'company',
     'security',
     'schedule-master',
+    'sm-gantt-v2',
     'meeting-types',
     'whs',
     'financial',
@@ -419,6 +422,19 @@ export default function SettingsPage() {
             >
               <CalendarDaysIcon className="h-4 w-4" />
               Schedule Master
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              <UserGroupIcon className="h-4 w-4" />
+              SM Gantt v2
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -614,7 +630,14 @@ export default function SettingsPage() {
             </Suspense>
           </TabPanel>
 
-          {/* 4. Meeting Types Tab */}
+          {/* 4. SM Gantt v2 Setup Tab */}
+          <TabPanel>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <SmGanttSetupTab />
+            </Suspense>
+          </TabPanel>
+
+          {/* 5. Meeting Types Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <MeetingTypesPage />

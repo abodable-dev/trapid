@@ -23,39 +23,82 @@ export default function AgentStatus() {
   const [globalSearch, setGlobalSearch] = useState('');
   const [columnFilters, setColumnFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-  const [columnWidths, setColumnWidths] = useState({
-    agent: 180,
-    description: 200,
-    status: 75,
-    lastRun: 90,
-    totalRuns: 50,
-    successRate: 60,
-    createdBy: 90,
-    updatedBy: 90,
-    actions: 60
+  const [columnWidths, setColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('agentStatus_columnWidths');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing saved column widths:', e);
+      }
+    }
+    return {
+      agent: 180,
+      description: 200,
+      status: 75,
+      lastRun: 90,
+      totalRuns: 50,
+      successRate: 60,
+      createdBy: 90,
+      updatedBy: 90,
+      actions: 60
+    };
   });
   const [resizingColumn, setResizingColumn] = useState(null);
   const [resizeStartX, setResizeStartX] = useState(0);
   const [resizeStartWidth, setResizeStartWidth] = useState(0);
-  const [visibleColumns, setVisibleColumns] = useState({
-    agent: true,
-    description: true,
-    status: true,
-    lastRun: true,
-    totalRuns: true,
-    successRate: true,
-    createdBy: true,
-    updatedBy: true,
-    actions: true
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    const saved = localStorage.getItem('agentStatus_visibleColumns');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing saved visible columns:', e);
+      }
+    }
+    return {
+      agent: true,
+      description: true,
+      status: true,
+      lastRun: true,
+      totalRuns: true,
+      successRate: true,
+      createdBy: true,
+      updatedBy: true,
+      actions: true
+    };
   });
   const [showColumnPicker, setShowColumnPicker] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [columnOrder, setColumnOrder] = useState(['agent', 'description', 'status', 'lastRun', 'totalRuns', 'successRate', 'createdBy', 'updatedBy', 'actions']);
+  const [columnOrder, setColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('agentStatus_columnOrder');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing saved column order:', e);
+      }
+    }
+    return ['agent', 'description', 'status', 'lastRun', 'totalRuns', 'successRate', 'createdBy', 'updatedBy', 'actions'];
+  });
   const [draggingColumn, setDraggingColumn] = useState(null);
 
   useEffect(() => {
     fetchAgentStatus();
   }, []);
+
+  // Persist table state to localStorage
+  useEffect(() => {
+    localStorage.setItem('agentStatus_columnWidths', JSON.stringify(columnWidths));
+  }, [columnWidths]);
+
+  useEffect(() => {
+    localStorage.setItem('agentStatus_visibleColumns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  useEffect(() => {
+    localStorage.setItem('agentStatus_columnOrder', JSON.stringify(columnOrder));
+  }, [columnOrder]);
 
   // Column resize handlers
   useEffect(() => {

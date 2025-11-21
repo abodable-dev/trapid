@@ -1,195 +1,162 @@
 # Single Source of Truth - Column Type System
 
 ## Overview
-The Trapid application now has a **single source of truth** for all column type metadata, ensuring consistency across the entire frontend.
 
-## Location
-**File:** `frontend/src/constants/columnTypes.js`
+**Trinity T19.001-T19.021 is the SINGLE SOURCE OF TRUTH** for all column type definitions.
 
-This file exports all column type definitions and utilities.
+See **Bible Rule #19.37** for the authoritative rule.
 
-## What's Centralized
+## The Hierarchy
 
-### 1. Column Type Definitions (`COLUMN_TYPES`)
-Complete metadata for all 20 column types:
-- `value` - Internal type identifier
-- `label` - User-facing display name
-- `icon` - HeroIcon component
-- `category` - Grouping (Text, Numbers, Date & Time, Special, Selection, Relationships, Computed)
-- `sqlType` - Database column type
-- `validationRules` - Validation logic description
-- `example` - Sample values
-- `usedFor` - Usage description
-
-### 2. Column Type Icons (`getColumnTypeEmoji`)
-**Location:** `frontend/src/constants/columnTypes.js:323-349`
-
-Centralized emoji icon mapping for all column types:
-```javascript
-export const getColumnTypeEmoji = (columnType) => {
-  const iconMap = {
-    'single_line_text': '📝',
-    'email': '📧',
-    'phone': '📞',
-    'mobile': '📱',
-    // ... etc
-  }
-  return iconMap[columnType] || '📝'
-}
+```
+Trinity T19.001-T19.021 (SSoT - RULES)
+    │
+    │ Defines: SQL type, validation rules, examples, usage
+    │
+    ├──► columns table (Table ID 1) - IMPLEMENTATION
+    │    Must match Trinity rules
+    │
+    ├──► gold_standard_items - PROOF
+    │    Sample data demonstrating each type
+    │
+    └──► Frontend COLUMN_TYPES - CACHE/FALLBACK ONLY
+         Reads from API, never edited directly
 ```
 
-### 3. Helper Functions
-- `getColumnTypeLabel(value)` - Get display label
-- `getColumnTypeIcon(value)` - Get HeroIcon component
-- `getColumnTypesByCategory(category)` - Filter by category
-- `getColumnCategories()` - Get all categories
-- `getColumnTypeEmoji(columnType)` - Get emoji icon ⭐ NEW
+## What Each Source Contains
 
-## Components Using Single Source of Truth
+### Trinity T19.001-T19.021 (Source of Truth)
 
-### ✅ ColumnEditorModal
-**File:** `frontend/src/components/schema/ColumnEditorModal.jsx`
+- **Location:** `trinities` table, category=teacher, chapter=19
+- **Access:** `GET /api/v1/trinity?category=teacher&chapter_number=19`
+- **Contains:** SQL type, validation rules, examples, usage description
+- **Edit via:** Trapid UI → Documentation page
 
-**Imports:**
-```javascript
-import { COLUMN_TYPES, getColumnTypeEmoji } from '../../constants/columnTypes'
-```
+### columns table (Implementation)
 
-**Uses:**
-- Column type dropdown with icons and labels
-- Metadata display (SQL type, validation, examples, usage)
-- All data pulled from COLUMN_TYPES
+- **Location:** `columns` table where `table_id = 1` (Gold Standard)
+- **Access:** `GET /api/v1/column_types`
+- **Contains:** column_name, column_type, max_length, required, etc.
+- **Must match:** Trinity rules
 
-### ✅ TypeConversionEditor
-**File:** `frontend/src/components/schema/TypeConversionEditor.jsx`
+### gold_standard_items (Proof)
 
-**Imports:**
-```javascript
-import { COLUMN_TYPES, getColumnTypeEmoji } from '../../constants/columnTypes'
-```
+- **Location:** `gold_standard_items` table
+- **Access:** `GET /api/v1/gold_standard_items`
+- **Contains:** Sample data for each column type
+- **Purpose:** Demonstrates column types work correctly
 
-**Uses:**
-- Column type conversion dropdown
-- Type-specific configuration UI
-- Icons in dropdown options
+### Frontend COLUMN_TYPES (Cache Only)
 
-### ✅ ColumnInfoTab
-**File:** `frontend/src/components/settings/ColumnInfoTab.jsx`
+- **Location:** `frontend/src/constants/columnTypes.js`
+- **Purpose:** Fallback when API unavailable, cached for performance
+- **NEVER edit as source** - it reads from API
 
-**Imports:**
-```javascript
-import { COLUMN_TYPES, getColumnTypeEmoji } from '../../constants/columnTypes'
-```
+## Maintenance Process
 
-**Uses:**
-- Gold Standard Reference table
-- Display Type column with icons
-- Dynamically generated from COLUMN_TYPES
+### Adding a New Column Type
 
-## Benefits
+1. **Create Trinity Entry**
+   - Go to Trapid UI → Documentation page
+   - Add new Teacher entry in Chapter 19
+   - Section: T19.022 (next available number)
+   - Include: SQL type, validation rules, examples, usage
 
-### ✅ No Duplication
-- Icons defined once in `columnTypes.js`
-- All components import from same source
-- No risk of different icons in different places
+2. **Update Gold Standard Table**
+   - Add column to columns table (Table ID 1)
+   - Column type must match Trinity entry
 
-### ✅ Easy Maintenance
-- Add new column type? Update ONE file
-- Change icon? Update ONE location
-- All components automatically sync
+3. **Add Sample Data**
+   - Add sample value to gold_standard_items
 
-### ✅ Consistency Guaranteed
-- Same icons everywhere
-- Same labels everywhere
-- Same metadata everywhere
+4. **Update Backend** (if needed)
+   - Add to `Column::COLUMN_TYPE_MAP` in `backend/app/models/column.rb`
+   - This maps type to Rails type for migrations
 
-### ✅ Type Safety
-- Single export point
-- Easy to grep/search
-- Clear dependencies
+5. **Verify Sync**
+   - Run `gold-standard-sst` agent
+   - Fix any mismatches reported
 
-## How to Add a New Column Type
+### Updating Validation Rules
 
-1. **Update Backend** (`backend/app/models/column.rb`)
-   - Add to validation list
-   - Add to COLUMN_TYPE_MAP
+1. **Edit Trinity Entry**
+   - Update T19.xxx description with new rules
 
-2. **Update Frontend** (`frontend/src/constants/columnTypes.js`)
-   - Add to COLUMN_TYPES array with all metadata
-   - Add emoji icon to `getColumnTypeEmoji` function
+2. **Update columns table** (if structural)
+   - Update max_length, min_value, etc.
 
-3. **Done!**
-   - All UI components automatically updated
-   - No need to touch ColumnEditorModal, TypeConversionEditor, or ColumnInfoTab
+3. **Verify Sync**
+   - Run `gold-standard-sst` agent
 
-## Example: Adding "Rich Text" Column Type
+### Verifying Sync
 
-### Step 1: Backend
-```ruby
-# backend/app/models/column.rb
-validates :column_type, inclusion: {
-  in: %w[
-    single_line_text
-    # ... existing types
-    rich_text  # ⭐ ADD HERE
-  ]
-}
-
-COLUMN_TYPE_MAP = {
-  # ... existing mappings
-  'rich_text' => :text  # ⭐ ADD HERE
-}.freeze
-```
-
-### Step 2: Frontend
-```javascript
-// frontend/src/constants/columnTypes.js
-
-// Add to COLUMN_TYPES array
-{
-  value: 'rich_text',
-  label: 'Rich text',
-  icon: DocumentTextIcon,
-  category: 'Text',
-  sqlType: 'TEXT',
-  validationRules: 'HTML content with formatting',
-  example: '<p>Bold <strong>text</strong></p>',
-  usedFor: 'Formatted content with bold, italic, links'
-}
-
-// Add to getColumnTypeEmoji function
-export const getColumnTypeEmoji = (columnType) => {
-  const iconMap = {
-    // ... existing icons
-    'rich_text': '📰'  // ⭐ ADD HERE
-  }
-  return iconMap[columnType] || '📝'
-}
-```
-
-### Step 3: Verify
-✅ ColumnEditorModal - Shows in dropdown with 📰 icon
-✅ TypeConversionEditor - Available for conversion with 📰 icon
-✅ ColumnInfoTab - Appears in Gold Standard table with 📰 icon
-
-## Testing Single Source of Truth
-
-Run this command to verify no duplicate icon definitions:
+Run the agent:
 ```bash
-grep -r "getIconEmoji\|iconMap" frontend/src/components/
+# Via Claude Code
+/run gold-standard-sst
+
+# Or check Sync tab in UI
+http://localhost:5173/admin/system?tab=gold-standard-sync
 ```
 
-Should only find imports, not definitions!
+## What NOT to Do
 
-## Migration Complete ✅
+**NEVER edit `frontend/src/constants/columnTypes.js` as source**
+- It's a cache/fallback only
+- Changes will be overwritten by API reads
 
-All components now use `getColumnTypeEmoji` from `columnTypes.js`:
-- ❌ No local `getIconEmoji` functions
-- ❌ No hardcoded icon mappings
-- ✅ Single import from central location
-- ✅ Guaranteed consistency
+**NEVER hardcode column types in controllers**
+- Read from `Column::COLUMN_SQL_TYPE_MAP` or API
+- No duplicate maps in code
+
+**NEVER skip Trinity when adding types**
+- Trinity is the source of truth
+- Everything else derives from it
+
+**NEVER assume sources are in sync**
+- Run agent to verify
+- Fix drift immediately
+
+## API Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/v1/column_types` | Get all column types from Gold Standard |
+| `GET /api/v1/trinity?category=teacher&chapter_number=19` | Get Trinity entries |
+| `GET /api/v1/gold_table_sync` | Check sync status across all sources |
+| `GET /api/v1/gold_standard_items` | Get sample data |
+
+## Agent: gold-standard-sst
+
+The `gold-standard-sst` agent validates:
+
+- Trinity T19.xxx entries are complete (SQL type, validation, examples, usage)
+- columns table (Table ID 1) matches Trinity rules
+- gold_standard_items has valid samples for each type
+- No hardcoded duplicates in code
+- Frontend COLUMN_TYPES is marked as cache/fallback only
+
+## Helper Functions (Frontend)
+
+The frontend provides helper functions that read from the cached/fallback data:
+
+```javascript
+import {
+  COLUMN_TYPES,           // Cache/fallback array
+  getColumnTypeLabel,     // Get display label
+  getColumnTypeIcon,      // Get HeroIcon component
+  getColumnTypeEmoji,     // Get emoji icon
+  getColumnTypesByCategory,
+  getColumnCategories,
+  getColumnTypesWithCache // Fetches from API with caching
+} from '../../constants/columnTypes'
+```
+
+**Important:** These read from cache. The source of truth is Trinity.
 
 ---
 
-**Last Updated:** 2025-11-19
-**Status:** ✅ COMPLETE - Single source of truth established
+**Last Updated:** 2025-11-22
+**Status:** Trinity is Single Source of Truth
+**Bible Rule:** #19.37
+**Agent:** gold-standard-sst

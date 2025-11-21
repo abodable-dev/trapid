@@ -252,25 +252,29 @@ export default function GoldStandardTableTab() {
   }
 
   const handleAddNew = () => {
+    // Field names must match actual database columns (see Bible Rule #19.37)
+    // Source of Truth: Trinity T19.001-T19.021
     setNewItem({
-      item_code: '',
+      single_line_text: '',
       email: '',
       phone: '',
       mobile: '',
-      start_date: '',
-      location_coords: '',
-      color_code: '#000000',
-      file_attachment: '',
+      date: '',
+      gps_coordinates: '',
+      color_picker: '#000000',
+      file_upload: '',
       action_buttons: '',
-      category_type: '',
-      is_active: true,
-      discount: 0,
-      status: 'active',
-      price: 0,
-      quantity: 0,
+      lookup: '',
+      boolean: true,
+      percentage: 0,
+      choice: 'active',
+      currency: 0,
+      number: 0,
       whole_number: 0,
-      notes: '',
-      document_link: ''
+      multiple_lines_text: '',
+      url: '',
+      user: getCurrentUserId(),
+      multiple_lookups: ''
     })
     setShowAddModal(true)
   }
@@ -407,15 +411,15 @@ export default function GoldStandardTableTab() {
             </div>
 
             <div className="px-6 py-4 space-y-4">
-              {/* Single Line Text (Code) */}
+              {/* Single Line Text */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Code (Single Line Text)
+                  Single Line Text
                 </label>
                 <input
                   type="text"
-                  value={newItem.item_code}
-                  onChange={(e) => setNewItem({ ...newItem, item_code: e.target.value })}
+                  value={newItem.single_line_text}
+                  onChange={(e) => setNewItem({ ...newItem, single_line_text: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   placeholder="e.g., CONC-001"
                 />
@@ -466,12 +470,12 @@ export default function GoldStandardTableTab() {
               {/* Date */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Start Date (Date only)
+                  Date
                 </label>
                 <input
                   type="date"
-                  value={newItem.start_date}
-                  onChange={(e) => setNewItem({ ...newItem, start_date: e.target.value })}
+                  value={newItem.date}
+                  onChange={(e) => setNewItem({ ...newItem, date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
@@ -479,12 +483,12 @@ export default function GoldStandardTableTab() {
               {/* GPS Coordinates */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  GPS Coordinates (Lat, Long)
+                  GPS Coordinates
                 </label>
                 <input
                   type="text"
-                  value={newItem.location_coords}
-                  onChange={(e) => setNewItem({ ...newItem, location_coords: e.target.value })}
+                  value={newItem.gps_coordinates}
+                  onChange={(e) => setNewItem({ ...newItem, gps_coordinates: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   placeholder="-33.8688, 151.2093"
                 />
@@ -493,50 +497,50 @@ export default function GoldStandardTableTab() {
               {/* Color Picker */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Color Code
+                  Color Picker
                 </label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
-                    value={newItem.color_code}
-                    onChange={(e) => setNewItem({ ...newItem, color_code: e.target.value })}
+                    value={newItem.color_picker}
+                    onChange={(e) => setNewItem({ ...newItem, color_picker: e.target.value })}
                     className="h-10 w-20 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
                   />
                   <input
                     type="text"
-                    value={newItem.color_code}
-                    onChange={(e) => setNewItem({ ...newItem, color_code: e.target.value })}
+                    value={newItem.color_picker}
+                    onChange={(e) => setNewItem({ ...newItem, color_picker: e.target.value })}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white font-mono"
                     placeholder="#000000"
                   />
                 </div>
               </div>
 
-              {/* File Attachment */}
+              {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  File Attachment (Path/URL)
+                  File Upload
                 </label>
                 <input
                   type="text"
-                  value={newItem.file_attachment}
-                  onChange={(e) => setNewItem({ ...newItem, file_attachment: e.target.value })}
+                  value={newItem.file_upload}
+                  onChange={(e) => setNewItem({ ...newItem, file_upload: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   placeholder="/uploads/document.pdf"
                 />
               </div>
 
-              {/* Category Dropdown */}
+              {/* Lookup */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Category (Lookup)
+                  Lookup
                 </label>
                 <select
-                  value={newItem.category_type}
-                  onChange={(e) => setNewItem({ ...newItem, category_type: e.target.value })}
+                  value={newItem.lookup}
+                  onChange={(e) => setNewItem({ ...newItem, lookup: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 >
-                  <option value="">Select a category...</option>
+                  <option value="">Select...</option>
                   <option value="Concrete">Concrete</option>
                   <option value="Timber">Timber</option>
                   <option value="Steel">Steel</option>
@@ -551,14 +555,14 @@ export default function GoldStandardTableTab() {
                 </select>
               </div>
 
-              {/* Status with Badges */}
+              {/* Choice */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Status (Lookup with Badges)
+                  Choice
                 </label>
                 <select
-                  value={newItem.status}
-                  onChange={(e) => setNewItem({ ...newItem, status: e.target.value })}
+                  value={newItem.choice}
+                  onChange={(e) => setNewItem({ ...newItem, choice: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 >
                   <option value="active">Active</option>
@@ -570,24 +574,24 @@ export default function GoldStandardTableTab() {
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={newItem.is_active}
-                  onChange={(e) => setNewItem({ ...newItem, is_active: e.target.checked })}
+                  checked={newItem.boolean}
+                  onChange={(e) => setNewItem({ ...newItem, boolean: e.target.checked })}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Is Active (Boolean)
+                  Boolean
                 </label>
               </div>
 
               {/* Percentage */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Discount (Percentage)
+                  Percentage
                 </label>
                 <input
                   type="number"
-                  value={newItem.discount}
-                  onChange={(e) => setNewItem({ ...newItem, discount: parseFloat(e.target.value) || 0 })}
+                  value={newItem.percentage}
+                  onChange={(e) => setNewItem({ ...newItem, percentage: parseFloat(e.target.value) || 0 })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   placeholder="0"
                   min="0"
@@ -596,16 +600,16 @@ export default function GoldStandardTableTab() {
                 />
               </div>
 
-              {/* Price, Quantity, and Whole Number */}
+              {/* Currency, Number, and Whole Number */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Price (Currency - AUD)
+                    Currency
                   </label>
                   <input
                     type="number"
-                    value={newItem.price}
-                    onChange={(e) => setNewItem({ ...newItem, price: parseFloat(e.target.value) || 0 })}
+                    value={newItem.currency}
+                    onChange={(e) => setNewItem({ ...newItem, currency: parseFloat(e.target.value) || 0 })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder="0.00"
                     min="0"
@@ -614,16 +618,16 @@ export default function GoldStandardTableTab() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Quantity (Number)
+                    Number
                   </label>
                   <input
                     type="number"
-                    value={newItem.quantity}
-                    onChange={(e) => setNewItem({ ...newItem, quantity: parseFloat(e.target.value) || 0 })}
+                    value={newItem.number}
+                    onChange={(e) => setNewItem({ ...newItem, number: parseFloat(e.target.value) || 0 })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder="0"
                     min="0"
-                    step="1"
+                    step="0.01"
                   />
                 </div>
                 <div>
@@ -642,28 +646,28 @@ export default function GoldStandardTableTab() {
                 </div>
               </div>
 
-              {/* Document Link */}
+              {/* URL */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Document Link (URL)
+                  URL
                 </label>
                 <input
                   type="url"
-                  value={newItem.document_link}
-                  onChange={(e) => setNewItem({ ...newItem, document_link: e.target.value })}
+                  value={newItem.url}
+                  onChange={(e) => setNewItem({ ...newItem, url: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   placeholder="https://example.com/document.pdf"
                 />
               </div>
 
-              {/* Multi Line Text */}
+              {/* Multiple Lines Text */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Notes/Description (Multi Line Text)
+                  Multiple Lines Text
                 </label>
                 <textarea
-                  value={newItem.notes}
-                  onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
+                  value={newItem.multiple_lines_text}
+                  onChange={(e) => setNewItem({ ...newItem, multiple_lines_text: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
                   placeholder="Enter any notes or description..."

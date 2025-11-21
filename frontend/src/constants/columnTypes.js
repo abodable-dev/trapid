@@ -18,19 +18,34 @@ import {
 import api from '../api'
 
 /**
- * IMPORTANT: This is a FALLBACK ONLY for when the API is unavailable.
+ * ============================================================================
+ * CACHE/FALLBACK ONLY - DO NOT EDIT AS SOURCE OF TRUTH
+ * ============================================================================
  *
- * THE SINGLE SOURCE OF TRUTH is:
- * - Backend: Column::COLUMN_SQL_TYPE_MAP (backend/app/models/column.rb)
- * - API: /api/v1/column_types (serves from Gold Standard Reference table)
- * - Trinity: Teacher §T19.001-T19.022 (documents all column types)
+ * SINGLE SOURCE OF TRUTH: Trinity T19.001-T19.021 (see Bible Rule #19.37)
  *
- * This constant MUST be kept in sync with the backend but should ONLY be used as a fallback.
- * Always fetch from the API first using getColumnTypesWithCache().
+ * The Hierarchy:
+ *   Trinity T19.001-T19.021 (SSoT - RULES)
+ *       │
+ *       ├──► columns table (Table ID 1) - IMPLEMENTATION
+ *       ├──► gold_standard_items - PROOF (sample data)
+ *       └──► THIS FILE - CACHE/FALLBACK ONLY
  *
- * Complete list of all column types supported by the application.
- * Used for column creation and display.
- * Includes SQL types, validation rules, examples, and usage information from Gold Standard.
+ * Maintenance Process:
+ *   1. Edit Trinity T19.xxx first (via Documentation page UI)
+ *   2. Update columns table to match
+ *   3. Run gold-standard-sst agent to verify sync
+ *   4. This file auto-syncs via API fetch
+ *
+ * API Access:
+ *   - GET /api/v1/column_types (reads from Gold Standard table)
+ *   - GET /api/v1/trinity?category=teacher&chapter_number=19 (reads Trinity)
+ *
+ * NEVER edit this file as the source - it's for offline/fallback only.
+ * Always use getColumnTypesWithCache() which fetches from API first.
+ *
+ * See: SINGLE_SOURCE_OF_TRUTH.md for full documentation.
+ * ============================================================================
  */
 export const COLUMN_TYPES = [
   // Text Fields
