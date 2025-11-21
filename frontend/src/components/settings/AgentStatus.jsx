@@ -17,7 +17,6 @@ export default function AgentStatus() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [runningAgents, setRunningAgents] = useState(new Set());
-  const [currentUser, setCurrentUser] = useState(null);
   const [selectedAgentDescription, setSelectedAgentDescription] = useState(null);
 
   // Table state - RULE #19 compliance
@@ -25,13 +24,15 @@ export default function AgentStatus() {
   const [columnFilters, setColumnFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [columnWidths, setColumnWidths] = useState({
-    agent: 250,
-    description: 500,
-    status: 140,
-    lastRun: 180,
-    totalRuns: 120,
-    successRate: 120,
-    actions: 100
+    agent: 160,
+    description: 250,
+    status: 90,
+    lastRun: 130,
+    totalRuns: 70,
+    successRate: 80,
+    createdBy: 130,
+    updatedBy: 130,
+    actions: 70
   });
   const [resizingColumn, setResizingColumn] = useState(null);
   const [resizeStartX, setResizeStartX] = useState(0);
@@ -43,15 +44,16 @@ export default function AgentStatus() {
     lastRun: true,
     totalRuns: true,
     successRate: true,
+    createdBy: true,
+    updatedBy: true,
     actions: true
   });
   const [showColumnPicker, setShowColumnPicker] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [columnOrder, setColumnOrder] = useState(['agent', 'description', 'status', 'lastRun', 'totalRuns', 'successRate', 'actions']);
+  const [columnOrder, setColumnOrder] = useState(['agent', 'description', 'status', 'lastRun', 'totalRuns', 'successRate', 'createdBy', 'updatedBy', 'actions']);
   const [draggingColumn, setDraggingColumn] = useState(null);
 
   useEffect(() => {
-    loadCurrentUser();
     fetchAgentStatus();
   }, []);
 
@@ -82,20 +84,6 @@ export default function AgentStatus() {
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [resizingColumn, resizeStartX, resizeStartWidth]);
-
-  const loadCurrentUser = () => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      try {
-        const userData = JSON.parse(user);
-        setCurrentUser(userData.email || userData.name || 'User');
-      } catch (e) {
-        setCurrentUser('User');
-      }
-    } else {
-      setCurrentUser('User');
-    }
-  };
 
   const fetchAgentStatus = async () => {
     try {
@@ -205,7 +193,11 @@ export default function AgentStatus() {
         last_run: agent.last_run_at,
         status: agent.last_status,
         total_runs: agent.total_runs || 0,
-        success_rate: agent.success_rate || 0
+        success_rate: agent.success_rate || 0,
+        created_at: agent.created_at,
+        created_by: agent.created_by,
+        updated_at: agent.updated_at,
+        updated_by: agent.updated_by
       }))
     : [];
 
@@ -246,6 +238,8 @@ export default function AgentStatus() {
     { key: 'lastRun', label: 'Last Run', sortable: true, searchable: false },
     { key: 'totalRuns', label: 'Total Runs', sortable: true, searchable: false },
     { key: 'successRate', label: 'Success Rate', sortable: true, searchable: false },
+    { key: 'createdBy', label: 'Created By', sortable: true, searchable: true },
+    { key: 'updatedBy', label: 'Updated', sortable: true, searchable: true },
     { key: 'actions', label: 'Actions', sortable: false, searchable: false }
   ];
 
@@ -364,8 +358,8 @@ export default function AgentStatus() {
 
       {/* Table - RULE #19.2 Sticky Headers, #19.3 Inline Filters, #19.5B Resizable */}
       <div className="bg-white dark:bg-gray-800 shadow overflow-hidden flex-1 flex flex-col">
-        <div className="overflow-x-auto overflow-y-auto flex-1">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <div className="overflow-y-auto flex-1">
+          <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
               <tr>
                 {/* Row Selection - RULE #19.9 */}
@@ -414,7 +408,7 @@ export default function AgentStatus() {
                     }}
                     onDragEnd={() => setDraggingColumn(null)}
                     style={{ width: columnWidths[column.key] }}
-                    className={`relative px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-move hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${draggingColumn === column.key ? 'opacity-50' : ''}`}
+                    className={`relative px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-move hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${draggingColumn === column.key ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -496,10 +490,10 @@ export default function AgentStatus() {
                     .map(key => {
                       if (key === 'agent') {
                         return (
-                          <td key="agent" className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <span className="text-2xl">{agent.icon}</span>
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          <td key="agent" className="px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">{agent.icon}</span>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                 {agent.displayName}
                               </div>
                             </div>
@@ -509,35 +503,35 @@ export default function AgentStatus() {
                         return (
                           <td
                             key="description"
-                            className="px-6 py-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                            className="px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
                             onDoubleClick={() => setSelectedAgentDescription({
                               name: agent.name || agent.agent_id,
                               description: agent.description
                             })}
                             title="Double-click to view full description"
                           >
-                            <div className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-md">
+                            <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
                               {agent.description}
                             </div>
                           </td>
                         );
                       } else if (key === 'status') {
                         return (
-                          <td key="status" className="px-6 py-4">
+                          <td key="status" className="px-3 py-2">
                             {getStatusBadge(agent.last_status)}
                           </td>
                         );
                       } else if (key === 'lastRun') {
                         return (
-                          <td key="lastRun" className="px-6 py-4">
-                            <div className="text-sm text-gray-900 dark:text-white">
+                          <td key="lastRun" className="px-3 py-2">
+                            <div className="text-xs text-gray-900 dark:text-white">
                               {agent.last_run ? formatDate(agent.last_run) : 'Never'}
                             </div>
                           </td>
                         );
                       } else if (key === 'totalRuns') {
                         return (
-                          <td key="totalRuns" className="px-6 py-4">
+                          <td key="totalRuns" className="px-3 py-2">
                             <div className="text-sm text-gray-900 dark:text-white">
                               {agent.total_runs || 0}
                             </div>
@@ -545,24 +539,49 @@ export default function AgentStatus() {
                         );
                       } else if (key === 'successRate') {
                         return (
-                          <td key="successRate" className="px-6 py-4">
+                          <td key="successRate" className="px-3 py-2">
                             <div className="text-sm text-gray-900 dark:text-white">
                               {agent.total_runs > 0 ? `${agent.success_rate}%` : 'N/A'}
                             </div>
                           </td>
                         );
+                      } else if (key === 'createdBy') {
+                        return (
+                          <td key="createdBy" className="px-3 py-2">
+                            <div className="text-xs text-gray-900 dark:text-white">
+                              {agent.created_by || '-'}
+                            </div>
+                            {agent.created_at && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {formatDate(agent.created_at)}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      } else if (key === 'updatedBy') {
+                        return (
+                          <td key="updatedBy" className="px-3 py-2">
+                            <div className="text-xs text-gray-900 dark:text-white">
+                              {agent.updated_by || '-'}
+                            </div>
+                            {agent.updated_at && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {formatDate(agent.updated_at)}
+                              </div>
+                            )}
+                          </td>
+                        );
                       } else if (key === 'actions') {
                         return (
-                          <td key="actions" className="px-6 py-4">
+                          <td key="actions" className="px-3 py-2">
                             <button
                               onClick={() => handleRunAgent(agent.id)}
                               disabled={runningAgents.has(agent.id)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {runningAgents.has(agent.id) ? (
                                 <>
                                   <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                  Running...
                                 </>
                               ) : (
                                 <>

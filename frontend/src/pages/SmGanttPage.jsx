@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon, PauseIcon, PlayIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon, PauseIcon, PlayIcon, PlusIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import Toast from '../components/Toast'
 import SmGanttChart from '../components/sm-gantt/SmGanttChart'
 import SmTaskModal from '../components/sm-gantt/SmTaskModal'
 import SmNewTaskModal from '../components/sm-gantt/SmNewTaskModal'
+import SmCopyFromTemplateModal from '../components/sm-gantt/SmCopyFromTemplateModal'
 
 const SmTaskList = ({ tasks, onTaskClick, onStatusChange }) => (
   <div className="h-full overflow-auto">
@@ -97,6 +98,7 @@ export default function SmGanttPage() {
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [holdReasons, setHoldReasons] = useState([])
   const [showNewTaskModal, setShowNewTaskModal] = useState(false)
+  const [showCopyTemplateModal, setShowCopyTemplateModal] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -181,6 +183,20 @@ export default function SmGanttPage() {
     }
   }
 
+  const handleCopyFromTemplate = async (templateRowId) => {
+    try {
+      await api.post(`/api/v1/constructions/${id}/sm_tasks/copy_from_template`, {
+        template_row_id: templateRowId
+      })
+      setToast({ type: 'success', message: 'Task copied from template' })
+      await loadData() // Refresh
+    } catch (err) {
+      console.error('Failed to copy from template:', err)
+      setToast({ type: 'error', message: 'Failed to copy from template' })
+      throw err
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -235,6 +251,15 @@ export default function SmGanttPage() {
             >
               <PlusIcon className="h-4 w-4" />
               New Task
+            </button>
+
+            {/* Copy from Template Button */}
+            <button
+              onClick={() => setShowCopyTemplateModal(true)}
+              className="px-3 py-1.5 text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-1.5"
+            >
+              <DocumentDuplicateIcon className="h-4 w-4" />
+              From Template
             </button>
 
             {/* View Toggle */}
@@ -308,6 +333,14 @@ export default function SmGanttPage() {
         isOpen={showNewTaskModal}
         onClose={() => setShowNewTaskModal(false)}
         onCreate={handleTaskCreate}
+      />
+
+      {/* Copy from Template Modal */}
+      <SmCopyFromTemplateModal
+        constructionId={id}
+        isOpen={showCopyTemplateModal}
+        onClose={() => setShowCopyTemplateModal(false)}
+        onCopy={handleCopyFromTemplate}
       />
     </div>
   )

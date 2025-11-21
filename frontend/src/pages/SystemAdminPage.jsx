@@ -121,12 +121,45 @@ function SecurityTab() {
 
 // Developer Tools Tab Component with nested sub-tabs
 function DeveloperToolsTab() {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Map sub-tab names to indices
+  const devSubTabs = ['tables', 'schema', 'branches', 'agents']
+
+  // Get initial sub-tab index from URL query parameter
+  const getInitialSubTabIndex = () => {
+    const params = new URLSearchParams(location.search)
+    const subtab = params.get('subtab')
+    const index = devSubTabs.indexOf(subtab)
+    return index >= 0 ? index : 0
+  }
+
+  const [selectedSubIndex, setSelectedSubIndex] = useState(getInitialSubTabIndex())
+
+  // Update URL when sub-tab changes
+  const handleSubTabChange = (index) => {
+    setSelectedSubIndex(index)
+    const params = new URLSearchParams(location.search)
+    params.set('subtab', devSubTabs[index])
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true })
+  }
+
+  // Update selected sub-tab when URL changes
+  useEffect(() => {
+    const newIndex = getInitialSubTabIndex()
+    if (newIndex !== selectedSubIndex) {
+      setSelectedSubIndex(newIndex)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search])
+
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-10">
       <div className="max-w-7xl">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Developer Tools</h2>
 
-        <TabGroup>
+        <TabGroup selectedIndex={selectedSubIndex} onChange={handleSubTabChange}>
           <TabList className="flex space-x-1 rounded-xl bg-indigo-900/20 p-1 mb-6">
             <Tab
               className={({ selected }) =>
