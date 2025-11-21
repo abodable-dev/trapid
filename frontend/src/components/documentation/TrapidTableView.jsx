@@ -1416,10 +1416,10 @@ export default function TrapidTableView({
         )
 
       case 'is_active':
-        // Boolean column with checkmark/x
+        // Boolean column with toggle-style indicator
         if (editingRowId === entry.id) {
           return (
-            <div className="text-center">
+            <div className="flex justify-center">
               <input
                 type="checkbox"
                 checked={editingData.is_active || false}
@@ -1431,12 +1431,16 @@ export default function TrapidTableView({
           )
         }
         return (
-          <div className="text-center">
-            {entry.is_active ? (
-              <span className="text-green-600 dark:text-green-400 text-lg">✓</span>
-            ) : (
-              <span className="text-red-600 dark:text-red-400 text-lg">✗</span>
-            )}
+          <div className="flex justify-center">
+            <div className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors ${
+              entry.is_active
+                ? 'bg-green-500 dark:bg-green-600'
+                : 'bg-red-400 dark:bg-red-500'
+            }`}>
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                entry.is_active ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </div>
           </div>
         )
 
