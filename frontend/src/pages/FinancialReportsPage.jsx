@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DocumentChartBarIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
-import api from '../services/api'
+import api from '../api'
 
 export default function FinancialReportsPage() {
   const [activeReport, setActiveReport] = useState('balance_sheet')

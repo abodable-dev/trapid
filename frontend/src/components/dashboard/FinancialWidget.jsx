@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { BanknotesIcon, CreditCardIcon, ChartBarIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
-import api from '../../services/api'
+import api from '../../api'
 
 export default function FinancialWidget() {
   const [summary, setSummary] = useState(null)
@@ -15,9 +15,9 @@ export default function FinancialWidget() {
   const fetchSummary = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/financial_transactions/summary')
-      if (response.data.success) {
-        setSummary(response.data.summary)
+      const response = await api.get('/api/v1/financial_transactions/summary')
+      if (response.success) {
+        setSummary(response.summary)
       }
     } catch (err) {
       console.error('Failed to load financial summary:', err)

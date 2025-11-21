@@ -77,12 +77,46 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
+// Helper to get a normalized route key for localStorage
+const getRouteKey = (pathname) => {
+  // Normalize paths like /jobs/123 to /jobs
+  if (pathname.startsWith('/jobs/')) return '/jobs'
+  if (pathname.startsWith('/tables/')) return '/tables'
+  if (pathname.startsWith('/contacts/')) return '/contacts'
+  if (pathname.startsWith('/accounts/')) return '/accounts'
+  if (pathname.startsWith('/corporate/')) return '/corporate'
+  return pathname
+}
+
+// Default sidebar state for routes (collapsed = true means sidebar is closed by default)
+const defaultSidebarState = {
+  '/active-jobs': true,   // Collapsed
+  '/jobs': true,          // Collapsed
+  '/settings': true,      // Collapsed
+  '/dashboard': false,    // Expanded
+}
+
 export default function AppLayout({ children }) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    location.pathname === '/active-jobs' || location.pathname.startsWith('/jobs/') || location.pathname === '/settings'
-  )
+
+  // Get sidebar preference for current route
+  const getSidebarPreference = (pathname) => {
+    const routeKey = getRouteKey(pathname)
+    const storageKey = `sidebarCollapsed:${routeKey}`
+    const saved = localStorage.getItem(storageKey)
+
+    if (saved !== null) {
+      return saved === 'true'
+    }
+
+    // Use default for this route, or false (expanded) if no default
+    return defaultSidebarState[routeKey] ?? false
+  }
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return getSidebarPreference(location.pathname)
+  })
   const [backendVersion, setBackendVersion] = useState('loading...')
   const [unreadCount, setUnreadCount] = useState(0)
   const frontendVersion = packageJson.version
@@ -119,12 +153,19 @@ export default function AppLayout({ children }) {
     return () => clearInterval(interval)
   }, [])
 
-  // Auto-collapse sidebar when navigating to Active Jobs, Job Detail pages, or Settings
+  // Update sidebar state when route changes
   useEffect(() => {
-    if (location.pathname === '/active-jobs' || location.pathname.startsWith('/jobs/') || location.pathname === '/settings') {
-      setSidebarCollapsed(true)
-    }
+    const newPreference = getSidebarPreference(location.pathname)
+    setSidebarCollapsed(newPreference)
   }, [location.pathname])
+
+  // Save sidebar preference to localStorage when toggled (per-route)
+  const handleSidebarToggle = () => {
+    const newValue = !sidebarCollapsed
+    setSidebarCollapsed(newValue)
+    const routeKey = getRouteKey(location.pathname)
+    localStorage.setItem(`sidebarCollapsed:${routeKey}`, String(newValue))
+  }
 
   const isCurrentPath = (href) => {
     if (href === '/dashboard') {
@@ -285,7 +326,7 @@ export default function AppLayout({ children }) {
               />
             )}
             <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              onClick={handleSidebarToggle}
               className={classNames(
                 "absolute p-1 rounded hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200",
                 sidebarCollapsed ? "-right-3 top-1/2 -translate-y-1/2" : "right-2 top-1/2 -translate-y-1/2"

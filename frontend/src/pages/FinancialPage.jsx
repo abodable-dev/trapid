@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { PlusIcon, BanknotesIcon, CreditCardIcon } from '@heroicons/react/24/outline'
 import TrapidTableView from '../components/documentation/TrapidTableView'
 import TransactionForm from '../components/financial/TransactionForm'
-import api from '../services/api'
+import api from '../api'
 
 // Define columns for financial transactions table
 const TRANSACTION_COLUMNS = [
@@ -116,10 +116,10 @@ export default function FinancialPage() {
   const fetchTransactions = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/financial_transactions')
-      if (response.data.success) {
+      const response = await api.get('/api/v1/financial_transactions')
+      if (response.success) {
         // Transform data to include computed fields for TrapidTableView
-        const transformedData = response.data.transactions.map(t => ({
+        const transformedData = response.transactions.map(t => ({
           ...t,
           construction_name: t.construction?.name || 'N/A',
           user_name: t.user ? `${t.user.first_name} ${t.user.last_name}` : 'Unknown'
@@ -136,9 +136,9 @@ export default function FinancialPage() {
 
   const fetchSummary = async () => {
     try {
-      const response = await api.get('/financial_transactions/summary')
-      if (response.data.success) {
-        setSummary(response.data.summary)
+      const response = await api.get('/api/v1/financial_transactions/summary')
+      if (response.success) {
+        setSummary(response.summary)
       }
     } catch (err) {
       console.error('Failed to load summary:', err)
@@ -148,20 +148,20 @@ export default function FinancialPage() {
   const handleEdit = async (entry) => {
     // For inline edits from TrapidTableView
     try {
-      const response = await api.put(`/financial_transactions/${entry.id}`, {
+      const response = await api.put(`/api/v1/financial_transactions/${entry.id}`, {
         transaction: {
           description: entry.description,
           category: entry.category
         }
       })
 
-      if (response.data.success) {
+      if (response.success) {
         setTransactions(prev =>
-          prev.map(t => t.id === response.data.transaction.id ? {
-            ...response.data.transaction,
-            construction_name: response.data.transaction.construction?.name || 'N/A',
-            user_name: response.data.transaction.user ?
-              `${response.data.transaction.user.first_name} ${response.data.transaction.user.last_name}` :
+          prev.map(t => t.id === response.transaction.id ? {
+            ...response.transaction,
+            construction_name: response.transaction.construction?.name || 'N/A',
+            user_name: response.transaction.user ?
+              `${response.transaction.user.first_name} ${response.transaction.user.last_name}` :
               'Unknown'
           } : t)
         )
@@ -169,7 +169,7 @@ export default function FinancialPage() {
       }
     } catch (err) {
       console.error('Error updating transaction:', err)
-      alert(`Failed to update transaction: ${err.response?.data?.error || err.message}`)
+      alert(`Failed to update transaction: ${err.message}`)
     }
   }
 
@@ -177,15 +177,15 @@ export default function FinancialPage() {
     if (!confirm(`Are you sure you want to delete this ${entry.transaction_type} transaction?`)) return
 
     try {
-      const response = await api.delete(`/financial_transactions/${entry.id}`)
+      const response = await api.delete(`/api/v1/financial_transactions/${entry.id}`)
 
-      if (response.data.success) {
+      if (response.success) {
         setTransactions(prev => prev.filter(t => t.id !== entry.id))
         await fetchSummary()
       }
     } catch (err) {
       console.error('Error deleting transaction:', err)
-      alert(`Failed to delete transaction: ${err.response?.data?.error || err.message}`)
+      alert(`Failed to delete transaction: ${err.message}`)
     }
   }
 

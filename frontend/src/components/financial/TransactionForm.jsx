@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import api from '../../services/api'
+import api from '../../api'
 
 export default function TransactionForm({ isOpen, onClose, onSuccess, transaction = null, type = 'expense' }) {
   const [formData, setFormData] = useState({
@@ -54,12 +54,12 @@ export default function TransactionForm({ isOpen, onClose, onSuccess, transactio
 
   const loadCategories = async () => {
     try {
-      const response = await api.get(`/financial_transactions/categories?transaction_type=${type}`)
-      if (response.data.success) {
-        setCategories(response.data.categories)
+      const response = await api.get(`/api/v1/financial_transactions/categories?transaction_type=${type}`)
+      if (response.success) {
+        setCategories(response.categories)
         // Set default category
-        if (!transaction && response.data.categories.length > 0) {
-          setFormData(prev => ({ ...prev, category: response.data.categories[0] }))
+        if (!transaction && response.categories.length > 0) {
+          setFormData(prev => ({ ...prev, category: response.categories[0] }))
         }
       }
     } catch (err) {
@@ -69,9 +69,9 @@ export default function TransactionForm({ isOpen, onClose, onSuccess, transactio
 
   const loadJobs = async () => {
     try {
-      const response = await api.get('/constructions?per_page=100')
-      if (response.data.success) {
-        setJobs(response.data.constructions || [])
+      const response = await api.get('/api/v1/constructions?per_page=100')
+      if (response.success) {
+        setJobs(response.constructions || [])
       }
     } catch (err) {
       console.error('Failed to load jobs:', err)
@@ -133,24 +133,24 @@ export default function TransactionForm({ isOpen, onClose, onSuccess, transactio
       let response
       if (transaction) {
         // Update existing transaction
-        response = await api.put(`/financial_transactions/${transaction.id}`, submitData, {
+        response = await api.put(`/api/v1/financial_transactions/${transaction.id}`, submitData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
       } else {
         // Create new transaction
-        response = await api.post('/financial_transactions', submitData, {
+        response = await api.post('/api/v1/financial_transactions', submitData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
       }
 
-      if (response.data.success) {
-        onSuccess(response.data.transaction)
+      if (response.success) {
+        onSuccess(response.transaction)
         onClose()
       } else {
-        throw new Error(response.data.error || 'Failed to save transaction')
+        throw new Error(response.error || 'Failed to save transaction')
       }
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Failed to save transaction')
+      setError(err.message || 'Failed to save transaction')
     } finally {
       setLoading(false)
     }
