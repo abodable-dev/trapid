@@ -622,6 +622,24 @@ export default function TrapidTableView({
         case 'severity':
           result = result.filter(e => e.severity === value)
           break
+        default:
+          // Generic handler for other filterable columns
+          // For boolean columns, convert string "true"/"false" to boolean
+          if (value === 'true' || value === 'false') {
+            const boolValue = value === 'true'
+            result = result.filter(e => e[key] === boolValue)
+          } else {
+            // For other columns, do a simple equality check or string match
+            result = result.filter(e => {
+              const entryValue = e[key]
+              if (entryValue === null || entryValue === undefined) return false
+              if (typeof entryValue === 'string') {
+                return entryValue.toLowerCase().includes(value.toLowerCase())
+              }
+              return entryValue === value
+            })
+          }
+          break
       }
     })
 
@@ -3740,6 +3758,19 @@ export default function TrapidTableView({
                             onClick={(e) => e.stopPropagation()}
                             className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white placeholder-blue-200 dark:placeholder-blue-300"
                           />
+                        )}
+
+                        {showFilters && column.filterType === 'boolean' && (
+                          <select
+                            value={columnFilters[colKey] || ''}
+                            onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white"
+                          >
+                            <option value="">All</option>
+                            <option value="true">✓ Checked</option>
+                            <option value="false">✗ Unchecked</option>
+                          </select>
                         )}
 
                         {showFilters && column.filterType === 'dropdown' && colKey !== 'component' && (
