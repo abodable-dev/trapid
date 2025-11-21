@@ -26,7 +26,7 @@ const buildGoldStandardColumns = () => {
     'file_upload': { key: 'file_upload', width: 300, sortable: false, filterable: false },
     'action_buttons': { key: 'action_buttons', width: 180, sortable: false, filterable: false },
     'lookup': { key: 'lookup', width: 150, filterable: true, filterType: 'dropdown' },
-    'boolean': { key: 'boolean', width: 100, filterable: true, filterType: 'dropdown' },
+    'boolean': { key: 'boolean', width: 100, filterable: true, filterType: 'boolean' },
     'percentage': { key: 'percentage', width: 120, filterable: false },
     'choice': { key: 'choice', width: 140, filterable: true, filterType: 'dropdown' },
     'currency': { key: 'currency', width: 120, filterable: false, showSum: true, sumType: 'currency' },
