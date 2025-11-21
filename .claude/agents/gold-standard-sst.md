@@ -6,8 +6,13 @@ description: |
   ║  Gold Standard Cols:    21 column types           ║
   ║  Type Comparison:       21/21 matched             ║
   ║  SQL Type Sync:         22/22 defined             ║
+  ║    (+1 action_buttons system-only)                ║
   ║  Column Validation:     21/21 have rules          ║
   ║  Code Audit:            No unauthorized dupes     ║
+  ╠═══════════════════════════════════════════════════╣
+  ║  System Columns:        id, created_at, updated_at║
+  ║  Single Source of Truth: Trinity T19.xxx          ║
+  ║  Bible Rule: #19.37                               ║
   ╚═══════════════════════════════════════════════════╝
 model: sonnet
 color: yellow

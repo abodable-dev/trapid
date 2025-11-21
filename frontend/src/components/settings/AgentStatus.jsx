@@ -667,7 +667,7 @@ export default function AgentStatus() {
           onClick={() => setSelectedAgentDescription(null)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 shadow-xl"
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-3xl w-full mx-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start mb-4">
@@ -683,7 +683,7 @@ export default function AgentStatus() {
                 </svg>
               </button>
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+            <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap font-mono">
               {selectedAgentDescription.description}
             </div>
             <div className="mt-6 flex justify-end">
