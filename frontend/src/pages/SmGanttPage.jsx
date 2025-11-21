@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon, PauseIcon, PlayIcon, PlusIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline'
+import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon, PauseIcon, PlayIcon, PlusIcon, DocumentDuplicateIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import Toast from '../components/Toast'
 import SmGanttChart from '../components/sm-gantt/SmGanttChart'
 import SmTaskModal from '../components/sm-gantt/SmTaskModal'
 import SmNewTaskModal from '../components/sm-gantt/SmNewTaskModal'
 import SmCopyFromTemplateModal from '../components/sm-gantt/SmCopyFromTemplateModal'
+import SmResourcePanel from '../components/sm-gantt/SmResourcePanel'
 
 const SmTaskList = ({ tasks, onTaskClick, onStatusChange }) => (
   <div className="h-full overflow-auto">
@@ -99,6 +100,7 @@ export default function SmGanttPage() {
   const [holdReasons, setHoldReasons] = useState([])
   const [showNewTaskModal, setShowNewTaskModal] = useState(false)
   const [showCopyTemplateModal, setShowCopyTemplateModal] = useState(false)
+  const [showResourcePanel, setShowResourcePanel] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -262,6 +264,19 @@ export default function SmGanttPage() {
               From Template
             </button>
 
+            {/* Resources Button */}
+            <button
+              onClick={() => setShowResourcePanel(!showResourcePanel)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg flex items-center gap-1.5 transition-colors ${
+                showResourcePanel
+                  ? 'bg-indigo-600 text-white'
+                  : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              <UserGroupIcon className="h-4 w-4" />
+              Resources
+            </button>
+
             {/* View Toggle */}
             <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
               <button
@@ -292,19 +307,32 @@ export default function SmGanttPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden p-4">
-        {viewMode === 'gantt' ? (
-          <SmGanttChart
-            tasks={tasks}
-            dependencies={[]}
-            onTaskClick={handleTaskClick}
-            onTaskUpdate={handleTaskUpdate}
-          />
-        ) : (
-          <SmTaskList
-            tasks={tasks}
-            onTaskClick={handleTaskClick}
-          />
+      <div className="flex-1 overflow-hidden p-4 flex gap-4">
+        {/* Task View */}
+        <div className={`flex-1 overflow-hidden ${showResourcePanel ? 'w-2/3' : 'w-full'}`}>
+          {viewMode === 'gantt' ? (
+            <SmGanttChart
+              tasks={tasks}
+              dependencies={[]}
+              onTaskClick={handleTaskClick}
+              onTaskUpdate={handleTaskUpdate}
+            />
+          ) : (
+            <SmTaskList
+              tasks={tasks}
+              onTaskClick={handleTaskClick}
+            />
+          )}
+        </div>
+
+        {/* Resource Panel (Phase 2) */}
+        {showResourcePanel && (
+          <div className="w-80 flex-shrink-0">
+            <SmResourcePanel
+              constructionId={id}
+              onClose={() => setShowResourcePanel(false)}
+            />
+          </div>
         )}
       </div>
 
