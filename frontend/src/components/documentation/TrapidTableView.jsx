@@ -2000,28 +2000,43 @@ export default function TrapidTableView({
         return <span className="text-gray-400">-</span>
 
       case 'boolean':
-        // Boolean column with toggle switch (green = true, red = false)
+        // Boolean column with toggle switch (green = checked/true, gray = unchecked/false)
+        // Always clickable - toggles immediately and saves
         const boolValue = editingRowId === entry.id ? editingData[columnKey] : entry[columnKey]
 
         return (
           <div className="flex justify-center">
             <button
               type="button"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation()
+                const newValue = !boolValue
+
                 if (editingRowId === entry.id) {
-                  // In edit mode: toggle the value
-                  setEditingData({ ...editingData, [columnKey]: !editingData[columnKey] })
+                  // If already in edit mode, just update editingData
+                  setEditingData({ ...editingData, [columnKey]: newValue })
+                } else {
+                  // Not in edit mode: toggle and save immediately
+                  const updatedEntry = { ...entry, [columnKey]: newValue }
+
+                  // If onEdit callback exists, call it to save the change
+                  if (onEdit) {
+                    try {
+                      await onEdit(updatedEntry)
+                    } catch (error) {
+                      console.error('Failed to update boolean value:', error)
+                    }
+                  }
                 }
               }}
-              disabled={editingRowId !== entry.id}
-              className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors ${
+              className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors cursor-pointer ${
                 boolValue
-                  ? 'bg-green-500 dark:bg-green-600'
-                  : 'bg-red-400 dark:bg-red-500'
-              } ${editingRowId === entry.id ? 'cursor-pointer' : 'cursor-default'}`}
+                  ? 'bg-green-500 dark:bg-green-600 hover:bg-green-600 dark:hover:bg-green-700'
+                  : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+              }`}
+              title={boolValue ? 'Click to uncheck' : 'Click to check'}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
                 boolValue ? 'translate-x-6' : 'translate-x-1'
               }`} />
             </button>
