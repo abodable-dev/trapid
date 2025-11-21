@@ -9,7 +9,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'https://trapid-backend-447058022b51.herokuapp.com',
+        target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       },

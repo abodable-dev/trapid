@@ -13,37 +13,38 @@ const buildGoldStandardColumns = () => {
   ]
 
   // Map each COLUMN_TYPE to its database column and configuration
+  // After cleanup migration, columns are named after their types
   const typeToColumnMap = {
-    'single_line_text': { key: 'item_code', width: 150, filterable: true, filterType: 'text' },
+    'single_line_text': { key: 'single_line_text', width: 150, filterable: true, filterType: 'text' },
     'email': { key: 'email', width: 200, filterable: true, filterType: 'text' },
     'phone': { key: 'phone', width: 150, filterable: true, filterType: 'text' },
     'mobile': { key: 'mobile', width: 150, filterable: true, filterType: 'text' },
-    'url': { key: 'document_link', width: 180, sortable: false, filterable: false },
-    'date': { key: 'start_date', width: 140, filterable: false },
-    'gps_coordinates': { key: 'location_coords', width: 180, sortable: false, filterable: false },
-    'color_picker': { key: 'color_code', width: 130, sortable: false, filterable: false },
-    'file_upload': { key: 'file_attachment', width: 180, sortable: false, filterable: false },
+    'url': { key: 'url', width: 180, sortable: false, filterable: false },
+    'date': { key: 'date', width: 140, filterable: false },
+    'gps_coordinates': { key: 'gps_coordinates', width: 180, sortable: false, filterable: false },
+    'color_picker': { key: 'color_picker', width: 130, sortable: false, filterable: false },
+    'file_upload': { key: 'file_upload', width: 180, sortable: false, filterable: false },
     'action_buttons': { key: 'action_buttons', width: 150, sortable: false, filterable: false },
-    'lookup': { key: 'category_type', width: 150, filterable: true, filterType: 'dropdown' },
-    'boolean': { key: 'is_active', width: 100, filterable: true, filterType: 'dropdown' },
-    'percentage': { key: 'discount', width: 120, filterable: false },
-    'choice': { key: 'status', width: 140, filterable: true, filterType: 'dropdown' },
-    'currency': { key: 'price', width: 120, filterable: false, showSum: true, sumType: 'currency' },
-    'number': { key: 'quantity', width: 100, filterable: false, showSum: true, sumType: 'number' },
+    'lookup': { key: 'lookup', width: 150, filterable: true, filterType: 'dropdown' },
+    'boolean': { key: 'boolean', width: 100, filterable: true, filterType: 'dropdown' },
+    'percentage': { key: 'percentage', width: 120, filterable: false },
+    'choice': { key: 'choice', width: 140, filterable: true, filterType: 'dropdown' },
+    'currency': { key: 'currency', width: 120, filterable: false, showSum: true, sumType: 'currency' },
+    'number': { key: 'number', width: 100, filterable: false, showSum: true, sumType: 'number' },
     'whole_number': { key: 'whole_number', width: 120, filterable: false, showSum: true, sumType: 'number' },
     'computed': {
-      key: 'total_cost',
+      key: 'computed',
       width: 140,
       filterable: false,
       showSum: true,
       sumType: 'currency',
       isComputed: true,
-      computeFunction: (entry) => (entry.price || 0) * (entry.quantity || 0)
+      computeFunction: (entry) => (entry.currency || 0) * (entry.number || 0)
     },
-    'date_and_time': { key: 'created_at', width: 180, filterable: false },
-    'multiple_lines_text': { key: 'notes', width: 300, sortable: false, filterable: true, filterType: 'text' },
-    'multiple_lookups': { key: 'multiple_category_ids', width: 200, sortable: false, filterable: false },
-    'user': { key: 'user_id', width: 120, filterable: true, filterType: 'dropdown' }
+    'date_and_time': { key: 'date_and_time', width: 180, filterable: false },
+    'multiple_lines_text': { key: 'multiple_lines_text', width: 300, sortable: false, filterable: true, filterType: 'text' },
+    'multiple_lookups': { key: 'multiple_lookups', width: 200, sortable: false, filterable: false },
+    'user': { key: 'user', width: 120, filterable: true, filterType: 'dropdown' }
   }
 
   // Helper function to build a column from COLUMN_TYPES
@@ -101,26 +102,26 @@ export default function GoldStandardTableTab() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showFeatures, setShowFeatures] = useState(false)
   const [newItem, setNewItem] = useState({
-    item_code: '',
+    single_line_text: '',
     email: '',
     phone: '',
     mobile: '',
-    start_date: '',
-    location_coords: '',
-    color_code: '#000000',
-    file_attachment: '',
+    date: '',
+    gps_coordinates: '',
+    color_picker: '#000000',
+    file_upload: '',
     action_buttons: '',
-    category_type: '',
-    is_active: true,
-    discount: 0,
-    status: 'active',
-    price: 0,
-    quantity: 0,
+    lookup: '',
+    boolean: true,
+    percentage: 0,
+    choice: 'active',
+    currency: 0,
+    number: 0,
     whole_number: 0,
-    notes: '',
-    document_link: '',
-    user_id: null,
-    multiple_category_ids: ''
+    multiple_lines_text: '',
+    url: '',
+    user: null,
+    multiple_lookups: ''
   })
 
   // Fetch gold standard items from API
@@ -149,15 +150,25 @@ export default function GoldStandardTableTab() {
 
   const handleEdit = async (entry) => {
     try {
+      console.log('handleEdit called with entry:', entry)
+      const payload = { gold_standard_item: entry }
+      console.log('Sending PATCH request with payload:', payload)
+
       const response = await fetch(`/api/v1/gold_standard_items/${entry.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gold_standard_item: entry })
+        body: JSON.stringify(payload)
       })
 
-      if (!response.ok) throw new Error('Failed to update item')
+      console.log('Response status:', response.status)
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Response error:', errorText)
+        throw new Error('Failed to update item')
+      }
 
       const updatedItem = await response.json()
+      console.log('Updated item received from API:', updatedItem)
       setData(prevData =>
         prevData.map(item => item.id === updatedItem.id ? updatedItem : item)
       )
@@ -185,6 +196,30 @@ export default function GoldStandardTableTab() {
     } catch (err) {
       console.error('Error deleting item:', err)
       alert(`Failed to delete item: ${err.message}`)
+    }
+  }
+
+  // Bulk delete handler - no confirmation needed (TrapidTableView already confirmed)
+  const handleBulkDelete = async (entries) => {
+    try {
+      // Delete all entries in parallel
+      await Promise.all(
+        entries.map(entry =>
+          fetch(`/api/v1/gold_standard_items/${entry.id}`, {
+            method: 'DELETE'
+          })
+        )
+      )
+
+      // Remove deleted entries from state
+      const deletedIds = entries.map(e => e.id)
+      setData(prevData =>
+        prevData.filter(item => !deletedIds.includes(item.id))
+      )
+      console.log('Bulk deleted:', entries.length, 'items')
+    } catch (err) {
+      console.error('Error bulk deleting items:', err)
+      alert(`Failed to delete items: ${err.message}`)
     }
   }
 
@@ -312,6 +347,7 @@ export default function GoldStandardTableTab() {
         columns={GOLD_STANDARD_COLUMNS}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onBulkDelete={handleBulkDelete}
         enableImport={true}
         enableExport={true}
         enableSchemaEditor={true}

@@ -93,6 +93,7 @@ export default function TrapidTableView({
   entries,
   onEdit,
   onDelete,
+  onBulkDelete,
   stats,
   category = null,
   customActions = null,
@@ -152,6 +153,8 @@ export default function TrapidTableView({
 
   // Row selection state (Chapter 20: Always enabled for multi-select)
   const [selectedRows, setSelectedRows] = useState(new Set())
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStartRow, setDragStartRow] = useState(null)
 
   // Bulk action state - show delete only after edit clicked
   const [showDeleteButton, setShowDeleteButton] = useState(false)
@@ -245,6 +248,9 @@ export default function TrapidTableView({
   const [textEditValue, setTextEditValue] = useState('')
   const textEditTextareaRef = useRef(null)
 
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState({})
+
   // Editable modal state (for double-click row editing)
   const [showEditableModal, setShowEditableModal] = useState(false)
   const [modalEditData, setModalEditData] = useState(null)
@@ -268,14 +274,7 @@ export default function TrapidTableView({
   const [draggedColumn, setDraggedColumn] = useState(null)
   const [dropTargetColumn, setDropTargetColumn] = useState(null)
 
-  // Sticky horizontal scrollbar state
-  const [tableScrollWidth, setTableScrollWidth] = useState(0)
   const scrollContainerRef = useRef(null)
-  const stickyScrollbarRef = useRef(null)
-
-  // Scroll loop prevention flags (RULE #20.33)
-  const isScrollingStickyRef = useRef(false)
-  const isScrollingMainRef = useRef(false)
 
   // Load table state from localStorage on mount (Chapter 20.5B)
   useEffect(() => {
@@ -382,72 +381,7 @@ export default function TrapidTableView({
     return null
   }
 
-  // Scroll handlers for sticky horizontal scrollbar (RULE #20.33)
-  const handleScroll = (e) => {
-    // Prevent infinite loop from sticky scrollbar
-    if (isScrollingStickyRef.current) {
-      isScrollingStickyRef.current = false
-      return
-    }
 
-    const container = e.target
-    const { scrollLeft, scrollTop } = container
-
-    // Sync horizontal sticky scrollbar
-    if (stickyScrollbarRef.current) {
-      isScrollingMainRef.current = true
-      stickyScrollbarRef.current.scrollLeft = scrollLeft
-      setTimeout(() => { isScrollingMainRef.current = false }, 0)
-    }
-
-    // Log scroll position occasionally (every 100px)
-    if (Math.floor(scrollLeft / 100) !== Math.floor((scrollLeft - 1) / 100)) {
-      console.log('📊 Lexicon scroll:', { scrollLeft, scrollTop })
-    }
-  }
-
-  const handleStickyScroll = (e) => {
-    // Prevent infinite loop from main container
-    if (isScrollingMainRef.current) {
-      isScrollingMainRef.current = false
-      return
-    }
-
-    const scrollLeft = e.target.scrollLeft
-    if (scrollContainerRef.current) {
-      isScrollingStickyRef.current = true
-      scrollContainerRef.current.scrollLeft = scrollLeft
-      setTimeout(() => { isScrollingStickyRef.current = false }, 0)
-      console.log('📊 Lexicon sticky scrollbar scrolled to:', scrollLeft)
-    }
-  }
-
-  // Track table scroll width for sticky scrollbar
-  useEffect(() => {
-    const container = scrollContainerRef.current
-    if (!container) {
-      console.log('📊 Lexicon: No scroll container ref')
-      return
-    }
-
-    const updateScrollbar = () => {
-      const { scrollWidth, clientWidth, offsetWidth } = container
-      console.log('📊 Lexicon table dimensions:', {
-        scrollWidth,
-        clientWidth,
-        offsetWidth,
-        needsHorizontalScroll: scrollWidth > clientWidth,
-        overflow: scrollWidth - clientWidth
-      })
-      setTableScrollWidth(scrollWidth)
-    }
-
-    updateScrollbar()
-    const resizeObserver = new ResizeObserver(updateScrollbar)
-    resizeObserver.observe(container)
-
-    return () => resizeObserver.disconnect()
-  }, [columnWidths])
 
   // Column reordering handlers (Chapter 20.5)
   const handleDragStart = (e, columnKey) => {
@@ -534,6 +468,49 @@ export default function TrapidTableView({
     }
     setSelectedRows(newSelected)
   }
+
+  // Drag selection handlers
+  const handleDragSelectStart = (id) => {
+    setIsDragging(true)
+    setDragStartRow(id)
+    // Select the starting row
+    const newSelected = new Set(selectedRows)
+    newSelected.add(id)
+    setSelectedRows(newSelected)
+  }
+
+  const handleDragSelectOver = (id) => {
+    if (!isDragging || !dragStartRow) return
+
+    // Find the range between drag start and current row
+    const startIndex = filteredAndSorted.findIndex(e => e.id === dragStartRow)
+    const endIndex = filteredAndSorted.findIndex(e => e.id === id)
+
+    if (startIndex === -1 || endIndex === -1) return
+
+    // Select all rows in the range
+    const [min, max] = startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex]
+    const rowsInRange = filteredAndSorted.slice(min, max + 1).map(e => e.id)
+
+    setSelectedRows(new Set(rowsInRange))
+  }
+
+  const handleDragSelectEnd = () => {
+    setIsDragging(false)
+    setDragStartRow(null)
+  }
+
+  // Add global mouseup listener to end drag selection
+  useEffect(() => {
+    const handleMouseUp = () => {
+      if (isDragging) {
+        handleDragSelectEnd()
+      }
+    }
+
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => document.removeEventListener('mouseup', handleMouseUp)
+  }, [isDragging])
 
   // Bulk action handlers (Chapter 20: Delete with confirmation)
   const handleBulkDelete = () => {
@@ -832,11 +809,150 @@ export default function TrapidTableView({
     return column ? column.label : key
   }
 
+  // Auto-format function to fix phone and mobile numbers
+  const autoFormatPhone = (value, type = 'mobile') => {
+    if (!value) return value
+
+    // Remove all non-digit characters
+    const digits = value.replace(/\D/g, '')
+
+    if (type === 'mobile') {
+      // Format Australian mobile: 0400 000 000
+      if (digits.length === 10 && digits.startsWith('04')) {
+        return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`
+      }
+    } else if (type === 'phone') {
+      // Format Australian landline: (02) 0000 0000
+      if (digits.length === 10 && /^0[2-9]/.test(digits)) {
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)} ${digits.slice(6)}`
+      }
+      // Format 1300/1800 numbers: 1300 000 000
+      if (digits.length === 10 && /^1[38]00/.test(digits)) {
+        return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`
+      }
+      // Handle 8-digit numbers - auto-detect area code
+      if (digits.length === 8) {
+        const areaCode = detectAreaCode(digits)
+        if (areaCode) {
+          return `(${areaCode}) ${digits.slice(0, 4)} ${digits.slice(4)}`
+        }
+      }
+    }
+
+    return value // Return original if can't format
+  }
+
+  // Detect area code based on 8-digit landline pattern
+  const detectAreaCode = (eightDigits) => {
+    const firstDigit = eightDigits[0]
+
+    switch (firstDigit) {
+      case '3':
+        // Brisbane/QLD
+        return '07'
+      case '6':
+        // Perth/WA (most common for 6xxx)
+        return '08'
+      case '8':
+        // Check second digit for better accuracy
+        const secondDigit = eightDigits[1]
+        if (secondDigit === '8' || secondDigit === '9') {
+          // Adelaide/Darwin
+          return '08'
+        }
+        // Melbourne/VIC
+        return '03'
+      case '9':
+        // Melbourne/VIC (most common for 9xxx)
+        return '03'
+      default:
+        // Can't determine
+        return null
+    }
+  }
+
+  // Validation function to check if cell value is valid based on column type
+  const isCellValid = (entry, columnKey, column) => {
+    // Skip validation for special columns
+    if (['select', 'id', 'user_id', 'created_at', 'updated_at'].includes(columnKey)) {
+      return true
+    }
+
+    // Skip validation for computed columns
+    if (column?.isComputed) {
+      return true
+    }
+
+    // Skip validation if value is empty/null/undefined
+    const value = entry[columnKey]
+    if (value === null || value === undefined || value === '' || value === '-') {
+      return true
+    }
+
+    // Get column type for validation
+    const columnType = column?.column_type
+
+    // Validate based on column type
+    switch (columnType) {
+      case 'email':
+        // Validate email format
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+
+      case 'phone':
+      case 'mobile':
+        // Validate phone format (basic check for numbers and common phone chars)
+        return /^[\d\s\-\+\(\)]+$/.test(value)
+
+      case 'url':
+        // Validate URL format - accept URLs with or without protocol
+        try {
+          // Try parsing as-is first
+          new URL(value)
+          return true
+        } catch {
+          // If it fails, try adding https:// protocol
+          try {
+            new URL(`https://${value}`)
+            return true
+          } catch {
+            return false
+          }
+        }
+
+      case 'number':
+      case 'whole_number':
+      case 'currency':
+      case 'percentage':
+        // Validate numeric fields
+        return !isNaN(parseFloat(value))
+
+      case 'date':
+      case 'date_and_time':
+        // Validate date format
+        return !isNaN(Date.parse(value))
+
+      default:
+        // No specific validation for other types
+        return true
+    }
+  }
+
   const renderCellContent = (entry, columnKey) => {
     switch (columnKey) {
       case 'select':
         return (
-          <div className="flex items-center justify-center">
+          <div
+            className="flex items-center justify-center"
+            onMouseDown={(e) => {
+              e.preventDefault() // Prevent text selection while dragging
+              handleDragSelectStart(entry.id)
+            }}
+            onMouseEnter={() => {
+              if (isDragging) {
+                handleDragSelectOver(entry.id)
+              }
+            }}
+          >
             <input
               type="checkbox"
               checked={selectedRows.has(entry.id)}
@@ -844,7 +960,7 @@ export default function TrapidTableView({
                 e.stopPropagation()
                 handleSelectRow(entry.id)
               }}
-              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 pointer-events-none"
             />
           </div>
         )
@@ -1324,15 +1440,11 @@ export default function TrapidTableView({
             <input
               type="number"
               step={columnKey === 'whole_number' ? '1' : 'any'}
-              value={editingData[columnKey] || ''}
+              value={editingData[columnKey] ?? ''}
               onChange={(e) => {
                 const value = e.target.value
-                // For whole_number, only allow integers (no decimals)
-                if (columnKey === 'whole_number') {
-                  setEditingData({ ...editingData, [columnKey]: parseInt(value) || 0 })
-                } else {
-                  setEditingData({ ...editingData, [columnKey]: parseFloat(value) || 0 })
-                }
+                // Store the raw value to allow typing decimals
+                setEditingData({ ...editingData, [columnKey]: value })
               }}
               onClick={(e) => e.stopPropagation()}
               onFocus={(e) => e.target.select()}
@@ -1346,24 +1458,105 @@ export default function TrapidTableView({
           </div>
         )
 
+      case 'currency':
+        // Currency column - right-aligned with $ sign
+        if (editingRowId === entry.id) {
+          return (
+            <div className="relative flex items-center">
+              <span className="absolute left-2 text-gray-500 dark:text-gray-400">$</span>
+              <input
+                type="number"
+                step="0.01"
+                value={editingData[columnKey] ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setEditingData({ ...editingData, [columnKey]: value })
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                className="w-full pl-6 pr-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-right"
+              />
+            </div>
+          )
+        }
+        return (
+          <div className="text-right font-medium">
+            {entry[columnKey] != null ? `$${parseFloat(entry[columnKey]).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+          </div>
+        )
+
       case 'email':
         // Email column with mailto link
         if (editingRowId === entry.id) {
+          const emailValue = editingData.email || ''
+          const isValidEmail = !emailValue || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)
+          const hasValue = emailValue.length > 0
+
           return (
-            <input
-              type="email"
-              value={editingData.email || ''}
-              onChange={(e) => setEditingData({ ...editingData, email: e.target.value })}
-              onClick={(e) => e.stopPropagation()}
-              onFocus={(e) => e.target.select()}
-              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="w-full">
+              <div className="relative flex items-center">
+                <input
+                  type="email"
+                  value={emailValue}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setEditingData({ ...editingData, email: value })
+
+                    // Validate email format
+                    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                      setValidationErrors({ ...validationErrors, email: 'Invalid email format' })
+                    } else {
+                      const newErrors = { ...validationErrors }
+                      delete newErrors.email
+                      setValidationErrors(newErrors)
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.target.select()}
+                  className={`w-full px-2 py-1 pr-8 text-sm border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 transition-all ${
+                    !isValidEmail
+                      ? 'border-red-500 focus:ring-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse'
+                      : hasValue
+                      ? 'border-green-500 focus:ring-green-500 bg-green-50 dark:bg-green-900/20'
+                      : 'border-blue-500 focus:ring-blue-500'
+                  }`}
+                />
+                {/* Clickable mailto link overlaid on valid email */}
+                {isValidEmail && hasValue && (
+                  <a
+                    href={`mailto:${emailValue}`}
+                    className="absolute left-2 right-10 text-sm text-blue-600 dark:text-blue-400 underline pointer-events-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {emailValue}
+                  </a>
+                )}
+                {/* Green checkmark for valid email */}
+                {isValidEmail && hasValue && (
+                  <svg
+                    className="absolute right-2 h-5 w-5 text-green-600 dark:text-green-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              {/* Error message for invalid email */}
+              {!isValidEmail && (
+                <div className="text-xs text-red-600 dark:text-red-400 mt-0.5 font-semibold">
+                  Invalid email format
+                </div>
+              )}
+            </div>
           )
         }
+        // View mode - render email with mailto link
         return entry.email ? (
           <a
             href={`mailto:${entry.email}`}
-            className="text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-blue-600 dark:text-blue-400 underline"
             onClick={(e) => e.stopPropagation()}
           >
             {entry.email}
@@ -1380,16 +1573,12 @@ export default function TrapidTableView({
               type="tel"
               value={editingData.phone || ''}
               onChange={(e) => {
-                let value = e.target.value.replace(/[\s()]/g, '') // Remove formatting
-                // Auto-format landline: (0X) XXXX XXXX
-                if (value.length === 10 && value.match(/^0[2-9]\d{8}$/)) {
-                  value = `(${value.slice(0, 2)}) ${value.slice(2, 6)} ${value.slice(6)}`
-                }
-                // Auto-format 1300/1800: 1300 XXX XXX
-                else if (value.length === 10 && value.match(/^1[38]00\d{6}$/)) {
-                  value = `${value.slice(0, 4)} ${value.slice(4, 7)} ${value.slice(7)}`
-                }
-                setEditingData({ ...editingData, phone: value })
+                setEditingData({ ...editingData, phone: e.target.value })
+              }}
+              onBlur={(e) => {
+                // Auto-format on blur
+                const formatted = autoFormatPhone(e.target.value, 'phone')
+                setEditingData({ ...editingData, phone: formatted })
               }}
               onClick={(e) => e.stopPropagation()}
               onFocus={(e) => e.target.select()}
@@ -1418,12 +1607,12 @@ export default function TrapidTableView({
               type="tel"
               value={editingData.mobile || ''}
               onChange={(e) => {
-                let value = e.target.value.replace(/\s/g, '') // Remove spaces
-                // Auto-format if 10 digits entered (Australian mobile)
-                if (value.length === 10 && value.match(/^04\d{8}$/)) {
-                  value = `${value.slice(0, 4)} ${value.slice(4, 7)} ${value.slice(7)}`
-                }
-                setEditingData({ ...editingData, mobile: value })
+                setEditingData({ ...editingData, mobile: e.target.value })
+              }}
+              onBlur={(e) => {
+                // Auto-format on blur
+                const formatted = autoFormatPhone(e.target.value, 'mobile')
+                setEditingData({ ...editingData, mobile: formatted })
               }}
               onClick={(e) => e.stopPropagation()}
               onFocus={(e) => e.target.select()}
@@ -1515,8 +1704,101 @@ export default function TrapidTableView({
         // Generic handler for all other columns - make them editable in edit mode
         const value = entry[columnKey]
 
-        if (editingRowId === entry.id) {
-          // In edit mode: show editable input
+        // Get column definition to check if it's computed
+        const columnDef = COLUMNS.find(col => col.key === columnKey)
+        const isSystemColumn = columnKey === 'id' || columnKey === 'user_id'
+        const isComputedColumn = columnDef?.isComputed
+
+        // Check if this is a long text field that should have expand button
+        const isLongTextField = ['description', 'details', 'summary', 'notes', 'scenario', 'solution', 'examples', 'code_example', 'common_mistakes'].includes(columnKey)
+
+        if (editingRowId === entry.id && !isSystemColumn && !isComputedColumn) {
+          // In edit mode: show editable input with optional expand button for long text
+          if (isLongTextField) {
+            return (
+              <div className="flex items-center gap-1 w-full">
+                <input
+                  type="text"
+                  value={editingData[columnKey] || ''}
+                  onChange={(e) => setEditingData({ ...editingData, [columnKey]: e.target.value })}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.target.select()}
+                  className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setTextEditField(columnKey)
+                    setTextEditValue(editingData[columnKey] || '')
+                    setShowTextEditModal(true)
+                  }}
+                  className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors flex-shrink-0"
+                  title="Open in large editor"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                </button>
+              </div>
+            )
+          }
+
+          // For email fields: add validation
+          if (columnKey === 'email') {
+            const emailValue = editingData[columnKey] || ''
+            const isValidEmail = !emailValue || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)
+            const hasValue = emailValue.length > 0
+
+            return (
+              <div className="w-full relative">
+                <input
+                  type="email"
+                  value={emailValue}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setEditingData({ ...editingData, [columnKey]: value })
+
+                    // Validate email format
+                    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                      setValidationErrors({ ...validationErrors, [columnKey]: 'Invalid email format' })
+                    } else {
+                      const newErrors = { ...validationErrors }
+                      delete newErrors[columnKey]
+                      setValidationErrors(newErrors)
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.target.select()}
+                  className={`w-full px-2 py-1 pr-8 text-sm border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 transition-all ${
+                    !isValidEmail
+                      ? 'border-red-500 focus:ring-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse'
+                      : hasValue
+                      ? 'border-green-500 focus:ring-green-500 bg-green-50 dark:bg-green-900/20'
+                      : 'border-blue-500 focus:ring-blue-500'
+                  }`}
+                />
+                {/* Green checkmark for valid email */}
+                {isValidEmail && hasValue && (
+                  <svg
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-600 dark:text-green-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {!isValidEmail && (
+                  <div className="text-xs text-red-600 dark:text-red-400 mt-0.5 font-semibold">
+                    Invalid email format
+                  </div>
+                )}
+              </div>
+            )
+          }
+
+          // For other fields: just simple input
           return (
             <input
               type="text"
@@ -1529,7 +1811,37 @@ export default function TrapidTableView({
           )
         }
 
-        // Display mode: show value as text
+        // Display mode: show value as text (or if system/computed column)
+        // Special handling for URL fields - make them clickable links
+        if (columnKey === 'url' && value) {
+          // Add https:// if no protocol specified
+          const href = value.startsWith('http://') || value.startsWith('https://') ? value : `https://${value}`
+          return (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {value}
+            </a>
+          )
+        }
+
+        // Special handling for email fields - make them mailto links
+        if (columnKey === 'email' && value) {
+          return (
+            <a
+              href={`mailto:${value}`}
+              className="text-blue-600 dark:text-blue-400 underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {value}
+            </a>
+          )
+        }
+
         return value ? (
           <span className="text-gray-900 dark:text-white">{value}</span>
         ) : (
@@ -1541,7 +1853,7 @@ export default function TrapidTableView({
   return (
     <>
       <style>{`
-        /* Trapid table scrollbar styling - blue theme */
+        /* Trapid table scrollbar styling - blue theme for both scrollbars */
         .trapid-table-scroll::-webkit-scrollbar {
           width: 12px;
           height: 12px;
@@ -1608,17 +1920,39 @@ export default function TrapidTableView({
                 {/* Save & Exit button - saves current row if editing */}
                 <button
                   onClick={async () => {
+                    console.log('Save & Exit clicked')
+                    console.log('Validation errors:', validationErrors)
+
+                    // Check if there are validation errors
+                    if (Object.keys(validationErrors).length > 0) {
+                      alert('Please fix validation errors before saving')
+                      return
+                    }
+
                     // Save current editing row if any
                     if (editingRowId !== null && Object.keys(editingData).length > 0) {
-                      await onEdit(editingData)
+                      const entry = entries.find(e => e.id === editingRowId)
+                      if (entry) {
+                        console.log('Original entry:', entry)
+                        console.log('Editing data (changes only):', editingData)
+                        const updatedEntry = { ...entry, ...editingData }
+                        console.log('Merged entry to save:', updatedEntry)
+                        await onEdit(updatedEntry)
+                      }
                     }
                     setEditModeActive(false)
                     setEditingRowId(null)
                     setEditingData({})
+                    setValidationErrors({})
                     setShowDeleteButton(false)
                     setSelectedRows(new Set())
                   }}
-                  className="px-6 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2 shadow-lg"
+                  disabled={Object.keys(validationErrors).length > 0}
+                  className={`px-6 py-2.5 rounded-lg font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2 shadow-lg ${
+                    Object.keys(validationErrors).length > 0
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-green-600 hover:bg-green-700'
+                  }`}
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -1629,15 +1963,16 @@ export default function TrapidTableView({
                 {/* Exit Without Saving button */}
                 <button
                   onClick={() => {
-                    if (confirm('Exit without saving? Any unsaved changes will be lost.')) {
+                    if (confirm('Exit edit mode? Any unsaved changes will be lost.')) {
                       setEditModeActive(false)
                       setEditingRowId(null)
                       setEditingData({})
+                      setValidationErrors({})
                       setShowDeleteButton(false)
                       setSelectedRows(new Set())
                     }
                   }}
-                  className="px-6 py-2.5 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2 backdrop-blur-sm"
+                  className="px-6 py-2.5 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2 backdrop-blur-sm"
                 >
                   <XMarkIcon className="h-5 w-5" />
                   Exit Without Saving
@@ -1711,46 +2046,6 @@ export default function TrapidTableView({
             {editModeActive ? '🔓 Editing' : '✏️ Edit'}
           </button>
 
-          {/* Inline Editing Buttons - Always visible when row is being edited */}
-          {editingRowId && (
-            <>
-              {/* Save button when in edit mode */}
-              <button
-                onClick={() => {
-                  const entry = filteredAndSorted.find(e => e.id === editingRowId)
-                  if (entry) {
-                    // Merge edited data with original entry
-                    const updatedEntry = { ...entry, ...editingData }
-                    onEdit(updatedEntry)
-                    setEditingRowId(null)
-                    setEditingData({})
-                    setSelectedRows(new Set())
-                    setShowDeleteButton(false)
-                    setEditModeActive(false)
-                  }
-                }}
-                className="inline-flex items-center gap-2 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
-              >
-                <CheckIcon className="h-4 w-4" />
-                Save
-              </button>
-              {/* Cancel button when in edit mode */}
-              <button
-                onClick={() => {
-                  setEditingRowId(null)
-                  setEditingData({})
-                  setShowDeleteButton(false)
-                  setEditModeActive(false)
-                  setSelectedRows(new Set())
-                }}
-                className="inline-flex items-center gap-2 px-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
-              >
-                <XMarkIcon className="h-4 w-4" />
-                Cancel
-              </button>
-            </>
-          )}
-
           {/* Delete Button - Only visible when rows selected (Export available in three-dot menu) */}
           {selectedRows.size > 0 && !editingRowId && (
             <>
@@ -1758,15 +2053,22 @@ export default function TrapidTableView({
                 onClick={() => {
                   if (confirm(`Are you sure you want to delete ${selectedRows.size} ${selectedRows.size === 1 ? 'entry' : 'entries'}?`)) {
                     const selectedEntryIds = Array.from(selectedRows)
-                    selectedEntryIds.forEach(id => {
-                      fetch(`http://localhost:3000/api/v1/trinity/${id}`, {
-                        method: 'DELETE'
-                      }).catch(error => console.error('Error deleting entry:', error))
-                    })
+                    const selectedEntries = selectedEntryIds.map(id => entries.find(e => e.id === id)).filter(Boolean)
+
+                    // Use onBulkDelete if available (no individual confirmations)
+                    if (onBulkDelete) {
+                      onBulkDelete(selectedEntries)
+                    } else {
+                      // Fallback: call onDelete for each entry (will show multiple confirmations)
+                      selectedEntries.forEach(entry => {
+                        if (onDelete) {
+                          onDelete(entry)
+                        }
+                      })
+                    }
+
                     setSelectedRows(new Set())
                     setShowDeleteButton(false)
-                    alert('Entries deleted successfully!')
-                    window.location.reload()
                   }
                 }}
                 className="inline-flex items-center gap-2 px-4 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
@@ -2917,11 +3219,8 @@ export default function TrapidTableView({
         {/* Table with Sticky Gradient Headers (Chapter 20.2) */}
         <div
           ref={scrollContainerRef}
-          onScroll={handleScroll}
-          className="trapid-table-scroll flex-1 overflow-y-auto overflow-x-scroll relative bg-white dark:bg-gray-900"
+          className="trapid-table-scroll flex-1 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900"
           style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#2563EB #FFFFFF',
             maxHeight: 'calc(100vh - 320px)', // Footer always visible
             minHeight: '600px' // Minimum 10 rows visible to prevent dropdown cutoff
           }}
@@ -3295,7 +3594,7 @@ export default function TrapidTableView({
                             }
                             setValidationError(null)
                             setEditingRowId(entry.id);
-                            setEditingData(entry);
+                            setEditingData(entry); // Populate with current values so they show in edit mode
                             setSelectedRows(new Set([entry.id]));
                           }
                         }
@@ -3308,6 +3607,8 @@ export default function TrapidTableView({
                         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                       }}
                       className={`group relative ${colKey === 'select' ? 'px-1 py-1' : 'px-3 py-1'} ${
+                        // Validation: bright red background with white text for invalid cells (not in edit mode)
+                        !editModeActive && !isCellValid(entry, colKey, column) ? 'bg-red-600 text-white dark:bg-red-600 dark:text-white' :
                         // Gray out computed columns when in edit mode
                         editModeActive && column.isComputed ? 'text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-white'
                       } ${
@@ -3409,28 +3710,6 @@ export default function TrapidTableView({
         </table>
       </div>
       {/* End bordered container */}
-
-      {/* Sticky horizontal scrollbar (RULE #20.33) */}
-      {tableScrollWidth > 0 && (
-        <div
-          ref={stickyScrollbarRef}
-          className="sticky bottom-0 left-0 right-0 z-20 overflow-x-auto overflow-y-hidden bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700"
-          style={{ height: '20px' }}
-          onScroll={(e) => {
-            if (isScrollingMainRef.current) {
-              isScrollingMainRef.current = false
-              return
-            }
-            const { scrollLeft } = e.target
-            if (scrollContainerRef.current) {
-              isScrollingStickyRef.current = true
-              scrollContainerRef.current.scrollLeft = scrollLeft
-            }
-          }}
-        >
-          <div style={{ width: `${tableScrollWidth}px`, height: '1px' }}></div>
-        </div>
-      )}
       </div>
 
       {/* Full Entry Details Modal */}
@@ -3677,7 +3956,7 @@ export default function TrapidTableView({
                   Edit
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setSelectedEntry(null); onDelete(selectedEntry); }}
+                  onClick={(e) => { e.stopPropagation(); onDelete(selectedEntry); setSelectedEntry(null); }}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
                 >
                   <TrashIcon className="w-4 h-4" />
@@ -3713,7 +3992,7 @@ export default function TrapidTableView({
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Edit {textEditField === 'title' ? 'Title' : 'Content'}
+                  Edit {getColumnLabel(textEditField)}
                 </h3>
                 <button
                   onClick={() => setShowTextEditModal(false)}
@@ -3727,23 +4006,179 @@ export default function TrapidTableView({
 
               {/* Body */}
               <div className="flex-1 px-6 py-4 overflow-y-auto">
-                <RichTextEditor
+                {/* Simple Formatting Buttons */}
+                <div className="mb-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (textarea) {
+                        const pos = textarea.selectionStart
+                        const newValue = textEditValue.substring(0, pos) + '- ' + textEditValue.substring(pos)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          textarea.focus()
+                          textarea.selectionStart = pos + 2
+                          textarea.selectionEnd = pos + 2
+                        }, 0)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                  >
+                    • Bullet
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (textarea) {
+                        const pos = textarea.selectionStart
+                        const newValue = textEditValue.substring(0, pos) + '1. ' + textEditValue.substring(pos)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          textarea.focus()
+                          textarea.selectionStart = pos + 3
+                          textarea.selectionEnd = pos + 3
+                        }, 0)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                  >
+                    1. Number
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (textarea) {
+                        const start = textarea.selectionStart
+                        const end = textarea.selectionEnd
+                        const selectedText = textEditValue.substring(start, end) || 'text'
+                        const newValue = textEditValue.substring(0, start) + '**' + selectedText + '**' + textEditValue.substring(end)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          textarea.focus()
+                          textarea.selectionStart = start + 2
+                          textarea.selectionEnd = start + 2 + selectedText.length
+                        }, 0)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm font-bold bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (textarea) {
+                        const start = textarea.selectionStart
+                        const end = textarea.selectionEnd
+                        const selectedText = textEditValue.substring(start, end) || 'text'
+                        const newValue = textEditValue.substring(0, start) + '*' + selectedText + '*' + textEditValue.substring(end)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          textarea.focus()
+                          textarea.selectionStart = start + 1
+                          textarea.selectionEnd = start + 1 + selectedText.length
+                        }, 0)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm italic bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                  >
+                    I
+                  </button>
+                </div>
+
+                <textarea
+                  ref={textEditTextareaRef}
                   value={textEditValue}
-                  onChange={(html) => setTextEditValue(html)}
-                  placeholder={`Enter ${textEditField === 'title' ? 'title' : 'content'}...`}
+                  onChange={(e) => setTextEditValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Handle Enter key for auto-continuing lists
+                    if (e.key === 'Enter') {
+                      const start = e.target.selectionStart
+                      const value = textEditValue
+                      const lines = value.substring(0, start).split('\n')
+                      const currentLine = lines[lines.length - 1]
+
+                      // Check if current line is a numbered list item (e.g., "1. text" or "2. text")
+                      const numberedMatch = currentLine.match(/^(\d+)\.\s/)
+                      if (numberedMatch) {
+                        e.preventDefault()
+                        const currentNum = parseInt(numberedMatch[1])
+                        const nextNum = currentNum + 1
+                        const newValue = value.substring(0, start) + '\n' + nextNum + '. ' + value.substring(start)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          e.target.selectionStart = e.target.selectionEnd = start + nextNum.toString().length + 3
+                        }, 0)
+                        return
+                      }
+
+                      // Check if current line is a bullet point (e.g., "- text")
+                      const bulletMatch = currentLine.match(/^-\s/)
+                      if (bulletMatch) {
+                        e.preventDefault()
+                        const newValue = value.substring(0, start) + '\n- ' + value.substring(start)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          e.target.selectionStart = e.target.selectionEnd = start + 3
+                        }, 0)
+                        return
+                      }
+                    }
+
+                    // Handle Tab key for indentation
+                    if (e.key === 'Tab') {
+                      e.preventDefault()
+                      const start = e.target.selectionStart
+                      const end = e.target.selectionEnd
+                      const value = textEditValue
+
+                      if (e.shiftKey) {
+                        // Shift+Tab: Remove indentation
+                        const lines = value.substring(0, start).split('\n')
+                        const currentLine = lines[lines.length - 1]
+                        if (currentLine.startsWith('  ')) {
+                          const newValue = value.substring(0, start - 2) + value.substring(start)
+                          setTextEditValue(newValue)
+                          setTimeout(() => {
+                            e.target.selectionStart = e.target.selectionEnd = start - 2
+                          }, 0)
+                        }
+                      } else {
+                        // Tab: Add indentation (2 spaces)
+                        const newValue = value.substring(0, start) + '  ' + value.substring(end)
+                        setTextEditValue(newValue)
+                        setTimeout(() => {
+                          e.target.selectionStart = e.target.selectionEnd = start + 2
+                        }, 0)
+                      }
+                    }
+                  }}
+                  placeholder={`Enter ${getColumnLabel(textEditField).toLowerCase()}...`}
+                  className="w-full h-96 px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono whitespace-pre-wrap"
+                  style={{ tabSize: 2 }}
                 />
 
                 {/* Statistics */}
                 <div className="mt-4 flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{textEditValue.replace(/<[^>]*>/g, '').length}</span>
+                    <span className="font-medium">{textEditValue.length}</span>
                     <span className="text-xs">characters</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
-                      {textEditValue.replace(/<[^>]*>/g, '').trim().split(/\s+/).filter(w => w.length > 0).length}
+                      {textEditValue.trim().split(/\s+/).filter(w => w.length > 0).length}
                     </span>
                     <span className="text-xs">words</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      {textEditValue.split('\n').length}
+                    </span>
+                    <span className="text-xs">lines</span>
                   </div>
                 </div>
               </div>
@@ -3757,11 +4192,13 @@ export default function TrapidTableView({
                 </button>
                 <button
                   onClick={() => {
-                    if (textEditField === 'title') {
-                      setEditingData({ ...editingData, title: textEditValue })
-                    } else if (textEditField === 'content') {
-                      setEditingData({ ...editingData, description: textEditValue })
+                    // Update any field dynamically
+                    // For number fields, convert back to number
+                    let value = textEditValue
+                    if (['quantity', 'whole_number', 'price', 'discount'].includes(textEditField)) {
+                      value = textEditField === 'whole_number' ? parseInt(textEditValue) || 0 : parseFloat(textEditValue) || 0
                     }
+                    setEditingData({ ...editingData, [textEditField]: value })
                     setShowTextEditModal(false)
                   }}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
