@@ -307,18 +307,25 @@ Create a mockup of EXACTLY what the agent should produce. This becomes the contr
 
 Create `.claude/agents/your-agent-name.md` with this structure:
 
+**IMPORTANT:** The description MUST use the standard box format shown below. This displays in the Agent Status UI popup.
+
 ```markdown
 ---
 name: Your Agent Name
 description: |
-  ╔════════════════════════════════════════════════════════╗
-  ║  Check 1:             Expected result         [PASS]   ║
-  ║  Check 2:             Expected result         [PASS]   ║
-  ╠════════════════════════════════════════════════════════╣
-  ║  Est. Tokens:         ~X,XXX                           ║
-  ╚════════════════════════════════════════════════════════╝
+  ╔═══════════════════════════════════════════════════════════╗
+  ║  Check 1:               Expected result            [PASS] ║
+  ║  Check 2:               Expected result            [PASS] ║
+  ║  Check 3:               Expected result            [PASS] ║
+  ║  Check 4:               Expected result            [PASS] ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Focus: One line description of agent purpose            ║
+  ║  Bible Rule: #X.XX (if applicable)                       ║
+  ╠═══════════════════════════════════════════════════════════╣
+  ║  Est. Tokens:           ~X,XXX                           ║
+  ╚═══════════════════════════════════════════════════════════╝
 model: sonnet  # or opus, haiku
-color: blue    # optional: for UI display
+color: blue    # optional: blue, green, red, yellow, orange, cyan, gray
 type: diagnostic  # or development, deployment, planning
 author: Jake  # Your name - matches database user by name or email
 ---
@@ -383,17 +390,24 @@ Add the agent to the "Available Agents" list above.
 - [ ] Created mockup of expected output
 - [ ] Answered all planning questions
 - [ ] Created `.claude/agents/your-agent-name.md`
+- [ ] **Used standard box format in description** (see Step 3 template)
 - [ ] Included YAML frontmatter (name, description, model, type, author)
 - [ ] Added `author: YourName` field for attribution
+- [ ] Listed all checks with `[PASS]` placeholder in description box
+- [ ] Included Focus line and Bible Rule reference (if applicable)
+- [ ] Added Est. Tokens estimate in description box
 - [ ] Wrote clear diagnostic protocol/workflow
 - [ ] Defined pass/fail/warning criteria
 - [ ] Included fix guidance section
 - [ ] Specified required final summary output format
 - [ ] Ran `npm run sync-agents`
-- [ ] Verified agent appears in UI with correct attribution
+- [ ] Verified agent appears in UI with box format displaying correctly
 - [ ] Updated this README with agent listing and "Created by" info
 
-**Important:** Keep YAML frontmatter simple. Put detailed instructions in the markdown body.
+**Important:**
+- The description box format is REQUIRED - it displays in the Agent Status UI popup
+- Keep the box width consistent (59 characters inside the border)
+- Use Unicode box-drawing characters: ╔ ╗ ╚ ╝ ║ ═ ╠ ╣
 
 ## Notes
 
