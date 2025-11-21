@@ -3,18 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon, PauseIcon, PlayIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import Toast from '../components/Toast'
-
-// Placeholder for future components
-const SmGanttChart = ({ tasks, dependencies, onTaskUpdate }) => (
-  <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg">
-    <div className="text-center text-gray-500 dark:text-gray-400">
-      <ChartBarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-      <p className="text-lg font-medium">SM Gantt Chart</p>
-      <p className="text-sm mt-2">Phase 1.4 - Coming Soon</p>
-      <p className="text-xs mt-1">{tasks?.length || 0} tasks loaded</p>
-    </div>
-  </div>
-)
+import SmGanttChart from '../components/sm-gantt/SmGanttChart'
 
 const SmTaskList = ({ tasks, onTaskClick, onStatusChange }) => (
   <div className="h-full overflow-auto">
@@ -228,6 +217,7 @@ export default function SmGanttPage() {
           <SmGanttChart
             tasks={tasks}
             dependencies={[]}
+            onTaskClick={handleTaskClick}
             onTaskUpdate={handleTaskUpdate}
           />
         ) : (
