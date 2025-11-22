@@ -279,9 +279,9 @@ export default function TrapidTableView({
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartRow, setDragStartRow] = useState(null)
 
-  // Display limit for large tables (performance optimization)
-  const [displayLimit, setDisplayLimit] = useState(200)
-  const ROWS_PER_PAGE = 200
+  // Display limit for rendering performance (too many DOM nodes = slow)
+  // Data still loads in background, but we only render up to this limit
+  const MAX_RENDERED_ROWS = 500
 
   // Bulk action state - show delete only after edit clicked
   const [showDeleteButton, setShowDeleteButton] = useState(false)
@@ -320,8 +320,19 @@ export default function TrapidTableView({
   const [deletingColumnId, setDeletingColumnId] = useState(null)
 
   // Inline column filters (Chapter 20.1)
+  // Immediate input state for responsive typing
+  const [columnFilterInputs, setColumnFilterInputs] = useState({})
+  // Debounced filter state for actual filtering (300ms delay)
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilters, setShowFilters] = useState(true) // Toggle to show/hide filter inputs
+
+  // Debounce filter inputs
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setColumnFilters(columnFilterInputs)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [columnFilterInputs])
 
   // Cascade filters - Excel-style dropdown filters that can be applied in any order
   const [cascadeFilters, setCascadeFilters] = useState([]) // Array of {id, column, value, label, groupId}
@@ -332,8 +343,11 @@ export default function TrapidTableView({
   // Saved custom filters - load from localStorage on mount (per table)
   const [savedFilters, setSavedFilters] = useState(() => {
     try {
-      const stored = localStorage.getItem(`trapid-saved-filters-${tableId}`)
-      return stored ? JSON.parse(stored) : []
+      const key = `trapid-saved-filters-${tableId}`
+      const stored = localStorage.getItem(key)
+      const parsed = stored ? JSON.parse(stored) : []
+      console.log('[TrapidTableView] Initial savedFilters load:', { tableId, key, stored: !!stored, count: parsed.length })
+      return parsed
     } catch (error) {
       console.error('Error loading saved filters:', error)
       return []
@@ -408,24 +422,52 @@ export default function TrapidTableView({
   const [isDraggingPopup, setIsDraggingPopup] = useState(false)
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 })
 
-  // Save filters to localStorage whenever they change (per table)
+  // Track previous tableId to detect changes
+  const prevTableIdRef = useRef(tableId)
+
+  // Reload saved filters when tableId changes (e.g., after table slug loads)
   useEffect(() => {
-    try {
-      localStorage.setItem(`trapid-saved-filters-${tableId}`, JSON.stringify(savedFilters))
-    } catch (error) {
-      console.error('Error saving filters to localStorage:', error)
+    if (prevTableIdRef.current !== tableId) {
+      console.log('[TrapidTableView] tableId changed:', { from: prevTableIdRef.current, to: tableId })
+      try {
+        const key = `trapid-saved-filters-${tableId}`
+        const stored = localStorage.getItem(key)
+        const filters = stored ? JSON.parse(stored) : []
+        console.log('[TrapidTableView] Reloading savedFilters for new tableId:', { key, count: filters.length })
+        setSavedFilters(filters)
+      } catch (error) {
+        console.error('Error loading saved filters for new tableId:', error)
+        setSavedFilters([])
+      }
+      prevTableIdRef.current = tableId
+    }
+  }, [tableId])
+
+  // Save filters to localStorage whenever they change (per table)
+  // Skip saving if we just loaded from a new tableId (to prevent overwriting)
+  useEffect(() => {
+    // Only save if tableId hasn't changed since last render
+    if (prevTableIdRef.current === tableId) {
+      try {
+        localStorage.setItem(`trapid-saved-filters-${tableId}`, JSON.stringify(savedFilters))
+      } catch (error) {
+        console.error('Error saving filters to localStorage:', error)
+      }
     }
   }, [savedFilters, tableId])
 
   // URL-based view selection - load view from URL on mount and when URL changes
   useEffect(() => {
     const viewParam = searchParams.get('view')
+    console.log('[TrapidTableView] URL view check:', { viewParam, savedFiltersCount: savedFilters.length, tableId, activeViewId })
     if (viewParam && savedFilters.length > 0) {
-      // Find view by name (URL-friendly slug)
+      // Find view by name (URL-friendly slug) - try multiple matching strategies
       const view = savedFilters.find(v =>
         v.name.toLowerCase().replace(/\s+/g, '-') === viewParam.toLowerCase() ||
+        v.name.toLowerCase() === viewParam.toLowerCase() ||
         v.id.toString() === viewParam
       )
+      console.log('[TrapidTableView] URL view search result:', { viewParam, view: view?.name, found: !!view })
       if (view && activeViewId !== view.id) {
         // Load the view's filters
         setCascadeFilters(view.filters.map(f => ({
@@ -1022,9 +1064,9 @@ export default function TrapidTableView({
     setSelectedRows(new Set())
   }
 
-  // Column filter handler (Chapter 20.1)
+  // Column filter handler (Chapter 20.1) - updates input state immediately, debounce handles filter state
   const handleColumnFilterChange = (columnKey, value) => {
-    setColumnFilters(prev => ({
+    setColumnFilterInputs(prev => ({
       ...prev,
       [columnKey]: value
     }))
@@ -5396,29 +5438,16 @@ export default function TrapidTableView({
             {loadingMore && (
               <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
                 <span className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></span>
-                Loading more...
+                Loading...
               </span>
             )}
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              Showing {Math.min(displayLimit, filteredAndSorted.length)} of {filteredAndSorted.length}
-              {filteredAndSorted.length !== entries.length && ` (${entries.length} total)`}
+              {filteredAndSorted.length > MAX_RENDERED_ROWS
+                ? `Showing ${MAX_RENDERED_ROWS} of ${filteredAndSorted.length} matches (${entries.length} total)`
+                : filteredAndSorted.length === entries.length
+                  ? `${filteredAndSorted.length} records`
+                  : `${filteredAndSorted.length} of ${entries.length} records`}
             </span>
-            {displayLimit < filteredAndSorted.length && (
-              <button
-                onClick={() => setDisplayLimit(prev => prev + ROWS_PER_PAGE)}
-                className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded transition-colors"
-              >
-                Load More
-              </button>
-            )}
-            {displayLimit > ROWS_PER_PAGE && (
-              <button
-                onClick={() => setDisplayLimit(ROWS_PER_PAGE)}
-                className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors"
-              >
-                Reset
-              </button>
-            )}
           </div>
         </div>
         {/* END BOTTOM SECTION - Filters */}
@@ -5574,7 +5603,7 @@ export default function TrapidTableView({
                           <input
                             type="text"
                             placeholder="Filter..."
-                            value={columnFilters[colKey] || ''}
+                            value={columnFilterInputs[colKey] || ''}
                             onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white placeholder-blue-200 dark:placeholder-blue-300"
@@ -5583,7 +5612,7 @@ export default function TrapidTableView({
 
                         {showFilters && (columnShowFilters[colKey] ?? true) && column.filterType === 'boolean' && (
                           <select
-                            value={columnFilters[colKey] || ''}
+                            value={columnFilterInputs[colKey] || ''}
                             onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white"
@@ -5596,7 +5625,7 @@ export default function TrapidTableView({
 
                         {showFilters && (columnShowFilters[colKey] ?? true) && column.filterType === 'dropdown' && colKey !== 'component' && (
                           <select
-                            value={columnFilters[colKey] || ''}
+                            value={columnFilterInputs[colKey] || ''}
                             onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white placeholder-blue-200 dark:placeholder-blue-300"
@@ -5749,7 +5778,7 @@ export default function TrapidTableView({
                           <input
                             type="text"
                             placeholder="Filter..."
-                            value={columnFilters[colKey] || ''}
+                            value={columnFilterInputs[colKey] || ''}
                             onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white placeholder-blue-200 dark:placeholder-blue-300"
@@ -5935,8 +5964,8 @@ export default function TrapidTableView({
                 })
               }
 
-              // No grouping - render flat list (with display limit for performance)
-              const displayedRows = filteredAndSorted.slice(0, displayLimit)
+              // No grouping - render flat list (limit rendered rows for performance)
+              const displayedRows = filteredAndSorted.slice(0, MAX_RENDERED_ROWS)
               return displayedRows.map((entry, index) => (
               <tr
                 key={entry.id}
