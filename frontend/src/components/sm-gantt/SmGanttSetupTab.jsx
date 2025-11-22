@@ -1198,7 +1198,6 @@ function TemplatesSubTab() {
                       })
                     }
                   })
-                  console.log('Dependencies built:', deps, 'from templateRows:', templateRows.map(r => ({ id: r.id, task_number: r.task_number, predecessor_ids: r.predecessor_ids })))
                   return deps
                 })()}
                 onTaskClick={(task) => {

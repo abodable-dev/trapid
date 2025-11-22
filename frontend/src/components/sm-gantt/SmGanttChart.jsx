@@ -8,17 +8,21 @@ const formatDate = (date) => {
   return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short' })
 }
 
-// Helper to get days between dates
+// Helper to get days between dates (handles timezone consistently)
 const daysBetween = (start, end) => {
   const s = new Date(start)
   const e = new Date(end)
-  return Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1
+  // Reset to midnight local time to avoid timezone offset issues
+  s.setHours(0, 0, 0, 0)
+  e.setHours(0, 0, 0, 0)
+  return Math.round((e - s) / (1000 * 60 * 60 * 24)) + 1
 }
 
 // Helper to get date range for timeline
 const getDateRange = (tasks) => {
   if (!tasks || tasks.length === 0) {
     const today = new Date()
+    today.setHours(0, 0, 0, 0)
     const start = new Date(today)
     start.setDate(start.getDate() - 7)
     const end = new Date(today)
@@ -28,19 +32,25 @@ const getDateRange = (tasks) => {
 
   let minDate = new Date(tasks[0].start_date)
   let maxDate = new Date(tasks[0].end_date)
+  minDate.setHours(0, 0, 0, 0)
+  maxDate.setHours(0, 0, 0, 0)
 
   tasks.forEach(task => {
     const taskStart = new Date(task.start_date)
     const taskEnd = new Date(task.end_date)
-    if (taskStart < minDate) minDate = taskStart
-    if (taskEnd > maxDate) maxDate = taskEnd
+    taskStart.setHours(0, 0, 0, 0)
+    taskEnd.setHours(0, 0, 0, 0)
+    if (taskStart < minDate) minDate = new Date(taskStart)
+    if (taskEnd > maxDate) maxDate = new Date(taskEnd)
   })
 
-  // Add padding
-  minDate.setDate(minDate.getDate() - 3)
-  maxDate.setDate(maxDate.getDate() + 7)
+  // Add padding (create new dates to avoid mutation issues)
+  const start = new Date(minDate)
+  start.setDate(start.getDate() - 3)
+  const end = new Date(maxDate)
+  end.setDate(end.getDate() + 7)
 
-  return { start: minDate, end: maxDate }
+  return { start, end }
 }
 
 // Generate array of dates for timeline header
@@ -275,8 +285,6 @@ const DependencyLine = ({ fromTask, toTask, tasks, dateRange, dayWidth, rowHeigh
   const fromIndex = tasks.findIndex(t => t.id === fromTask.id)
   const toIndex = tasks.findIndex(t => t.id === toTask.id)
 
-  console.log('DependencyLine rendering:', { fromTask: fromTask.name, toTask: toTask.name, fromIndex, toIndex, depType })
-
   if (fromIndex === -1 || toIndex === -1) return null
 
   // Calculate X positions based on dependency type
@@ -365,8 +373,6 @@ const DependencyLine = ({ fromTask, toTask, tasks, dateRange, dayWidth, rowHeigh
   // Marker ID based on type (for correct arrowhead color)
   const markerId = `arrowhead-${depType.toLowerCase()}`
   const pathD = buildPath()
-
-  console.log('Dependency path:', { fromX, toX, fromY, toY, pathD })
 
   return (
     <g>
@@ -755,7 +761,6 @@ export default function SmGanttChart({ tasks = [], dependencies = [], onTaskClic
                 const fromTask = tasks.find(t => t.id === dep.source || t.id === dep.predecessor_id)
                 const toTask = tasks.find(t => t.id === dep.target || t.id === dep.successor_id)
                 if (!fromTask || !toTask) {
-                  console.log('Dependency not found:', dep, 'fromTask:', fromTask, 'toTask:', toTask, 'tasks:', tasks.map(t => ({ id: t.id, task_number: t.task_number })))
                   return null
                 }
                 return (

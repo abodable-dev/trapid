@@ -9,19 +9,25 @@ export default function CopyConsoleButton() {
   const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
-    // Subscribe to log updates
+    // Subscribe to log updates - use queueMicrotask to defer state updates
+    // This prevents "Cannot update a component while rendering a different component" error
+    // which happens when console.log is called during another component's render
     const unsubscribe = consoleCapture.subscribe((logs) => {
+      queueMicrotask(() => {
+        setLogCount(logs.length)
+        // Count errors and warnings
+        const errors = logs.filter(log => log.type === 'error' || log.type === 'warn').length
+        setErrorCount(errors)
+      })
+    })
+
+    // Initialize counts - also deferred to avoid render-phase state updates
+    queueMicrotask(() => {
+      const logs = consoleCapture.getLogs()
       setLogCount(logs.length)
-      // Count errors and warnings
       const errors = logs.filter(log => log.type === 'error' || log.type === 'warn').length
       setErrorCount(errors)
     })
-
-    // Initialize counts
-    const logs = consoleCapture.getLogs()
-    setLogCount(logs.length)
-    const errors = logs.filter(log => log.type === 'error' || log.type === 'warn').length
-    setErrorCount(errors)
 
     return unsubscribe
   }, [])
