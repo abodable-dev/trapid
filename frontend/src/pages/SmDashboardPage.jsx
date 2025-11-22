@@ -20,7 +20,7 @@ import {
   HorizontalBarChart,
   CostBreakdownTable
 } from '../components/sm-gantt/SmDashboardCharts'
-import api from '../services/api'
+import { api } from '../api'
 
 // Tab definitions
 const TABS = [

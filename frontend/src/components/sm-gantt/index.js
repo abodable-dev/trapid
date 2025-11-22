@@ -3,7 +3,7 @@ export { default as SmGanttChart } from './SmGanttChart'
 export { default as SmResourceGantt } from './SmResourceGantt'
 export { default as SmTimesheet } from './SmTimesheet'
 export { default as SmTaskModal } from './SmTaskModal'
-export { default as SmDependencyModal } from './SmDependencyModal'
+export { default as SmDependencyEditor } from './SmDependencyEditor'
 export { default as SmCascadeModal } from './SmCascadeModal'
 
 // Dashboard Charts

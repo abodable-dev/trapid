@@ -12,7 +12,7 @@ import {
   ChevronLeftIcon
 } from '@heroicons/react/24/outline'
 import { PhotoCapture, GpsCheckin, VoiceNotes } from '../components/sm-gantt/SmFieldComponents'
-import api from '../services/api'
+import { api } from '../api'
 
 // Offline storage helper
 const offlineStorage = {

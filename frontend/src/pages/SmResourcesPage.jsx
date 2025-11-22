@@ -10,7 +10,7 @@ import {
   ArrowPathIcon
 } from '@heroicons/react/24/outline'
 import { SmResourceGantt, SmTimesheet } from '../components/sm-gantt'
-import api from '../services/api'
+import { api } from '../api'
 
 // Resource type badge
 const ResourceTypeBadge = ({ type }) => {

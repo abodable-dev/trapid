@@ -14,7 +14,7 @@ import {
   BaselineComparison,
   ImportExportPanel
 } from '../components/sm-gantt/SmAnalyticsComponents'
-import api from '../services/api'
+import { api } from '../api'
 
 export default function SmAnalyticsPage() {
   const { id: constructionId } = useParams()

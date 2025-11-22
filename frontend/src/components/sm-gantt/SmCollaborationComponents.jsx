@@ -16,7 +16,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon
 } from '@heroicons/react/24/outline'
-import api from '../../services/api'
+import { api } from '../../api'
 
 // ============================================
 // Activity Feed Component
