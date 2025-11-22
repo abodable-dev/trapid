@@ -7,7 +7,9 @@ import TableColumnManager from './TableColumnManager'
 export default function TablesTab() {
   const navigate = useNavigate()
   const [tables, setTables] = useState([])
+  const [inMemoryTables, setInMemoryTables] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingInMemory, setLoadingInMemory] = useState(true)
   const [error, setError] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [editingName, setEditingName] = useState('')
@@ -36,8 +38,22 @@ export default function TablesTab() {
     }
   }
 
+  const fetchInMemoryTables = async () => {
+    try {
+      setLoadingInMemory(true)
+      const response = await api.get('/api/v1/schema/in_memory_tables')
+      setInMemoryTables(response.tables || [])
+    } catch (err) {
+      console.error('TablesTab: Failed to fetch in-memory tables:', err)
+      // Don't set error - in-memory tables are supplementary
+    } finally {
+      setLoadingInMemory(false)
+    }
+  }
+
   useEffect(() => {
     fetchTables()
+    fetchInMemoryTables()
   }, [])
 
   const handleNavigateToTable = (table) => {
@@ -470,6 +486,116 @@ export default function TablesTab() {
             </table>
           </div>
         )}
+      </div>
+
+      {/* In-Memory Tables Section */}
+      <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base/7 font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <span className="text-xl">💾</span> In-Memory Tables (TrapidTableView)
+              <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                ({inMemoryTables.length} tables)
+              </span>
+            </h2>
+            <p className="mt-1 text-sm/6 text-gray-500 dark:text-gray-400">
+              These tables use TrapidTableView for display but store data in separate Rails models, not Trapid custom tables.
+              They don't have a numeric Table ID.
+            </p>
+          </div>
+        </div>
+
+        {loadingInMemory ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 dark:ring-white/10 sm:rounded-lg">
+            <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+              <thead className="bg-orange-50 dark:bg-orange-900/20">
+                <tr>
+                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">
+                    Table ID (String)
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                    Display Name
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                    Source File
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                    Columns Variable
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                    Rails Model
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                    API Endpoint
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                    Features
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+                {inMemoryTables.map((table, index) => (
+                  <tr key={index} className="hover:bg-orange-50 dark:hover:bg-orange-900/10">
+                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                      <code className="text-xs bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded text-orange-700 dark:text-orange-300 font-mono">
+                        {table.table_id}
+                      </code>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      <span className="mr-2">{table.icon}</span>
+                      {table.name}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                      <code className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-600 dark:text-gray-400">
+                        {table.file}
+                      </code>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                      <code className="text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded text-blue-700 dark:text-blue-300">
+                        {table.columns_variable}
+                      </code>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      {table.model}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                      <code className="text-xs bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded text-green-700 dark:text-green-300">
+                        {table.api_endpoint}
+                      </code>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                      {table.has_saved_views ? (
+                        <span className="inline-flex items-center rounded-md bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 px-2 py-1 text-xs font-medium">
+                          Saved Views
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-500">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+          <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-2">ℹ️ For Claude Agents</h4>
+          <p className="text-sm text-amber-700 dark:text-amber-300 mb-2">
+            <strong>API:</strong> <code className="bg-amber-100 dark:bg-amber-800 px-1 rounded">GET /api/v1/schema/in_memory_tables</code> - Returns this registry programmatically
+          </p>
+          <p className="text-sm text-amber-700 dark:text-amber-300 mb-2">
+            To validate columns in an in-memory table, read the source file and check the columns variable.
+            These tables don't have a numeric ID - use the string <code className="bg-amber-100 dark:bg-amber-800 px-1 rounded">table_id</code> to identify them.
+          </p>
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            Saved views and filters are stored in localStorage using the pattern: <code className="bg-amber-100 dark:bg-amber-800 px-1 rounded">trapid-saved-filters-{'{table_id}'}</code>
+          </p>
+        </div>
       </div>
 
       {/* Preview Modal */}
