@@ -295,7 +295,7 @@ export default function AppLayout({ children }) {
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/chat_messages/unread_count`, {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/chat_messages/unread_count`, {
           withCredentials: true
         })
         setUnreadCount(response.data.count || 0)

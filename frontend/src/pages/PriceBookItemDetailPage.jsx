@@ -6,7 +6,7 @@ import { api } from '../api'
 import { formatCurrency } from '../utils/formatters'
 
 // Get API URL for proxy endpoints
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 import {
   ArrowLeftIcon,
   CurrencyDollarIcon,

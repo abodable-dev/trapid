@@ -862,7 +862,7 @@ export default function PriceBooksPage() {
         if (categoryFilter) params.append('category', categoryFilter)
       }
 
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
       const url = `${API_URL}/api/v1/pricebook/export_price_history?${params.toString()}`
 
       // Fetch the file

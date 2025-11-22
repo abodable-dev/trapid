@@ -587,7 +587,7 @@ export default function ContactDetailPage() {
   const handleExportPriceHistory = async () => {
     try {
       setExporting(true)
-      const response = await fetch(`${api.API_URL || 'http://localhost:3001'}/api/v1/pricebook/export_price_history?supplier_id=${id}`, {
+      const response = await fetch(`${api.API_URL || 'http://localhost:3000'}/api/v1/pricebook/export_price_history?supplier_id=${id}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -698,7 +698,7 @@ export default function ContactDetailPage() {
       formData.append('file', importFile)
       formData.append('effective_date', importDate)
 
-      const response = await fetch(`${api.API_URL || 'http://localhost:3001'}/api/v1/pricebook/import_price_history`, {
+      const response = await fetch(`${api.API_URL || 'http://localhost:3000'}/api/v1/pricebook/import_price_history`, {
         method: 'POST',
         body: formData,
         credentials: 'include'
