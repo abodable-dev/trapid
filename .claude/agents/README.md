@@ -160,6 +160,16 @@ The sync task uses this priority for attribution:
 - Syncs to database automatically
 - Updates README with new agent listing
 
+### 18. gold-std-table-integration
+**Focus:** Sync Table Settings to Gold Standard | **Created by:** Robert
+- Detects current table from UI context
+- Fetches Gold Standard template configuration
+- Compares column types, validation rules, display settings
+- Compares filter screen, button layout, color scheme
+- Compares edit functions (inline/bulk edit modes)
+- Shows preview of all changes before applying
+- Applies updates only after user confirmation
+
 ## How to Use
 
 ### Quick Commands
