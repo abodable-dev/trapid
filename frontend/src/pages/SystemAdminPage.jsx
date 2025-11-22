@@ -21,7 +21,8 @@ import {
   AcademicCapIcon,
   CheckCircleIcon,
   BanknotesIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../api'
 
@@ -43,6 +44,7 @@ const SchemaPage = lazy(() => import('./SchemaPage'))
 const GitBranchVisualization = lazy(() => import('../components/settings/GitBranchVisualization'))
 const AgentStatus = lazy(() => import('../components/settings/AgentStatus'))
 const SmGanttSetupTab = lazy(() => import('../components/sm-gantt/SmGanttSetupTab'))
+const PriceBookSettingsTab = lazy(() => import('../components/settings/PriceBookSettingsTab'))
 
 // Loading fallback component for lazy-loaded tabs
 function TabLoadingFallback() {
@@ -262,7 +264,7 @@ export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Map tab names to indices - REORGANIZED: 17 tabs (added sm-gantt-v2)
+  // Map tab names to indices - REORGANIZED: 18 tabs (added pricebook)
   const tabs = [
     'company',
     'security',
@@ -271,6 +273,7 @@ export default function SettingsPage() {
     'meeting-types',
     'whs',
     'financial',
+    'pricebook',
     'documentation',
     'supervisor-checklist',
     'gold-standard',
@@ -474,6 +477,19 @@ export default function SettingsPage() {
             >
               <BanknotesIcon className="h-4 w-4" />
               Financial
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `rounded-lg py-2 px-3 text-sm font-medium leading-5 transition-all whitespace-nowrap flex items-center gap-1.5
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              <CurrencyDollarIcon className="h-4 w-4" />
+              Price Book
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -818,7 +834,14 @@ export default function SettingsPage() {
             </div>
           </TabPanel>
 
-          {/* 7. Documentation Categories Tab */}
+          {/* 7. Price Book Settings Tab */}
+          <TabPanel>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <PriceBookSettingsTab />
+            </Suspense>
+          </TabPanel>
+
+          {/* 8. Documentation Categories Tab */}
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <DocumentationCategoriesTab />

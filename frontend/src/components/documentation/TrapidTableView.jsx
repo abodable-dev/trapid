@@ -5416,11 +5416,19 @@ export default function TrapidTableView({
                           >
                             <option key="inline-all" value="">All</option>
                             {colKey === 'category' && (
-                              <>
-                                <option key="inline-cat-bible" value="bible">📖 Bible</option>
-                                <option key="inline-cat-teacher" value="teacher">🔧 Teacher</option>
-                                <option key="inline-cat-lexicon" value="lexicon">📕 Lexicon</option>
-                              </>
+                              // Check if this is Trinity data (has bible/teacher/lexicon) or other data
+                              entries.some(e => ['bible', 'teacher', 'lexicon'].includes(e.category)) ? (
+                                <>
+                                  <option key="inline-cat-bible" value="bible">📖 Bible</option>
+                                  <option key="inline-cat-teacher" value="teacher">🔧 Teacher</option>
+                                  <option key="inline-cat-lexicon" value="lexicon">📕 Lexicon</option>
+                                </>
+                              ) : (
+                                // For non-Trinity tables, show unique category values from the data
+                                getUniqueValuesForColumn('category').map(cat => (
+                                  <option key={`cat-${cat}`} value={cat}>{cat}</option>
+                                ))
+                              )
                             )}
                             {colKey === 'chapter' && uniqueChapters.map(ch => (
                               <option key={ch.value} value={ch.value}>{ch.label}</option>
