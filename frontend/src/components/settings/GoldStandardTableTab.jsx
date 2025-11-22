@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { PlusIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import TrapidTableView from '../documentation/TrapidTableView'
 import { COLUMN_TYPES } from '../../constants/columnTypes'
 
@@ -127,7 +127,7 @@ export default function GoldStandardTableTab() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [showFeatures, setShowFeatures] = useState(false)
+  // Removed: showFeatures state - "Features to Test" section deleted
 
   const [newItem, setNewItem] = useState({
     single_line_text: '',
@@ -337,38 +337,6 @@ export default function GoldStandardTableTab() {
           Use this as a reference standard for implementing tables throughout Trapid.
         </p>
 
-        <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg overflow-hidden">
-          <button
-            onClick={() => setShowFeatures(!showFeatures)}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-blue-100 dark:hover:bg-blue-800/30 transition-colors"
-          >
-            <h3 className="font-semibold text-blue-900 dark:text-blue-200">
-              Features to Test
-            </h3>
-            {showFeatures ? (
-              <ChevronUpIcon className="h-5 w-5 text-blue-900 dark:text-blue-200" />
-            ) : (
-              <ChevronDownIcon className="h-5 w-5 text-blue-900 dark:text-blue-200" />
-            )}
-          </button>
-          {showFeatures && (
-            <div className="px-4 pb-4 pt-2 grid md:grid-cols-2 gap-2 text-sm text-blue-800 dark:text-blue-300">
-              <div>✓ Column Tooltips - Hover headers</div>
-              <div>✓ Column Resize - Drag borders</div>
-              <div>✓ Column Reorder - Drag headers</div>
-              <div>✓ Show/Hide - Three-dot menu (scrollable!)</div>
-              <div>✓ Filters - Click "Filters" button</div>
-              <div>✓ Supplier Multi-Select - Filter by multiple suppliers</div>
-              <div>✓ Category Dropdown - Single select filter</div>
-              <div>✓ Sorting - Click headers (3-state)</div>
-              <div>✓ Computed Column - Auto-calc (price × qty)</div>
-              <div>✓ Price Sum - See total in footer</div>
-              <div>✓ Bulk Actions - Select & delete rows</div>
-              <div>✓ Inline Edit - Toggle edit mode</div>
-              <div>✓ State Persistence - Reload page</div>
-            </div>
-          )}
-        </div>
       </div>
 
       <TrapidTableView

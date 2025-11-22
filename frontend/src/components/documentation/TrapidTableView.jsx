@@ -108,7 +108,9 @@ export default function TrapidTableView({
   tableId = 'default',  // NEW: Unique identifier for this table (for saving filters per table)
   enableSchemaEditor = false,  // NEW: Enable schema editor menu items
   tableIdNumeric = null,  // NEW: Numeric table ID for schema editor API calls
-  tableName = 'Table'  // NEW: Human-readable table name for schema editor
+  tableName = 'Table',  // NEW: Human-readable table name for schema editor
+  onRowDoubleClick = null,  // NEW: Custom handler for row double-click (overrides default edit modal)
+  onView = null  // NEW: Custom handler for View action button (e.g., navigate to detail page)
 }) {
   const navigate = useNavigate()
 
@@ -1136,8 +1138,15 @@ export default function TrapidTableView({
             bVal = 0
           }
           break
+        case 'id':
+          aVal = a.id || 0
+          bVal = b.id || 0
+          break
         default:
-          return 0
+          // Generic fallback: try to access the column value directly
+          aVal = a[sortBy] ?? ''
+          bVal = b[sortBy] ?? ''
+          break
       }
 
       if (aVal < bVal) return sortDir === 'asc' ? -1 : 1
@@ -1751,15 +1760,44 @@ export default function TrapidTableView({
           </a>
         )
 
+      case 'actions': // Column key 'actions' - View only icon for detail page navigation
+        return (
+          <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (onView) {
+                  onView(entry)
+                } else if (onRowDoubleClick) {
+                  onRowDoubleClick(entry)
+                } else {
+                  setModalEditData({...entry})
+                  setShowEditableModal(true)
+                }
+              }}
+              className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded transition-colors"
+              title="View"
+            >
+              <EyeIcon className="h-4 w-4" />
+            </button>
+          </div>
+        )
+
       case 'action_buttons':
-        // Action buttons column - demonstrates interactive row-level actions
-        // This is a REFERENCE IMPLEMENTATION for the Gold Standard table
+        // Full action buttons - View, Edit, Delete (for Gold Standard table)
         return (
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                console.log('👁️ View action clicked for entry:', entry.id)
+                if (onView) {
+                  onView(entry)
+                } else if (onRowDoubleClick) {
+                  onRowDoubleClick(entry)
+                } else {
+                  setModalEditData({...entry})
+                  setShowEditableModal(true)
+                }
               }}
               className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded transition-colors"
               title="View"
@@ -1769,7 +1807,8 @@ export default function TrapidTableView({
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                console.log('✏️ Edit action clicked for entry:', entry.id)
+                setModalEditData({...entry})
+                setShowEditableModal(true)
               }}
               className="p-1.5 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 rounded transition-colors"
               title="Edit"
@@ -1779,17 +1818,9 @@ export default function TrapidTableView({
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                console.log('▶️ Run action clicked for entry:', entry.id)
-              }}
-              className="p-1.5 text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/20 rounded transition-colors"
-              title="Run"
-            >
-              <PlayIcon className="h-4 w-4" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                console.log('🗑️ Delete action clicked for entry:', entry.id)
+                if (onDelete && confirm('Are you sure you want to delete this record?')) {
+                  onDelete(entry)
+                }
               }}
               className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded transition-colors"
               title="Delete"
@@ -2733,9 +2764,9 @@ export default function TrapidTableView({
           cursor: grabbing;
         }
       `}</style>
-      <div className="h-full flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
+      <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 min-h-0 overflow-hidden">
       {/* Bordered container wrapping toolbar and table */}
-      <div className="flex-1 min-h-0 flex flex-col mx-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+      <div className="flex-1 flex flex-col mx-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-0 overflow-hidden">
 
         {/* Edit Mode Banner - Shows when edit mode is active */}
         {editModeActive && (
@@ -2839,7 +2870,7 @@ export default function TrapidTableView({
         )}
 
         {/* Header with Search, Filters, and Column Visibility (Chapter 20.20, #19.10) */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4 flex-shrink-0">
+        <div className="py-2 border-b border-gray-200 dark:border-gray-700 space-y-1 flex-shrink-0 relative z-20">
         {/* Search Box with Clear Button (Chapter 20.20) */}
         <div className="flex items-end gap-3">
           <div className="relative flex-1">
@@ -2930,13 +2961,13 @@ export default function TrapidTableView({
             </>
           )}
 
-          {/* Three-Dot Menu - Table Options - Always on far right */}
-          <Menu as="div" className="relative inline-block text-left">
+          {/* Three-Dot Menu - Always on far right */}
+          <Menu as="div" className="relative inline-block text-left z-[100]">
             <MenuButton className="inline-flex items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-700 p-2 text-white border border-blue-600 dark:border-blue-500 h-[42px] w-[42px] transition-colors">
               <EllipsisVerticalIcon className="h-6 w-6" />
             </MenuButton>
 
-            <MenuItems className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 dark:divide-gray-700 max-h-[80vh] overflow-y-auto">
+            <MenuItems anchor="bottom end" className="z-[9999] w-56 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 dark:divide-gray-700 max-h-[80vh] overflow-y-auto">
               {/* Filter toggle */}
               <div className="py-1">
                 <MenuItem>
@@ -4483,31 +4514,33 @@ export default function TrapidTableView({
             )}
           </div>
 
-          {/* Showing count */}
-          <div className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
-            Showing {filteredAndSorted.length} of {entries.length} entries
-          </div>
+        </div>
+        {/* Showing count - right aligned */}
+        <div className="flex justify-end">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            Showing {filteredAndSorted.length} of {entries.length}
+          </span>
         </div>
         </div>
 
         {/* Table with Sticky Gradient Headers (Chapter 20.2) */}
         <div
           ref={scrollContainerRef}
-          className="trapid-table-scroll flex-1 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900"
-          style={{
-            maxHeight: 'calc(100vh - 320px)', // Footer always visible
-            minHeight: '600px' // Minimum 10 rows visible to prevent dropdown cutoff
-          }}
+          className="trapid-table-scroll flex-1 min-h-0 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900 z-0"
         >
           <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
-            <thead className="sticky top-0 z-10 backdrop-blur-sm bg-blue-600 dark:bg-blue-800">
-            <tr className="border-b border-blue-700 dark:border-blue-900">
-              {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
+            <thead className="sticky top-0 z-10 backdrop-blur-sm">
+            <tr className="bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-800">
+              {(() => {
+                const visibleCols = columnOrder.filter(key => key === 'select' || visibleColumns[key])
+                return visibleCols.map((colKey, index) => {
                 const column = COLUMNS.find(c => c.key === colKey)
                 if (!column) return null
 
                 // Check if this is a system-generated column
                 const isSystemGenerated = ['id', 'created_at', 'updated_at'].includes(colKey)
+                const isFirst = index === 0
+                const isLast = index === visibleCols.length - 1
 
                 return (
                   <th
@@ -4524,28 +4557,19 @@ export default function TrapidTableView({
                       width: columnWidths[colKey],
                       minWidth: columnWidths[colKey],
                       position: 'relative',
-                      fontSize: '18px',
-                      fontWeight: 'bold',
-                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                      fontSize: '16px',
+                      fontWeight: '600',
                       verticalAlign: 'top',
-                      height: '100px',
-                      // Visual drop indicator - green border when this is the drop target
-                      borderLeft: dropTargetColumn === colKey ? '4px solid #10b981' : undefined,
-                      borderRight: dropTargetColumn === colKey ? '4px solid #10b981' : undefined,
-                      // System-generated columns get red background
-                      backgroundColor: isSystemGenerated ? (dropTargetColumn === colKey ? '#059669' : '#dc2626') : undefined,
                     }}
-                    className={`group align-top ${colKey === 'select' ? 'px-1 py-4' : 'px-6 pt-4 pb-2'} ${colKey === 'select' ? 'text-center' : 'text-left'} text-white tracking-wide transition-colors ${
-                      column.sortable && !isSystemGenerated ? 'cursor-pointer hover:bg-blue-700 dark:hover:bg-blue-900' : ''
-                    } ${column.sortable && isSystemGenerated ? 'cursor-pointer hover:bg-red-700 dark:hover:bg-red-800' : ''} ${
-                      draggedColumn === colKey && !isSystemGenerated ? 'bg-blue-700 dark:bg-blue-900 opacity-50' : ''
-                    } ${draggedColumn === colKey && isSystemGenerated ? 'bg-red-700 dark:bg-red-800 opacity-50' : ''} ${
-                      dropTargetColumn === colKey ? 'bg-green-600 dark:bg-green-700' : ''
-                    }`}
+                    className={`group align-top ${colKey === 'select' ? 'px-2 py-3' : 'px-4 py-3'} text-white border-r border-blue-400/30 dark:border-blue-600/30 last:border-r-0 ${
+                      isSystemGenerated ? 'bg-gradient-to-b from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700' : ''
+                    } ${column.sortable ? 'cursor-pointer hover:bg-blue-400/20 dark:hover:bg-blue-600/20' : ''} ${
+                      isFirst ? 'rounded-tl-lg' : ''
+                    } ${isLast ? 'rounded-tr-lg' : ''}`}
                   >
                     {/* Select All Checkbox (Chapter 20.1) */}
                     {colKey === 'select' ? (
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center h-full">
                         <input
                           type="checkbox"
                           checked={selectedRows.size === filteredAndSorted.length && filteredAndSorted.length > 0}
@@ -4553,7 +4577,7 @@ export default function TrapidTableView({
                             e.stopPropagation()
                             handleSelectAll()
                           }}
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                          className="h-4 w-4 rounded border-white/50 text-white bg-transparent focus:ring-white"
                         />
                       </div>
                     ) : (
@@ -4812,7 +4836,8 @@ export default function TrapidTableView({
 
                   </th>
                 )
-              })}
+              })
+              })()}
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900">
@@ -4820,11 +4845,17 @@ export default function TrapidTableView({
               <tr
                 key={entry.id}
                 onDoubleClick={(e) => {
-                  // Double-click row when NOT in edit mode to open editable modal
+                  // Double-click row when NOT in edit mode
                   if (!editModeActive) {
                     e.stopPropagation()
-                    setModalEditData({...entry})
-                    setShowEditableModal(true)
+                    // If custom handler provided, use it (e.g., navigate to detail page)
+                    if (onRowDoubleClick) {
+                      onRowDoubleClick(entry)
+                    } else {
+                      // Default: open editable modal
+                      setModalEditData({...entry})
+                      setShowEditableModal(true)
+                    }
                   }
                 }}
                 className={`${
@@ -4839,7 +4870,7 @@ export default function TrapidTableView({
                           : 'bg-blue-50 dark:bg-blue-900/20'
                 } ${!editModeActive ? 'cursor-pointer' : ''} ${editModeActive ? 'hover:bg-orange-100 dark:hover:bg-orange-800/30' : 'hover:bg-blue-100 dark:hover:bg-blue-800/30'} transition-colors duration-150`}
               >
-                {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
+                {columnOrder.filter(key => key === 'select' || visibleColumns[key]).map(colKey => {
                   const column = COLUMNS.find(c => c.key === colKey)
                   if (!column) return null
 
@@ -4946,7 +4977,7 @@ export default function TrapidTableView({
           {/* Table Footer - shows sums for currency/numeric columns */}
           <tfoot className="sticky bottom-0 z-10 bg-blue-100 dark:bg-blue-900/30 border-t border-blue-200 dark:border-blue-800">
             <tr>
-              {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
+              {columnOrder.filter(key => key === 'select' || visibleColumns[key]).map(colKey => {
                 const column = COLUMNS.find(c => c.key === colKey)
                 if (!column) return null
 
