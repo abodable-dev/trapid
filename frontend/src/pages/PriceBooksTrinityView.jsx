@@ -7,11 +7,12 @@ import TrapidTableView from '../components/documentation/TrapidTableView'
 // Define price book-specific columns
 const PRICEBOOK_COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32 },
+  { key: 'actions', label: 'Actions', column_type: 'action_buttons', resizable: false, sortable: false, filterable: false, width: 80 },
   { key: 'section', label: 'Code', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Item code' },
   { key: 'title', label: 'Item Name', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 300 },
   { key: 'type', label: 'Category', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 180 },
   { key: 'component', label: 'Supplier', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200 },
-  { key: 'price', label: 'Price', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'currency', tooltip: 'Current price in AUD' },
+  { key: 'price', label: 'Price', column_type: 'currency', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'currency', tooltip: 'Current price in AUD' },
   { key: 'unit', label: 'Unit', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 100 },
   { key: 'status', label: 'Status', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120 },
   { key: 'severity', label: 'Risk', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120, tooltip: 'Price risk level' },
@@ -137,6 +138,9 @@ export default function PriceBooksTrinityView() {
   return (
     <div className="h-full bg-gray-50 dark:bg-gray-900">
       <TrapidTableView
+        tableId="pricebook-trinity"
+        tableIdNumeric={205}
+        tableName="Price Book Items"
         category="pricebook"
         entries={trinityEntries}
         columns={PRICEBOOK_COLUMNS}
@@ -146,6 +150,12 @@ export default function PriceBooksTrinityView() {
         enableExport={true}
         onImport={handleImport}
         onExport={handleExport}
+        onRowDoubleClick={(entry) => {
+          navigate(`/price-books/${entry.id}`)
+        }}
+        onView={(entry) => {
+          navigate(`/price-books/${entry.id}`)
+        }}
         customActions={
           <button
             onClick={handleAddNew}

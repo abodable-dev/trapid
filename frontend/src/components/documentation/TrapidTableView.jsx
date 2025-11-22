@@ -150,10 +150,22 @@ export default function TrapidTableView({
       const savedState = localStorage.getItem(storageKey)
       if (savedState) {
         const state = JSON.parse(savedState)
+        // Merge saved visibleColumns with defaults to handle new columns added after save
+        const defaultVisible = getDefaultVisibleColumns()
+        const mergedVisible = { ...defaultVisible, ...(state.visibleColumns || {}) }
+        // Also merge column widths and order to handle new columns
+        const mergedWidths = { ...DEFAULT_COLUMN_WIDTHS, ...(state.columnWidths || {}) }
+        const mergedOrder = state.columnOrder || DEFAULT_COLUMN_ORDER
+        // Add any new columns not in saved order
+        COLUMNS.forEach(col => {
+          if (!mergedOrder.includes(col.key)) {
+            mergedOrder.push(col.key)
+          }
+        })
         return {
-          columnWidths: state.columnWidths || DEFAULT_COLUMN_WIDTHS,
-          columnOrder: state.columnOrder || DEFAULT_COLUMN_ORDER,
-          visibleColumns: state.visibleColumns || getDefaultVisibleColumns(),
+          columnWidths: mergedWidths,
+          columnOrder: mergedOrder,
+          visibleColumns: mergedVisible,
           sortBy: state.sortBy || 'chapter',
           sortDir: state.sortDir || 'asc'
         }
@@ -163,10 +175,13 @@ export default function TrapidTableView({
       if (legacyStored) {
         const parsed = JSON.parse(legacyStored)
         if (parsed && typeof parsed === 'object') {
+          // Merge with defaults to handle new columns
+          const defaultVisible = getDefaultVisibleColumns()
+          const mergedVisible = { ...defaultVisible, ...parsed }
           return {
             columnWidths: DEFAULT_COLUMN_WIDTHS,
             columnOrder: DEFAULT_COLUMN_ORDER,
-            visibleColumns: parsed,
+            visibleColumns: mergedVisible,
             sortBy: 'chapter',
             sortDir: 'asc'
           }
@@ -199,8 +214,15 @@ export default function TrapidTableView({
   // enableImport/enableExport: show import/export options in three-dot menu
   // onImport/onExport: callback functions for import/export actions
   const [search, setSearch] = useState('')
-  const [sortBy, setSortBy] = useState(initialTableState.sortBy)
-  const [sortDir, setSortDir] = useState(initialTableState.sortDir)
+  // Multi-column sorting: array of {column, dir} objects
+  // First item is primary sort, second is secondary, etc.
+  const [sortColumns, setSortColumns] = useState(() => {
+    // Convert legacy sortBy/sortDir to new format
+    if (initialTableState.sortBy) {
+      return [{ column: initialTableState.sortBy, dir: initialTableState.sortDir || 'asc' }]
+    }
+    return []
+  })
   const [filters, setFilters] = useState({
     chapter: 'all',
     type: 'all',
@@ -701,8 +723,14 @@ export default function TrapidTableView({
         setColumnWidths(state.columnWidths || DEFAULT_COLUMN_WIDTHS)
         setColumnOrder(state.columnOrder || DEFAULT_COLUMN_ORDER)
         setVisibleColumns(state.visibleColumns || DEFAULT_VISIBLE_COLUMNS)
-        setSortBy(state.sortBy || 'chapter')
-        setSortDir(state.sortDir || 'asc')
+        // Support both legacy sortBy/sortDir and new sortColumns format
+        if (state.sortColumns) {
+          setSortColumns(state.sortColumns)
+        } else if (state.sortBy) {
+          setSortColumns([{ column: state.sortBy, dir: state.sortDir || 'asc' }])
+        } else {
+          setSortColumns([{ column: 'chapter', dir: 'asc' }])
+        }
       } catch (e) {
         console.error('Failed to load table state:', e)
       }
@@ -711,8 +739,7 @@ export default function TrapidTableView({
       setColumnWidths(DEFAULT_COLUMN_WIDTHS)
       setColumnOrder(DEFAULT_COLUMN_ORDER)
       setVisibleColumns(getDefaultVisibleColumns())
-      setSortBy('chapter')
-      setSortDir('asc')
+      setSortColumns([{ column: 'chapter', dir: 'asc' }])
     }
   }, [tableId, category])
 
@@ -723,11 +750,10 @@ export default function TrapidTableView({
       columnWidths,
       columnOrder,
       visibleColumns,
-      sortBy,
-      sortDir
+      sortColumns
     }
     localStorage.setItem(storageKey, JSON.stringify(state))
-  }, [columnWidths, columnOrder, visibleColumns, sortBy, sortDir, tableId, category])
+  }, [columnWidths, columnOrder, visibleColumns, sortColumns, tableId, category])
 
   // Column resizing handlers (Chapter 20.4)
   const handleResizeStart = (e, columnKey) => {
@@ -1232,143 +1258,157 @@ export default function TrapidTableView({
       result = result.filter(e => e.severity === filters.severity)
     }
 
-    // Sort
-    result.sort((a, b) => {
-      let aVal, bVal
-
-      switch (sortBy) {
+    // Helper to get sort value for a column
+    const getSortValue = (row, sortKey) => {
+      switch (sortKey) {
         case 'category':
-          aVal = a.category || ''
-          bVal = b.category || ''
-          break
+          return row.category || ''
         case 'chapter':
-          aVal = a.chapter_number
-          bVal = b.chapter_number
-          break
+          return row.chapter_number
         case 'section':
           // Parse section numbers with optional category prefix (B01.01, L01.02, T01.03)
           const parseSection = (str) => {
-            if (!str) return ['', 0, 0]
-
-            // Match: B01.01 → prefix="B", chapter=1, section=1
-            // Match: 03.05 → prefix="", chapter=3, section=5 (legacy)
+            if (!str) return [0, 0, 0] // Use numbers for proper sorting
             const match = str.match(/^([BTL])?(\d+)\.(\d+)$/)
-            if (!match) return ['', 0, 0]
-
+            if (!match) return [0, 0, 0]
+            // Convert prefix to number: B=1, L=2, T=3, none=0
+            const prefixOrder = { 'B': 1, 'L': 2, 'T': 3 }
             return [
-              match[1] || '',           // prefix letter (B/L/T or empty)
-              parseInt(match[2]),       // chapter number
-              parseInt(match[3])        // section number
+              prefixOrder[match[1]] || 0,
+              parseInt(match[2]),
+              parseInt(match[3])
             ]
           }
-
-          const [aPrefix, aChapter, aSection] = parseSection(a.section_number)
-          const [bPrefix, bChapter, bSection] = parseSection(b.section_number)
-
-          // Sort by prefix first (B < L < T), then chapter, then section
-          if (aPrefix !== bPrefix) {
-            aVal = aPrefix
-            bVal = bPrefix
-          } else if (aChapter !== bChapter) {
-            aVal = aChapter
-            bVal = bChapter
-          } else {
-            aVal = aSection
-            bVal = bSection
-          }
-          break
+          // Return array for multi-level section comparison
+          return parseSection(row.section_number)
         case 'title':
-          aVal = a.title || ''
-          bVal = b.title || ''
-          break
+          return row.title || ''
         case 'status':
-          aVal = a.status || ''
-          bVal = b.status || ''
-          break
+          return row.status || ''
         case 'severity':
           const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 }
-          aVal = severityOrder[a.severity] || 0
-          bVal = severityOrder[b.severity] || 0
-          break
+          return severityOrder[row.severity] || 0
         case 'component':
-          aVal = a.component || ''
-          bVal = b.component || ''
-          break
+          return row.component || ''
         case 'type':
-          aVal = a.entry_type || ''
-          bVal = b.entry_type || ''
-          break
+          return row.entry_type || ''
         case 'audit':
         case 'updated_at':
-          aVal = a.updated_at ? new Date(a.updated_at).getTime() : 0
-          bVal = b.updated_at ? new Date(b.updated_at).getTime() : 0
-          break
+          return row.updated_at ? new Date(row.updated_at).getTime() : 0
         case 'created_at':
-          aVal = a.created_at ? new Date(a.created_at).getTime() : 0
-          bVal = b.created_at ? new Date(b.created_at).getTime() : 0
-          break
+          return row.created_at ? new Date(row.created_at).getTime() : 0
         case 'price':
-          aVal = a.price || 0
-          bVal = b.price || 0
-          break
+          return row.price || 0
         case 'quantity':
-          aVal = a.quantity || 0
-          bVal = b.quantity || 0
-          break
+          return row.quantity || 0
         case 'discount':
-          aVal = a.discount || 0
-          bVal = b.discount || 0
-          break
+          return row.discount || 0
         case 'total_cost':
-          // Computed column - use the compute function
-          const column = COLUMNS.find(c => c.key === sortBy)
+          const column = COLUMNS.find(c => c.key === sortKey)
           if (column?.isComputed && column?.computeFunction) {
-            aVal = column.computeFunction(a) || 0
-            bVal = column.computeFunction(b) || 0
-          } else {
-            aVal = 0
-            bVal = 0
+            return column.computeFunction(row) || 0
           }
-          break
+          return 0
         case 'id':
-          aVal = a.id || 0
-          bVal = b.id || 0
-          break
+          return row.id || 0
         default:
-          // Generic fallback: try to access the column value directly
-          aVal = a[sortBy] ?? ''
-          bVal = b[sortBy] ?? ''
-          break
+          return row[sortKey] ?? ''
       }
+    }
 
-      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1
-      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1
+    // Compare two values for sorting
+    const compareValues = (aVal, bVal, dir) => {
+      // Handle array values (for section sorting)
+      if (Array.isArray(aVal) && Array.isArray(bVal)) {
+        for (let i = 0; i < aVal.length; i++) {
+          if (aVal[i] < bVal[i]) return dir === 'asc' ? -1 : 1
+          if (aVal[i] > bVal[i]) return dir === 'asc' ? 1 : -1
+        }
+        return 0
+      }
+      if (aVal < bVal) return dir === 'asc' ? -1 : 1
+      if (aVal > bVal) return dir === 'asc' ? 1 : -1
       return 0
-    })
+    }
+
+    // Multi-column sort
+    if (sortColumns.length > 0) {
+      result.sort((a, b) => {
+        for (const { column: sortKey, dir } of sortColumns) {
+          const aVal = getSortValue(a, sortKey)
+          const bVal = getSortValue(b, sortKey)
+          const comparison = compareValues(aVal, bVal, dir)
+          if (comparison !== 0) return comparison
+        }
+        return 0
+      })
+    }
 
     return result
-  }, [entries, search, filters, sortBy, sortDir, columnFilters, category, cascadeFilters, filterGroups, interGroupLogic, selectedComponents])
+  }, [entries, search, filters, sortColumns, columnFilters, category, cascadeFilters, filterGroups, interGroupLogic, selectedComponents])
 
-  const handleSort = (column) => {
-    if (sortBy === column) {
-      if (sortDir === 'asc') {
-        setSortDir('desc')
-      } else if (sortDir === 'desc') {
-        // Third state: clear sort
-        setSortBy(null)
-        setSortDir(null)
+  // Multi-column sort handler
+  // Regular click: single column sort (cycles asc -> desc -> clear)
+  // Shift+click: add/toggle column in multi-sort
+  const handleSort = (column, event) => {
+    const isShiftKey = event?.shiftKey
+
+    setSortColumns(prev => {
+      const existingIndex = prev.findIndex(s => s.column === column)
+
+      if (isShiftKey) {
+        // Shift+click: add to multi-sort or toggle existing
+        if (existingIndex >= 0) {
+          const existing = prev[existingIndex]
+          if (existing.dir === 'asc') {
+            // Toggle to desc
+            const newSort = [...prev]
+            newSort[existingIndex] = { ...existing, dir: 'desc' }
+            return newSort
+          } else {
+            // Remove from multi-sort
+            return prev.filter((_, i) => i !== existingIndex)
+          }
+        } else {
+          // Add new column to sort
+          return [...prev, { column, dir: 'asc' }]
+        }
+      } else {
+        // Regular click: single column sort
+        if (existingIndex === 0 && prev.length === 1) {
+          // Already primary sort, cycle through
+          if (prev[0].dir === 'asc') {
+            return [{ column, dir: 'desc' }]
+          } else {
+            return [] // Clear sort
+          }
+        } else {
+          // Set as new primary sort
+          return [{ column, dir: 'asc' }]
+        }
       }
-    } else {
-      setSortBy(column)
-      setSortDir('asc')
-    }
+    })
   }
 
+  // Sort icon showing direction and order number for multi-sort
   const SortIcon = ({ column }) => {
-    if (sortBy !== column) return null
-    return sortDir === 'asc'
-      ? <ChevronUpIcon className="w-4 h-4 inline ml-1 text-white" />
-      : <ChevronDownIcon className="w-4 h-4 inline ml-1 text-white" />
+    const sortIndex = sortColumns.findIndex(s => s.column === column)
+    if (sortIndex < 0) return null
+
+    const sort = sortColumns[sortIndex]
+    const showNumber = sortColumns.length > 1
+
+    return (
+      <span className="inline-flex items-center ml-1">
+        {sort.dir === 'asc'
+          ? <ChevronUpIcon className="w-4 h-4 text-white" />
+          : <ChevronDownIcon className="w-4 h-4 text-white" />
+        }
+        {showNumber && (
+          <span className="text-xs text-yellow-300 font-bold -ml-0.5">{sortIndex + 1}</span>
+        )}
+      </span>
+    )
   }
 
   const uniqueChapters = useMemo(() => {
@@ -3958,12 +3998,17 @@ export default function TrapidTableView({
                       </svg>
                       Cascade Filters
                     </span>
-                    <button
-                      onClick={closeCascadePopup}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    >
-                      ✕
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded" title="Hold Shift and click multiple column headers to sort by multiple columns">
+                        💡 Shift+Click headers for multi-sort
+                      </span>
+                      <button
+                        onClick={closeCascadePopup}
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
 
                   {/* Two separate header boxes */}
@@ -4952,8 +4997,9 @@ export default function TrapidTableView({
                     onDrop={(e) => handleDrop(e, colKey)}
                     onClick={(e) => {
                       // Only sort if clicking on the column content, not resize handle or drag icon
+                      // Pass event for Shift+click multi-column sort
                       if (column.sortable && !e.defaultPrevented) {
-                        handleSort(colKey)
+                        handleSort(colKey, e)
                       }
                     }}
                     style={{
@@ -4990,7 +5036,8 @@ export default function TrapidTableView({
                         showFilters && (columnShowFilters[colKey] ?? true) && column.filterType ? 'justify-between' : 'justify-start'
                       }`}>
                         <div className="flex items-start gap-1 min-w-0">
-                          {column.resizable && (
+                          {/* Only show drag handle in edit mode */}
+                          {editIndividualMode && column.resizable && (
                             <div
                               draggable="true"
                               onDragStart={(e) => {

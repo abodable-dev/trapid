@@ -9,7 +9,7 @@ const buildGoldStandardColumns = () => {
   // Base columns that always appear
   const baseColumns = [
     { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32, tooltip: 'Checkbox - select rows for bulk actions' },
-    { key: 'id', label: 'ID / Primary Key', column_type: 'id', resizable: true, sortable: true, filterable: false, width: 80, tooltip: 'Primary Key - Auto-increment ID' }
+    { key: 'id', label: 'ID / Primary Key', column_type: 'id', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 80, tooltip: 'Primary Key - Auto-increment ID' }
   ]
 
   // Map each COLUMN_TYPE to its database column and configuration
