@@ -270,6 +270,17 @@ export default function TrapidTableView({
   const [editingFilterId, setEditingFilterId] = useState(null) // Track which filter is being edited
   const [editingFilterValue, setEditingFilterValue] = useState('') // Track the temporary value while editing
 
+  // Cascade popup resizing state
+  const [cascadePopupSize, setCascadePopupSize] = useState(() => {
+    if (typeof window === 'undefined') return { width: 50, height: 90 } // vw, vh
+    try {
+      const stored = localStorage.getItem(`trapid-cascade-popup-size-${tableId}`)
+      return stored ? JSON.parse(stored) : { width: 50, height: 90 }
+    } catch { return { width: 50, height: 90 } }
+  })
+  const [isResizing, setIsResizing] = useState(null) // 'right', 'bottom', 'corner', or null
+  const cascadePopupRef = useRef(null)
+
   // Save filters to localStorage whenever they change (per table)
   useEffect(() => {
     try {
@@ -369,6 +380,54 @@ export default function TrapidTableView({
       }
     }
   }, [visibilityColumnOrder, tableId])
+
+  // Save cascade popup size to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(`trapid-cascade-popup-size-${tableId}`, JSON.stringify(cascadePopupSize))
+    } catch (error) {
+      console.error('Error saving cascade popup size to localStorage:', error)
+    }
+  }, [cascadePopupSize, tableId])
+
+  // Handle cascade popup resizing
+  useEffect(() => {
+    if (!isResizing) return
+
+    const handleMouseMove = (e) => {
+      if (!cascadePopupRef.current) return
+
+      const vw = window.innerWidth / 100
+      const vh = window.innerHeight / 100
+
+      if (isResizing === 'right' || isResizing === 'corner') {
+        const centerX = window.innerWidth / 2
+        const newWidth = Math.max(30, Math.min(95, ((e.clientX - centerX) * 2) / vw))
+        setCascadePopupSize(prev => ({ ...prev, width: newWidth }))
+      }
+
+      if (isResizing === 'bottom' || isResizing === 'corner') {
+        const centerY = window.innerHeight / 2
+        const newHeight = Math.max(30, Math.min(95, ((e.clientY - centerY) * 2) / vh))
+        setCascadePopupSize(prev => ({ ...prev, height: newHeight }))
+      }
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(null)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    document.body.style.userSelect = 'none'
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing])
 
   // Column resizing state
   const [resizingColumn, setResizingColumn] = useState(null)
@@ -3036,12 +3095,48 @@ export default function TrapidTableView({
               <>
                 {/* Backdrop */}
                 <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowCascadeDropdown(false)} />
-                {/* Dropdown positioned in center like a modal */}
+                {/* Dropdown positioned in center like a modal - resizable */}
                 <div
-                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50vw] h-[90vh] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl overflow-y-auto z-[60]"
+                  ref={cascadePopupRef}
+                  style={{
+                    width: `${cascadePopupSize.width}vw`,
+                    height: `${cascadePopupSize.height}vh`
+                  }}
+                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl overflow-hidden z-[60]"
                   onClick={(e) => e.stopPropagation()}
                 >
-                <div className="p-3">
+                {/* Right resize handle */}
+                <div
+                  className="absolute top-0 right-0 w-2 h-full cursor-ew-resize hover:bg-blue-500/20 z-10"
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    setIsResizing('right')
+                    document.body.style.cursor = 'ew-resize'
+                  }}
+                />
+                {/* Bottom resize handle */}
+                <div
+                  className="absolute bottom-0 left-0 w-full h-2 cursor-ns-resize hover:bg-blue-500/20 z-10"
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    setIsResizing('bottom')
+                    document.body.style.cursor = 'ns-resize'
+                  }}
+                />
+                {/* Corner resize handle */}
+                <div
+                  className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize hover:bg-blue-500/30 z-20"
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    setIsResizing('corner')
+                    document.body.style.cursor = 'nwse-resize'
+                  }}
+                >
+                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M22 22H20V20H22V22ZM22 18H20V16H22V18ZM18 22H16V20H18V22ZM22 14H20V12H22V14ZM18 18H16V16H18V18ZM14 22H12V20H14V22Z" />
+                  </svg>
+                </div>
+                <div className="p-3 h-full overflow-y-auto">
                   {/* Header */}
                   <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2 mb-3">
                     <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -3056,7 +3151,7 @@ export default function TrapidTableView({
                   </div>
 
                   {/* Main content: 4 columns - Saved Views | Column Select | Value Select | Column Visibility */}
-                  <div className="grid grid-cols-[280px,1fr,1.5fr,fit-content(200px)] gap-4 h-[calc(90vh-4rem)]">
+                  <div className="grid grid-cols-[280px,1fr,1.5fr,fit-content(200px)] gap-4" style={{ height: `calc(${cascadePopupSize.height}vh - 4rem)` }}>
                     {/* COLUMN 1: Saved Views Section (moved to left) */}
                     <div className="border-r border-gray-200 dark:border-gray-700 pr-4 h-full overflow-hidden flex flex-col">
                     {useKanbanSavedViews ? (
