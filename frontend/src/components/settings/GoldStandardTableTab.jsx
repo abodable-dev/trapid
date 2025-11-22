@@ -127,6 +127,7 @@ export default function GoldStandardTableTab() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [columnsWithIds, setColumnsWithIds] = useState(GOLD_STANDARD_COLUMNS)
   // Removed: showFeatures state - "Features to Test" section deleted
 
   const [newItem, setNewItem] = useState({
@@ -152,9 +153,10 @@ export default function GoldStandardTableTab() {
     multiple_lookups: ''
   })
 
-  // Fetch gold standard items from API
+  // Fetch gold standard items and columns from API
   useEffect(() => {
     fetchGoldStandardItems()
+    fetchColumnIds()
   }, [])
 
   const fetchGoldStandardItems = async () => {
@@ -173,6 +175,30 @@ export default function GoldStandardTableTab() {
       setData([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Fetch column IDs from API and merge with static config
+  const fetchColumnIds = async () => {
+    try {
+      const response = await fetch('/api/v1/tables/1')
+      if (!response.ok) return
+      const result = await response.json()
+      const dbColumns = result.table?.columns || []
+
+      // Merge database column IDs with static column config
+      const updatedColumns = GOLD_STANDARD_COLUMNS.map(col => {
+        // Find matching database column by column_name (key)
+        const dbCol = dbColumns.find(dc => dc.column_name === col.key)
+        if (dbCol) {
+          return { ...col, id: dbCol.id }
+        }
+        return col
+      })
+      setColumnsWithIds(updatedColumns)
+    } catch (err) {
+      console.error('Error fetching column IDs:', err)
+      // Keep using static columns without IDs
     }
   }
 
@@ -327,8 +353,8 @@ export default function GoldStandardTableTab() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
+    <div className="flex flex-col h-full">
+      <div className="px-6 pt-6 pb-4">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           Gold Standard - TrapidTableView Reference
         </h2>
@@ -336,15 +362,15 @@ export default function GoldStandardTableTab() {
           Live database table demonstrating all TrapidTableView column types and features.
           Use this as a reference standard for implementing tables throughout Trapid.
         </p>
-
       </div>
 
+      <div className="flex-1 min-h-0 px-6">
       <TrapidTableView
         tableId="gold-standard-table"
         tableIdNumeric={1}
         tableName="Gold Standard Reference"
         entries={data}
-        columns={GOLD_STANDARD_COLUMNS}
+        columns={columnsWithIds}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onBulkDelete={handleBulkDelete}
@@ -363,6 +389,7 @@ export default function GoldStandardTableTab() {
           </button>
         }
       />
+      </div>
 
       {/* Add New Item Modal */}
       {showAddModal && (

@@ -1,7 +1,7 @@
 {
   "name": "trapid-frontend",
   "private": true,
-  "version": "1.99.1299",
+  "version": "1.99.1300",
   "type": "module",
   "scripts": {
     "dev": "node scripts/increment-version.js && vite",

@@ -115,25 +115,12 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
         return;
       }
 
-      // Validate database column name format
-      const dbNameRegex = /^[a-z][a-z0-9_]*$/;
-      if (!dbNameRegex.test(editedColumn.column_name)) {
-        alert('Database column name must be lowercase, start with a letter, and contain only letters, numbers, and underscores');
-        setSaving(false);
-        return;
-      }
-
-      // Warn if changing database column name or type
-      const dbNameChanged = editedColumn.column_name !== column.column_name;
+      // Warn if changing column type (database column name changes are not allowed)
       const typeChanged = editedColumn.data_type !== (column.data_type || column.column_type);
 
-      if (dbNameChanged || typeChanged) {
-        const changes = [];
-        if (dbNameChanged) changes.push(`database column name from "${column.column_name}" to "${editedColumn.column_name}"`);
-        if (typeChanged) changes.push(`type from "${column.column_type}" to "${editedColumn.data_type}"`);
-
+      if (typeChanged) {
         const confirmed = window.confirm(
-          `⚠️ Warning: You are changing the ${changes.join(' and ')}.\n\n` +
+          `⚠️ Warning: You are changing the type from "${column.column_type}" to "${editedColumn.data_type}".\n\n` +
           'This will rebuild the database table and may result in data loss if the types are incompatible.\n\n' +
           'Are you sure you want to continue?'
         );
@@ -144,23 +131,24 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
         }
       }
 
-      const response = await api.patch(
+      const result = await api.patch(
         `/api/v1/tables/${tableId}/columns/${column.id}`,
         {
           column: {
             name: editedColumn.name,
-            column_name: editedColumn.column_name,
+            // column_name is NEVER sent - database column names cannot be changed after creation
             column_type: editedColumn.data_type
           }
         }
       );
 
-      if (response.data.success) {
+      // api.patch returns the data directly, not wrapped in response.data
+      if (result.success) {
         alert('✅ Column updated successfully!');
         handleUpdate();
         handleClose();
       } else {
-        alert('❌ Failed to update column: ' + (response.data.errors?.join(', ') || 'Unknown error'));
+        alert('❌ Failed to update column: ' + (result.errors?.join(', ') || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error updating column:', error);
@@ -302,22 +290,9 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
                     value={editedColumn.name}
                     onChange={(e) => {
                       const newName = e.target.value;
-                      const updates = { name: newName };
-
-                      // Auto-copy to column_name unless it contains "ratetime"
-                      if (!column.column_name?.includes('ratetime')) {
-                        // Convert to snake_case
-                        const snakeCaseName = newName
-                          .toLowerCase()
-                          .replace(/[^\w\s]/g, '') // Remove special chars
-                          .replace(/\s+/g, '_')     // Replace spaces with underscores
-                          .replace(/_+/g, '_')      // Remove duplicate underscores
-                          .replace(/^_|_$/g, '');   // Remove leading/trailing underscores
-
-                        updates.column_name = snakeCaseName;
-                      }
-
-                      setEditedColumn({ ...editedColumn, ...updates });
+                      // Only update display name - database column_name is NEVER changed after creation
+                      // Use functional form to avoid stale closure issues
+                      setEditedColumn(prev => ({ ...prev, name: newName }));
                     }}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-700 rounded-lg border-2 border-gray-300
                              dark:border-gray-600 text-base text-gray-900 dark:text-gray-100
@@ -329,14 +304,14 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
                   </p>
                 </div>
 
-                {/* Database Column Name - Read Only */}
+                {/* Database Column Name - Read Only - Use column prop directly to prevent any accidental modification */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Column Name (Database)
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-600 rounded-lg border-2 border-gray-300
                                dark:border-gray-500 text-base font-mono text-gray-700 dark:text-gray-300">
-                    {editedColumn.column_name}
+                    {column.column_name}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Database column name cannot be changed after creation

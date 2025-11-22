@@ -45,6 +45,7 @@ function convertColumnsToTrapidFormat(apiColumns, tableSlug) {
     const defaults = COLUMN_TYPE_DEFAULTS[col.column_type] || { width: 150 }
 
     columns.push({
+      id: col.id, // Database column ID for schema editor
       key: col.column_name,
       label: col.name,
       column_type: col.column_type,

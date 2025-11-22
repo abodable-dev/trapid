@@ -2765,9 +2765,9 @@ export default function TrapidTableView({
           cursor: grabbing;
         }
       `}</style>
-      <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 min-h-0 overflow-hidden">
-      {/* Bordered container wrapping toolbar and table */}
-      <div className="flex-1 flex flex-col border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 min-h-0">
+      {/* Full-width table container */}
+      <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 min-h-0">
 
         {/* Edit Mode Banner - Shows when edit mode is active */}
         {editModeActive && (
@@ -2870,7 +2870,7 @@ export default function TrapidTableView({
           </div>
         )}
 
-        {/* Header with Search, Filters, and Column Visibility (Chapter 20.20, #19.10) */}
+        {/* TOP SECTION - Search and Buttons */}
         <div className="py-2 border-b border-gray-200 dark:border-gray-700 space-y-1 flex-shrink-0 relative z-20">
         {/* Search Box with Clear Button (Chapter 20.20) */}
         <div className="flex items-end gap-3">
@@ -3344,9 +3344,14 @@ export default function TrapidTableView({
             Found {filteredAndSorted.length} of {entries.length} entries
           </div>
         )}
+        </div>
+        {/* END TOP SECTION - Search/Buttons */}
 
-        {/* Filters */}
-        <div className="flex items-end gap-3 flex-wrap">
+        {/* Main content area - filters at top for now until code can be restructured */}
+        <div className="flex-1 flex flex-col min-h-0">
+
+        {/* Filters row */}
+        <div className="flex items-end gap-3 flex-wrap px-2 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
           {/* Cascade Filters Button - Excel-style popup */}
           <div className="relative group flex items-center gap-2">
             <button
@@ -4515,25 +4520,27 @@ export default function TrapidTableView({
             )}
           </div>
 
+          {/* Showing count - right aligned */}
+          <div className="flex justify-end ml-auto">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Showing {filteredAndSorted.length} of {entries.length}
+            </span>
+          </div>
         </div>
-        {/* Showing count - right aligned */}
-        <div className="flex justify-end">
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Showing {filteredAndSorted.length} of {entries.length}
-          </span>
-        </div>
-        </div>
+        {/* END BOTTOM SECTION - Filters */}
 
-        {/* Table with Sticky Gradient Headers (Chapter 20.2) */}
-        <div
-          ref={scrollContainerRef}
-          className="trapid-table-scroll flex-1 min-h-0 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900 z-0"
-        >
-          <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
+        {/* Table Container with Border */}
+        <div className="flex-1 min-h-0 p-4">
+          {/* Table with Sticky Gradient Headers (Chapter 20.2) */}
+          <div
+            ref={scrollContainerRef}
+            className="trapid-table-scroll h-full overflow-y-auto overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
+          >
+          <table className="border-collapse" style={{ tableLayout: 'fixed', minWidth: 'max-content' }}>
             <thead className="sticky top-0 z-10 backdrop-blur-sm">
             <tr className="bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-800">
               {(() => {
-                const visibleCols = columnOrder.filter(key => key === 'select' || visibleColumns[key])
+                const visibleCols = columnOrder.filter(key => key === 'select' || key === 'actions' || visibleColumns[key])
                 return visibleCols.map((colKey, index) => {
                 const column = COLUMNS.find(c => c.key === colKey)
                 if (!column) return null
@@ -4562,7 +4569,7 @@ export default function TrapidTableView({
                       fontWeight: '600',
                       verticalAlign: 'top',
                     }}
-                    className={`group align-top ${colKey === 'select' ? 'px-2 py-3' : 'px-4 py-3'} text-white border-r border-blue-400/30 dark:border-blue-600/30 last:border-r-0 ${
+                    className={`group align-top ${colKey === 'select' ? 'px-2 py-3' : 'px-4 py-3'} text-white border-r-2 border-white/50 last:border-r-0 ${
                       isSystemGenerated ? 'bg-gradient-to-b from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700' : ''
                     } ${column.sortable ? 'cursor-pointer hover:bg-blue-400/20 dark:hover:bg-blue-600/20' : ''} ${
                       isFirst ? 'rounded-tl-lg' : ''
@@ -4610,29 +4617,39 @@ export default function TrapidTableView({
                           {column.sortable && <SortIcon column={colKey} />}
                           {/* Schema Editor Cog Icon - only show in Edit Individual mode */}
                           {editIndividualMode && enableSchemaEditor && colKey !== 'select' && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                // Create a column object to pass to the editor
-                                // Use column.id (database ID) if available, otherwise use colKey
-                                setSelectedColumnForEdit({
-                                  id: column.id || colKey,
-                                  name: column.label,
-                                  column_name: colKey,
-                                  column_type: column.column_type || 'single_line_text', // Use column type from config
-                                  required: false
-                                })
-                              }}
-                              className={`ml-2 p-1 rounded transition-colors ${
-                                isSystemGenerated
-                                  ? 'hover:bg-red-500 dark:hover:bg-red-700'
-                                  : 'hover:bg-blue-500 dark:hover:bg-blue-700'
-                              }`}
-                              title={isSystemGenerated ? 'Edit system-generated column schema' : 'Edit column schema'}
-                            >
-                              <Cog8ToothIcon className="h-4 w-4 text-orange-300 hover:text-white" />
-                            </button>
+                            // Only show cog if column has a database ID (numeric) - system columns like 'id' primary key have no column record
+                            column.id && typeof column.id === 'number' ? (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  // Create a column object to pass to the editor
+                                  setSelectedColumnForEdit({
+                                    id: column.id,
+                                    name: column.label,
+                                    column_name: colKey,
+                                    column_type: column.column_type || 'single_line_text',
+                                    required: false
+                                  })
+                                }}
+                                className={`ml-2 p-1 rounded transition-colors ${
+                                  isSystemGenerated
+                                    ? 'hover:bg-red-500 dark:hover:bg-red-700'
+                                    : 'hover:bg-blue-500 dark:hover:bg-blue-700'
+                                }`}
+                                title={isSystemGenerated ? 'Edit system-generated column schema' : 'Edit column schema'}
+                              >
+                                <Cog8ToothIcon className="h-4 w-4 text-orange-300 hover:text-white" />
+                              </button>
+                            ) : (
+                              // System column without editable schema - show disabled cog
+                              <span
+                                className="ml-2 p-1 rounded opacity-50 cursor-not-allowed"
+                                title="System column - cannot be edited"
+                              >
+                                <Cog8ToothIcon className="h-4 w-4 text-gray-400" />
+                              </span>
+                            )
                           )}
                         </div>
 
@@ -4871,7 +4888,7 @@ export default function TrapidTableView({
                           : 'bg-blue-50 dark:bg-blue-900/20'
                 } ${!editModeActive ? 'cursor-pointer' : ''} ${editModeActive ? 'hover:bg-orange-100 dark:hover:bg-orange-800/30' : 'hover:bg-blue-100 dark:hover:bg-blue-800/30'} transition-colors duration-150`}
               >
-                {columnOrder.filter(key => key === 'select' || visibleColumns[key]).map(colKey => {
+                {columnOrder.filter(key => key === 'select' || key === 'actions' || visibleColumns[key]).map(colKey => {
                   const column = COLUMNS.find(c => c.key === colKey)
                   if (!column) return null
 
@@ -4928,7 +4945,14 @@ export default function TrapidTableView({
                             }
                             setValidationError(null)
                             setEditingRowId(entry.id);
-                            setEditingData(entry); // Populate with current values so they show in edit mode
+                            // Populate with current values, defaulting undefined to '' to prevent controlled/uncontrolled warnings
+                            const safeEditingData = { ...entry }
+                            columns.forEach(col => {
+                              if (safeEditingData[col.key] === undefined) {
+                                safeEditingData[col.key] = ''
+                              }
+                            })
+                            setEditingData(safeEditingData);
                             setSelectedRows(new Set([entry.id]));
                           }
                         }
@@ -5041,9 +5065,13 @@ export default function TrapidTableView({
               })}
             </tr>
           </tfoot>
-        </table>
+          </table>
+          </div>
+          {/* End scroll container */}
+        </div>
+        {/* End Table Container with Border */}
       </div>
-      {/* End bordered container */}
+      {/* End Full-width table container */}
       </div>
 
       {/* Full Entry Details Modal */}
