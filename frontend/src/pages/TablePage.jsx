@@ -297,6 +297,10 @@ export default function TablePage({ embedded = false }) {
                 navigate(`/jobs/${entry.id}`)
               }
             }}
+            onColumnUpdate={() => {
+              // Reload table data when column schema is updated
+              loadTable()
+            }}
             customActions={
               <button
                 onClick={handleAddNew}

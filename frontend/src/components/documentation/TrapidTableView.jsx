@@ -110,7 +110,8 @@ export default function TrapidTableView({
   tableIdNumeric = null,  // NEW: Numeric table ID for schema editor API calls
   tableName = 'Table',  // NEW: Human-readable table name for schema editor
   onRowDoubleClick = null,  // NEW: Custom handler for row double-click (overrides default edit modal)
-  onView = null  // NEW: Custom handler for View action button (e.g., navigate to detail page)
+  onView = null,  // NEW: Custom handler for View action button (e.g., navigate to detail page)
+  onColumnUpdate = null  // NEW: Callback when a column schema is updated (to refresh table data)
 }) {
   const navigate = useNavigate()
 
@@ -129,13 +130,76 @@ export default function TrapidTableView({
     return acc
   }, {})
   const DEFAULT_VISIBLE_COLUMNS = getDefaultVisibleColumns()
+
+  // Chapter 19 compliance: Load ALL table state from localStorage at initialization
+  // This function MUST be defined before useState calls to avoid race conditions
+  const getInitialTableState = () => {
+    if (typeof window === 'undefined') {
+      return {
+        columnWidths: DEFAULT_COLUMN_WIDTHS,
+        columnOrder: DEFAULT_COLUMN_ORDER,
+        visibleColumns: getDefaultVisibleColumns(),
+        sortBy: 'chapter',
+        sortDir: 'asc'
+      }
+    }
+    try {
+      // Primary storage: trapidTableViewState (the main save location)
+      const storageKey = `trapidTableViewState_${tableId || category || 'default'}`
+      const savedState = localStorage.getItem(storageKey)
+      if (savedState) {
+        const state = JSON.parse(savedState)
+        return {
+          columnWidths: state.columnWidths || DEFAULT_COLUMN_WIDTHS,
+          columnOrder: state.columnOrder || DEFAULT_COLUMN_ORDER,
+          visibleColumns: state.visibleColumns || getDefaultVisibleColumns(),
+          sortBy: state.sortBy || 'chapter',
+          sortDir: state.sortDir || 'asc'
+        }
+      }
+      // Fallback: Check legacy default columns storage
+      const legacyStored = localStorage.getItem(`trapid-default-columns-${tableId}`)
+      if (legacyStored) {
+        const parsed = JSON.parse(legacyStored)
+        if (parsed && typeof parsed === 'object') {
+          return {
+            columnWidths: DEFAULT_COLUMN_WIDTHS,
+            columnOrder: DEFAULT_COLUMN_ORDER,
+            visibleColumns: parsed,
+            sortBy: 'chapter',
+            sortDir: 'asc'
+          }
+        }
+      }
+      return {
+        columnWidths: DEFAULT_COLUMN_WIDTHS,
+        columnOrder: DEFAULT_COLUMN_ORDER,
+        visibleColumns: getDefaultVisibleColumns(),
+        sortBy: 'chapter',
+        sortDir: 'asc'
+      }
+    } catch (error) {
+      console.error('Error loading table state from localStorage:', error)
+      return {
+        columnWidths: DEFAULT_COLUMN_WIDTHS,
+        columnOrder: DEFAULT_COLUMN_ORDER,
+        visibleColumns: getDefaultVisibleColumns(),
+        sortBy: 'chapter',
+        sortDir: 'asc'
+      }
+    }
+  }
+
+  // Initialize table state from single source to avoid race conditions
+  const initialTableState = getInitialTableState()
+
   // category can be: null (show all), 'bible', 'teacher', or 'lexicon'
   // customActions: optional array of custom button elements to display after Columns button
   // enableImport/enableExport: show import/export options in three-dot menu
   // onImport/onExport: callback functions for import/export actions
   const [search, setSearch] = useState('')
-  const [sortBy, setSortBy] = useState('chapter')
-  const [sortDir, setSortDir] = useState('asc')
+  const [sortBy, setSortBy] = useState(initialTableState.sortBy)
+  const [sortDir, setSortDir] = useState(initialTableState.sortDir)
   const [filters, setFilters] = useState({
     chapter: 'all',
     type: 'all',
@@ -363,31 +427,11 @@ export default function TrapidTableView({
   const [editIndividualMode, setEditIndividualMode] = useState(false)
   const [selectedColumnForEdit, setSelectedColumnForEdit] = useState(null)
 
-  // Chapter 19 compliance: Column state management
-  const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
-  const [columnOrder, setColumnOrder] = useState(DEFAULT_COLUMN_ORDER)
-
-  // Load saved default columns from localStorage (shared between both states)
-  const getSavedDefaultColumns = () => {
-    if (typeof window === 'undefined') return getDefaultVisibleColumns()
-    try {
-      const stored = localStorage.getItem(`trapid-default-columns-${tableId}`)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (parsed && typeof parsed === 'object') {
-          return parsed
-        }
-      }
-      return getDefaultVisibleColumns()
-    } catch (error) {
-      console.error('Error loading default columns:', error)
-      return getDefaultVisibleColumns()
-    }
-  }
-
-  // visibleColumns starts mirroring defaultColumnsForNewViews
-  const [visibleColumns, setVisibleColumns] = useState(() => getSavedDefaultColumns())
-  const [defaultColumnsForNewViews, setDefaultColumnsForNewViews] = useState(() => getSavedDefaultColumns())
+  // Chapter 19 compliance: Column state from initialTableState (defined at top of component)
+  const [columnWidths, setColumnWidths] = useState(initialTableState.columnWidths)
+  const [columnOrder, setColumnOrder] = useState(initialTableState.columnOrder)
+  const [visibleColumns, setVisibleColumns] = useState(initialTableState.visibleColumns)
+  const [defaultColumnsForNewViews, setDefaultColumnsForNewViews] = useState(initialTableState.visibleColumns)
 
   // Save default columns to localStorage whenever they change (per table)
   useEffect(() => {
@@ -507,9 +551,20 @@ export default function TrapidTableView({
 
   const scrollContainerRef = useRef(null)
 
-  // Load table state from localStorage on mount (Chapter 20.5B)
-  // Use tableId for unique storage per table, fallback to category
+  // NOTE: Table state is now loaded from localStorage during initialization (via getInitialTableState)
+  // This useEffect is only needed if tableId or category changes AFTER initial render
+  // The initial load happens in useState initialization to avoid race conditions
+  const prevTableIdRef = React.useRef(tableId)
+  const prevCategoryRef = React.useRef(category)
   useEffect(() => {
+    // Skip on initial mount - state is already loaded from localStorage via initialTableState
+    if (prevTableIdRef.current === tableId && prevCategoryRef.current === category) {
+      return
+    }
+    prevTableIdRef.current = tableId
+    prevCategoryRef.current = category
+
+    // Load state for new tableId/category
     const storageKey = `trapidTableViewState_${tableId || category || 'default'}`
     const savedState = localStorage.getItem(storageKey)
     if (savedState) {
@@ -523,6 +578,13 @@ export default function TrapidTableView({
       } catch (e) {
         console.error('Failed to load table state:', e)
       }
+    } else {
+      // Reset to defaults for new table
+      setColumnWidths(DEFAULT_COLUMN_WIDTHS)
+      setColumnOrder(DEFAULT_COLUMN_ORDER)
+      setVisibleColumns(getDefaultVisibleColumns())
+      setSortBy('chapter')
+      setSortDir('asc')
     }
   }, [tableId, category])
 
@@ -6236,7 +6298,10 @@ export default function TrapidTableView({
           tableId={tableIdNumeric}
           onClose={() => setSelectedColumnForEdit(null)}
           onUpdate={() => {
-            // Optionally reload data here if needed
+            // Call the onColumnUpdate callback if provided to refresh table data
+            if (onColumnUpdate) {
+              onColumnUpdate()
+            }
             setSelectedColumnForEdit(null)
           }}
         />
