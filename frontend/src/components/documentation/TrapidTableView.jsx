@@ -151,8 +151,15 @@ export default function TrapidTableView({
       if (savedState) {
         const state = JSON.parse(savedState)
         // Merge saved visibleColumns with defaults to handle new columns added after save
+        // For NEW columns (not in saved state), use default visibility
+        // For EXISTING columns (in saved state), preserve user's choice
         const defaultVisible = getDefaultVisibleColumns()
-        const mergedVisible = { ...defaultVisible, ...(state.visibleColumns || {}) }
+        const savedVisible = state.visibleColumns || {}
+        const mergedVisible = {}
+        Object.keys(defaultVisible).forEach(key => {
+          // Only use saved value if that column existed in saved state
+          mergedVisible[key] = key in savedVisible ? savedVisible[key] : defaultVisible[key]
+        })
         // Also merge column widths and order to handle new columns
         const mergedWidths = { ...DEFAULT_COLUMN_WIDTHS, ...(state.columnWidths || {}) }
         const mergedOrder = state.columnOrder || DEFAULT_COLUMN_ORDER
@@ -176,8 +183,12 @@ export default function TrapidTableView({
         const parsed = JSON.parse(legacyStored)
         if (parsed && typeof parsed === 'object') {
           // Merge with defaults to handle new columns
+          // For NEW columns (not in saved state), use default visibility
           const defaultVisible = getDefaultVisibleColumns()
-          const mergedVisible = { ...defaultVisible, ...parsed }
+          const mergedVisible = {}
+          Object.keys(defaultVisible).forEach(key => {
+            mergedVisible[key] = key in parsed ? parsed[key] : defaultVisible[key]
+          })
           return {
             columnWidths: DEFAULT_COLUMN_WIDTHS,
             columnOrder: DEFAULT_COLUMN_ORDER,
@@ -1348,6 +1359,21 @@ export default function TrapidTableView({
     return result
   }, [entries, search, filters, sortColumns, columnFilters, category, cascadeFilters, filterGroups, interGroupLogic, selectedComponents])
 
+  // Collapse all groups by default when groupByColumn changes to a non-null value
+  useEffect(() => {
+    if (groupByColumn && filteredAndSorted.length > 0) {
+      const allGroups = new Set()
+      filteredAndSorted.forEach(entry => {
+        const rawValue = entry[groupByColumn]
+        const groupValue = rawValue && typeof rawValue === 'object' && rawValue.display !== undefined
+          ? (rawValue.display || '(empty)')
+          : (rawValue ?? '(empty)')
+        allGroups.add(groupValue)
+      })
+      setCollapsedGroups(allGroups)
+    }
+  }, [groupByColumn]) // Only trigger when groupByColumn changes, not on every filteredAndSorted change
+
   // Multi-column sort handler
   // Regular click: single column sort (cycles asc -> desc -> clear)
   // Shift+click: add/toggle column in multi-sort
@@ -1993,29 +2019,7 @@ export default function TrapidTableView({
           </a>
         )
 
-      case 'actions': // Column key 'actions' - View only icon for detail page navigation
-        return (
-          <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                if (onView) {
-                  onView(entry)
-                } else if (onRowDoubleClick) {
-                  onRowDoubleClick(entry)
-                } else {
-                  setModalEditData({...entry})
-                  setShowEditableModal(true)
-                }
-              }}
-              className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded transition-colors"
-              title="View"
-            >
-              <EyeIcon className="h-4 w-4" />
-            </button>
-          </div>
-        )
-
+      case 'actions': // Column key 'actions' - check column_type for full buttons vs view-only
       case 'action_buttons':
         // Full action buttons - View, Edit, Delete (for Gold Standard table)
         return (
@@ -4987,10 +4991,14 @@ export default function TrapidTableView({
                             <div className="mt-3 flex items-center gap-2">
                               <button
                                 onClick={() => {
-                                  // Collapse all groups
+                                  // Collapse all groups - handle lookup columns which return { id, display } objects
                                   const allGroups = new Set()
                                   filteredAndSorted.forEach(entry => {
-                                    allGroups.add(entry[groupByColumn] ?? '(empty)')
+                                    const rawValue = entry[groupByColumn]
+                                    const groupValue = rawValue && typeof rawValue === 'object' && rawValue.display !== undefined
+                                      ? (rawValue.display || '(empty)')
+                                      : (rawValue ?? '(empty)')
+                                    allGroups.add(groupValue)
                                   })
                                   setCollapsedGroups(allGroups)
                                 }}
@@ -5529,7 +5537,11 @@ export default function TrapidTableView({
               if (groupByColumn) {
                 const groups = {}
                 filteredAndSorted.forEach(entry => {
-                  const groupValue = entry[groupByColumn] ?? '(empty)'
+                  // Handle lookup columns which return { id, display } objects
+                  const rawValue = entry[groupByColumn]
+                  const groupValue = rawValue && typeof rawValue === 'object' && rawValue.display !== undefined
+                    ? (rawValue.display || '(empty)')
+                    : (rawValue ?? '(empty)')
                   if (!groups[groupValue]) {
                     groups[groupValue] = []
                   }

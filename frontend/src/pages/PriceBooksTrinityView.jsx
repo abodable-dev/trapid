@@ -7,7 +7,7 @@ import TrapidTableView from '../components/documentation/TrapidTableView'
 // Define price book-specific columns
 const PRICEBOOK_COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32 },
-  { key: 'actions', label: 'Actions', column_type: 'action_buttons', resizable: false, sortable: false, filterable: false, width: 80 },
+  { key: 'actions', label: 'Actions', column_type: 'action_buttons', resizable: true, sortable: false, filterable: false, width: 100 },
   { key: 'section', label: 'Code', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Item code' },
   { key: 'title', label: 'Item Name', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 300 },
   { key: 'type', label: 'Category', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 180 },
@@ -31,10 +31,11 @@ export default function PriceBooksTrinityView() {
   const loadPriceBookItems = async () => {
     setLoading(true)
     try {
+      // Load all items - API supports large limits
       const response = await api.get('/api/v1/pricebook', {
         params: {
           page: 1,
-          limit: 1000,
+          limit: 20000,  // Increased to load all ~14500 items
         }
       })
 
@@ -42,7 +43,7 @@ export default function PriceBooksTrinityView() {
 
       // API returns { items: [...], pagination: {...} }
       const itemsData = response.items || []
-      console.log('Price book items loaded:', itemsData.length, itemsData.slice(0, 2))
+      console.log('Price book items loaded:', itemsData.length, 'of', response.pagination?.total_count || 'unknown')
       setItems(itemsData)
     } catch (error) {
       console.error('Failed to load price book items:', error)
@@ -58,8 +59,10 @@ export default function PriceBooksTrinityView() {
     chapter_number: 0,
     chapter_name: 'Price Book',
     section_number: item.item_code || '',
+    section: item.item_code || '',  // Alias for 'section' column key (Code)
     title: item.item_name || '',
     entry_type: item.category || '',
+    type: item.category || '',  // Add 'type' field to match column key for Category grouping
     content: item.notes || '',
     description: item.notes || '',
     component: item.supplier?.name || item.default_supplier?.name || '',
@@ -148,6 +151,7 @@ export default function PriceBooksTrinityView() {
         onDelete={handleDelete}
         enableImport={true}
         enableExport={true}
+        enableSchemaEditor={true}
         onImport={handleImport}
         onExport={handleExport}
         onRowDoubleClick={(entry) => {
