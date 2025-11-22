@@ -4044,7 +4044,7 @@ export default function TrapidTableView({
                             />
                             <button
                               onClick={() => {
-                                // Save all changes: name, filters, groups, and columns
+                                // Save all changes: name, filters, groups, columns, and sort
                                 const nameInput = document.getElementById('editViewNameInput')
                                 const newName = nameInput?.value?.trim() || savedFilters.find(v => v.id === editingViewId)?.name
                                 setSavedFilters(savedFilters.map(v =>
@@ -4056,7 +4056,8 @@ export default function TrapidTableView({
                                         filterGroups: [...filterGroups],
                                         interGroupLogic,
                                         visibleColumns: { ...visibleColumns },
-                                        columnOrder: visibilityColumnOrder
+                                        columnOrder: visibilityColumnOrder,
+                                        sortColumns: [...sortColumns]
                                       }
                                     : v
                                 ))
@@ -4072,7 +4073,7 @@ export default function TrapidTableView({
                             </button>
                             <button
                               onClick={() => {
-                                // Save all changes: name, filters, groups, and columns
+                                // Save all changes: name, filters, groups, columns, and sort
                                 const nameInput = document.getElementById('editViewNameInput')
                                 const newName = nameInput?.value?.trim() || savedFilters.find(v => v.id === editingViewId)?.name
                                 setSavedFilters(savedFilters.map(v =>
@@ -4084,7 +4085,8 @@ export default function TrapidTableView({
                                         filterGroups: [...filterGroups],
                                         interGroupLogic,
                                         visibleColumns: { ...visibleColumns },
-                                        columnOrder: visibilityColumnOrder
+                                        columnOrder: visibilityColumnOrder,
+                                        sortColumns: [...sortColumns]
                                       }
                                     : v
                                 ))
@@ -4139,6 +4141,7 @@ export default function TrapidTableView({
                                     interGroupLogic,
                                     visibleColumns: columnsToSave,
                                     columnOrder: orderToSave,
+                                    sortColumns: [...sortColumns],
                                     isDefault: savedFilters.length === 0
                                   }])
                                   setActiveViewId(newViewId)
@@ -4166,6 +4169,7 @@ export default function TrapidTableView({
                                   interGroupLogic,
                                   visibleColumns: columnsToSave,
                                   columnOrder: orderToSave,
+                                  sortColumns: [...sortColumns],
                                   isDefault: savedFilters.length === 0
                                 }])
                                 setActiveViewId(newViewId)
@@ -4195,6 +4199,7 @@ export default function TrapidTableView({
                                   interGroupLogic,
                                   visibleColumns: columnsToSave,
                                   columnOrder: orderToSave,
+                                  sortColumns: [...sortColumns],
                                   isDefault: savedFilters.length === 0
                                 }])
                                 setActiveViewId(newViewId)
@@ -4260,6 +4265,7 @@ export default function TrapidTableView({
                           setColumnOrder={setColumnOrder}
                           setFilterGroups={setFilterGroups}
                           setInterGroupLogic={setInterGroupLogic}
+                          setSortColumns={setSortColumns}
                           hideHeader={true}
                           searchParams={searchParams}
                           setSearchParams={setSearchParams}

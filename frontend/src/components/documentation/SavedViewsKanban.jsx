@@ -25,6 +25,7 @@ export default function SavedViewsKanban({
   setColumnOrder,
   setFilterGroups,
   setInterGroupLogic,
+  setSortColumns,
   hideHeader = false,
   searchParams,
   setSearchParams
@@ -129,6 +130,10 @@ export default function SavedViewsKanban({
     if (view.columnOrder) {
       if (setVisibilityColumnOrder) setVisibilityColumnOrder(view.columnOrder)
       if (setColumnOrder) setColumnOrder(view.columnOrder)
+    }
+    // Restore sort columns
+    if (view.sortColumns && setSortColumns) {
+      setSortColumns(view.sortColumns)
     }
     setActiveViewId(view.id)
     // Update URL with view name (URL-friendly slug)
