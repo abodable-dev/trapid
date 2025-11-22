@@ -16,7 +16,7 @@ import {
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
 } from '@heroicons/react/24/outline'
 import { ShieldCheckIcon } from '@heroicons/react/24/solid'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
@@ -302,7 +302,7 @@ export default function ContactDetailPage() {
   }
 
   const filteredContacts = allContacts.filter(contact =>
-    contact.full_name.toLowerCase().includes(supplierSearchTerm.toLowerCase())
+    (contact.full_name || '').toLowerCase().includes(supplierSearchTerm.toLowerCase())
   )
 
   const toggleCategory = (category) => {

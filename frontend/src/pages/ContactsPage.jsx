@@ -1641,8 +1641,8 @@ export default function ContactsPage() {
           </TabPanel>
 
           {/* Raw Table Tab */}
-          <TabPanel className="flex-1 overflow-hidden flex flex-col">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4">
+          <TabPanel className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4 shrink-0">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-gray-900 dark:text-white">Raw Database View</h3>
@@ -1659,10 +1659,10 @@ export default function ContactsPage() {
                 </Link>
               </div>
             </div>
-            <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex-1 min-h-0 overflow-hidden bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
               <iframe
                 src="/embed/tables/contacts"
-                className="w-full h-full min-h-[600px] border-0"
+                className="w-full h-full border-0"
                 title="Raw Contacts Table"
               />
             </div>

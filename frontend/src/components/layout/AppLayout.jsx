@@ -57,7 +57,7 @@ const navigation = [
   { name: 'Financial', href: '/financial', icon: BanknotesIcon },
   { name: 'Xest', href: '/xest', icon: BeakerIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
-  { name: 'Contacts', href: '/contacts', icon: UsersIcon },
+  { name: 'Contacts', href: '/tables/214', icon: UsersIcon },
   { name: 'Accounts', href: '/accounts', icon: BanknotesIcon },
   { name: 'Corporate', href: '/corporate/companies', icon: BuildingOfficeIcon },
   { name: 'Documents', href: '/documents', icon: DocumentTextIcon },
@@ -83,8 +83,8 @@ function classNames(...classes) {
 const getRouteKey = (pathname) => {
   // Normalize paths like /jobs/123 to /jobs
   if (pathname.startsWith('/jobs/')) return '/jobs'
+  if (pathname === '/tables/214' || pathname.startsWith('/contacts/')) return '/tables/214'
   if (pathname.startsWith('/tables/')) return '/tables'
-  if (pathname.startsWith('/contacts/')) return '/contacts'
   if (pathname.startsWith('/accounts/')) return '/accounts'
   if (pathname.startsWith('/corporate/')) return '/corporate'
   return pathname
@@ -427,11 +427,11 @@ export default function AppLayout({ children }) {
 
       {/* Main content area */}
       <div className={classNames(
-        "transition-all duration-300",
+        "transition-all duration-300 h-screen flex flex-col",
         sidebarCollapsed ? "lg:pl-16" : "lg:pl-72"
       )}>
         {/* Top bar - always visible with help button */}
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900 dark:shadow-none transition-all duration-300">
+        <div className="z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900 dark:shadow-none transition-all duration-300">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
@@ -558,10 +558,10 @@ export default function AppLayout({ children }) {
 
         {/* Main content */}
         <main className={classNames(
-          "py-4",
+          "py-4 flex-1 flex flex-col min-h-0",
           sidebarCollapsed ? "lg:pt-4" : ""
         )}>
-          <div className="px-4 sm:px-6 lg:px-8">
+          <div className="px-4 sm:px-6 lg:px-8 flex-1 flex flex-col min-h-0">
             {children}
           </div>
         </main>

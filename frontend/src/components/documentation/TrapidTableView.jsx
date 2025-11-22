@@ -508,8 +508,9 @@ export default function TrapidTableView({
   const scrollContainerRef = useRef(null)
 
   // Load table state from localStorage on mount (Chapter 20.5B)
+  // Use tableId for unique storage per table, fallback to category
   useEffect(() => {
-    const storageKey = `trapidTableViewState_${category || 'default'}`
+    const storageKey = `trapidTableViewState_${tableId || category || 'default'}`
     const savedState = localStorage.getItem(storageKey)
     if (savedState) {
       try {
@@ -523,11 +524,11 @@ export default function TrapidTableView({
         console.error('Failed to load table state:', e)
       }
     }
-  }, [category])
+  }, [tableId, category])
 
   // Save table state to localStorage whenever it changes (Chapter 20.5B)
   useEffect(() => {
-    const storageKey = `trapidTableViewState_${category || 'default'}`
+    const storageKey = `trapidTableViewState_${tableId || category || 'default'}`
     const state = {
       columnWidths,
       columnOrder,
@@ -536,7 +537,7 @@ export default function TrapidTableView({
       sortDir
     }
     localStorage.setItem(storageKey, JSON.stringify(state))
-  }, [columnWidths, columnOrder, visibleColumns, sortBy, sortDir, category])
+  }, [columnWidths, columnOrder, visibleColumns, sortBy, sortDir, tableId, category])
 
   // Column resizing handlers (Chapter 20.4)
   const handleResizeStart = (e, columnKey) => {
@@ -2870,7 +2871,7 @@ export default function TrapidTableView({
         )}
 
         {/* Header with Search, Filters, and Column Visibility (Chapter 20.20, #19.10) */}
-        <div className="py-2 border-b border-gray-200 dark:border-gray-700 space-y-1 flex-shrink-0 relative z-20">
+        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 space-y-1 flex-shrink-0 relative z-20">
         {/* Search Box with Clear Button (Chapter 20.20) */}
         <div className="flex items-end gap-3">
           <div className="relative flex-1">
@@ -4526,7 +4527,7 @@ export default function TrapidTableView({
         {/* Table with Sticky Gradient Headers (Chapter 20.2) */}
         <div
           ref={scrollContainerRef}
-          className="trapid-table-scroll flex-1 min-h-0 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900 z-0"
+          className="trapid-table-scroll flex-1 min-h-0 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900 z-0 px-4"
         >
           <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
             <thead className="sticky top-0 z-10 backdrop-blur-sm">
