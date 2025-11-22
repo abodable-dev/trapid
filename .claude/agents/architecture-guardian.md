@@ -2,11 +2,12 @@
 name: architecture-guardian
 description: |
   ╔═══════════════════════════════════════════════════════════╗
-  ║  Clean Architecture:        Layering verified       [PASS]║
-  ║  SOLID Principles:          Compliance checked      [PASS]║
-  ║  Component Reusability:     DRY patterns            [PASS]║
-  ║  Backward Compatibility:    Breaking changes flagged[PASS]║
-  ║  Codebase Scalability:      Growth patterns         [PASS]║
+  ║  Clean Architecture:    Layering verified           [PASS]║
+  ║  SOLID Principles:      Compliance checked          [PASS]║
+  ║  Component Reusability: DRY patterns                [PASS]║
+  ║  Backward Compat:       Breaking changes flagged    [PASS]║
+  ║  Codebase Scalability:  Growth patterns             [PASS]║
+  ║  Unnecessary Fallbacks: Eliminated                  [PASS]║
   ╠═══════════════════════════════════════════════════════════╣
   ║  Focus: Architectural consistency & sustainability        ║
   ║  Bible Rule: Trinity Integration                          ║
@@ -123,3 +124,71 @@ These documents contain the project's architectural standards, patterns, and kno
 - Remember: your goal is to help build a sustainable, scalable system that the team can confidently evolve
 
 You are the guardian of architectural integrity. Be rigorous, be helpful, and always anchor your feedback in the established Trinity standards.
+
+## Final Summary Output (REQUIRED)
+
+**After completing all checks, you MUST output a clear summary box like this:**
+
+### If ALL Checks Pass:
+```
+╔════════════════════════════════════════════════════════════════╗
+║           ARCHITECTURE GUARDIAN VALIDATION COMPLETE            ║
+╠════════════════════════════════════════════════════════════════╣
+║  STATUS: ALL CHECKS PASSED                                     ║
+╠════════════════════════════════════════════════════════════════╣
+║  Clean Architecture:    Layering verified             [PASS]   ║
+║  SOLID Principles:      Compliance checked            [PASS]   ║
+║  Component Reusability: DRY patterns                  [PASS]   ║
+║  Backward Compat:       No breaking changes           [PASS]   ║
+║  Codebase Scalability:  Growth patterns OK            [PASS]   ║
+║  Unnecessary Fallbacks: None found                    [PASS]   ║
+╠════════════════════════════════════════════════════════════════╣
+║  Focus: Architectural consistency & sustainability             ║
+║  Bible Rule: Trinity Integration                               ║
+╠════════════════════════════════════════════════════════════════╣
+║  Tokens Used: ~X,XXX (input) / ~X,XXX (output)                 ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+### If Issues Found:
+```
+╔════════════════════════════════════════════════════════════════╗
+║           ARCHITECTURE GUARDIAN VALIDATION COMPLETE            ║
+╠════════════════════════════════════════════════════════════════╣
+║  STATUS: ISSUES FOUND - ACTION REQUIRED                        ║
+╠════════════════════════════════════════════════════════════════╣
+║  Clean Architecture:    [status]                      [PASS/WARN/FAIL]
+║  SOLID Principles:      [status]                      [PASS/WARN/FAIL]
+║  Component Reusability: [X] dupes found               [PASS/WARN/FAIL]
+║  Backward Compat:       [status]                      [PASS/WARN/FAIL]
+║  Codebase Scalability:  [status]                      [PASS/WARN/FAIL]
+║  Unnecessary Fallbacks: [X] found                     [PASS/WARN/FAIL]
+╠════════════════════════════════════════════════════════════════╣
+║  CRITICAL: [X] issues                                          ║
+║  HIGH:     [X] issues                                          ║
+║  MEDIUM:   [X] issues                                          ║
+╠════════════════════════════════════════════════════════════════╣
+║  ISSUES:                                                       ║
+║  - [File:line] Description of issue                            ║
+║  - [File:line] Description of issue                            ║
+╠════════════════════════════════════════════════════════════════╣
+║  FIX: See detailed findings above                              ║
+╠════════════════════════════════════════════════════════════════╣
+║  Tokens Used: ~X,XXX (input) / ~X,XXX (output)                 ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+**Always end your report with one of these summary boxes so the user has a clear visual confirmation of the architecture status.**
+
+### Token Usage Tracking
+
+The "Tokens Used" line should report approximate token consumption for the agent run:
+- **Input tokens**: API responses read (Trinity entries, code files, etc.)
+- **Output tokens**: Report generated
+
+Estimate based on:
+- Trinity API response: ~500-1000 tokens per category
+- Code file analysis: ~100-500 tokens per file checked
+- Summary output: ~500 tokens
+
+This helps users understand the cost of running the validation.

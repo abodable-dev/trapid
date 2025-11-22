@@ -233,6 +233,8 @@ export default function AgentStatus() {
         last_run: agent.last_run_at,
         last_run_by_name: agent.last_run_by_name,
         last_run_details: agent.last_run_details,
+        last_run_tokens: agent.last_run_tokens,
+        total_tokens: agent.total_tokens,
         status: agent.last_status,
         total_runs: agent.total_runs || 0,
         success_rate: agent.success_rate || 0,
@@ -281,12 +283,19 @@ export default function AgentStatus() {
       return sortConfig.direction === 'asc' ? comparison : -comparison;
     });
 
-  // Get token usage from last run details (if available)
+  // Get token usage from last_run_tokens column (primary) or last_run_details (fallback)
   const getTokenDisplay = (agent) => {
+    // Check new column first (preferred)
+    if (agent.last_run_tokens) {
+      const tokens = agent.last_run_tokens;
+      // Format as "8.5K" for thousands
+      const formatted = tokens >= 1000 ? `${(tokens / 1000).toFixed(1)}K` : String(tokens);
+      return formatted;
+    }
+    // Fallback to legacy details field
     const details = agent.last_run_details;
     if (details?.tokens_used) {
       const tokens = details.tokens_used;
-      // Format as "12.5K" for thousands
       const formatted = tokens >= 1000 ? `${(tokens / 1000).toFixed(1)}K` : String(tokens);
       return formatted;
     }
@@ -300,7 +309,7 @@ export default function AgentStatus() {
     { key: 'status', label: 'Status', sortable: true, searchable: false },
     { key: 'lastRun', label: 'Last Run', sortable: true, searchable: false },
     { key: 'totalRuns', label: 'Total Runs', sortable: true, searchable: false },
-    { key: 'tokens', label: 'Tokens (Last Run)', sortable: true, searchable: false },
+    { key: 'tokens', label: 'Tokens', sortable: true, searchable: false },
     { key: 'createdBy', label: 'Created By', sortable: true, searchable: true },
     { key: 'updatedBy', label: 'Updated', sortable: true, searchable: true }
   ];

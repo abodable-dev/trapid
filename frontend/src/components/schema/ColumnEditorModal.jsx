@@ -4,7 +4,6 @@ import { COLUMN_TYPES, getColumnTypeEmoji } from '../../constants/columnTypes';
 import ChoiceEditor from './ChoiceEditor';
 import FormulaEditor from './FormulaEditor';
 import TypeConversionEditor from './TypeConversionEditor';
-import RenameEditor from './RenameEditor';
 
 /**
  * ColumnEditorModal - Modal for editing a single column's schema
@@ -82,7 +81,6 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
 
   const tabs = [
     { id: 'info', label: 'Column Info', icon: 'ℹ️' },
-    { id: 'rename', label: 'Rename', icon: '✏️' },
     { id: 'type', label: 'Change Type', icon: '🔄' },
   ];
 
@@ -511,14 +509,6 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
             </div>
           )}
 
-          {activeTab === 'rename' && (
-            <RenameEditor
-              tableId={tableId}
-              column={column}
-              onUpdate={handleUpdate}
-            />
-          )}
-
           {activeTab === 'type' && (
             <TypeConversionEditor
               tableId={tableId}
@@ -550,15 +540,34 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={handleClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300
-                       bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
-                       rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-            >
-              Close
-            </button>
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {hasChanges() ? (
+                <span className="text-orange-600 dark:text-orange-400 font-medium">
+                  Unsaved changes
+                </span>
+              ) : null}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleClose}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300
+                         bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
+                         rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleSaveColumnInfo}
+                disabled={saving || !hasChanges()}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors
+                         ${hasChanges()
+                           ? 'bg-green-600 hover:bg-green-700'
+                           : 'bg-gray-400 cursor-not-allowed'}`}
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

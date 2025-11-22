@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon, PauseIcon, PlayIcon, PlusIcon, DocumentDuplicateIcon, UserGroupIcon } from '@heroicons/react/24/outline'
+import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon, PauseIcon, PlayIcon, PlusIcon, DocumentDuplicateIcon, UserGroupIcon, LinkIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import Toast from '../components/Toast'
 import SmGanttChart from '../components/sm-gantt/SmGanttChart'
@@ -8,6 +8,8 @@ import SmTaskModal from '../components/sm-gantt/SmTaskModal'
 import SmNewTaskModal from '../components/sm-gantt/SmNewTaskModal'
 import SmCopyFromTemplateModal from '../components/sm-gantt/SmCopyFromTemplateModal'
 import SmResourcePanel from '../components/sm-gantt/SmResourcePanel'
+import SmCascadeModal from '../components/sm-gantt/SmCascadeModal'
+import SmDependencyEditor from '../components/sm-gantt/SmDependencyEditor'
 
 const SmTaskList = ({ tasks, onTaskClick, onStatusChange }) => (
   <div className="h-full overflow-auto">
@@ -101,6 +103,11 @@ export default function SmGanttPage() {
   const [showNewTaskModal, setShowNewTaskModal] = useState(false)
   const [showCopyTemplateModal, setShowCopyTemplateModal] = useState(false)
   const [showResourcePanel, setShowResourcePanel] = useState(false)
+  const [showCascadeModal, setShowCascadeModal] = useState(false)
+  const [cascadeTask, setCascadeTask] = useState(null)
+  const [cascadeNewDate, setCascadeNewDate] = useState(null)
+  const [showDependencyEditor, setShowDependencyEditor] = useState(false)
+  const [dependencies, setDependencies] = useState([])
 
   useEffect(() => {
     if (id) {
@@ -118,9 +125,10 @@ export default function SmGanttPage() {
       const constructionResponse = await api.get(`/api/v1/constructions/${id}`)
       setConstruction(constructionResponse.construction)
 
-      // Load SM tasks
-      const tasksResponse = await api.get(`/api/v1/constructions/${id}/sm_tasks`)
-      setTasks(tasksResponse.sm_tasks || [])
+      // Load SM tasks and dependencies using gantt_data endpoint
+      const ganttResponse = await api.get(`/api/v1/constructions/${id}/sm_tasks/gantt_data`)
+      setTasks(ganttResponse.gantt_data?.tasks || [])
+      setDependencies(ganttResponse.gantt_data?.dependencies || [])
     } catch (err) {
       console.error('Failed to load SM Gantt data:', err)
       setError('Failed to load schedule data')
@@ -146,12 +154,61 @@ export default function SmGanttPage() {
 
   const handleTaskUpdate = async (taskId, updates) => {
     try {
-      await api.patch(`/api/v1/sm_tasks/${taskId}`, { sm_task: updates })
-      setToast({ type: 'success', message: 'Task updated' })
+      // If start_date is being changed, use the move endpoint for cascade handling
+      if (updates.start_date) {
+        const response = await api.post(`/api/v1/sm_tasks/${taskId}/move`, {
+          new_start_date: updates.start_date
+        })
+
+        // If cascade is blocked, show the cascade modal
+        if (response.needs_confirmation) {
+          const task = tasks.find(t => t.id === taskId)
+          setCascadeTask(task)
+          setCascadeNewDate(updates.start_date)
+          setShowCascadeModal(true)
+          return // Don't refresh yet, wait for modal confirmation
+        }
+
+        setToast({ type: 'success', message: response.message || 'Task moved' })
+      } else {
+        // Regular update (not a date change)
+        await api.patch(`/api/v1/sm_tasks/${taskId}`, { sm_task: updates })
+        setToast({ type: 'success', message: 'Task updated' })
+      }
       await loadData() // Refresh
     } catch (err) {
+      // Handle conflict response (409)
+      if (err.response?.status === 409 && err.response?.data?.needs_confirmation) {
+        const task = tasks.find(t => t.id === taskId)
+        setCascadeTask(task)
+        setCascadeNewDate(updates.start_date)
+        setShowCascadeModal(true)
+        return
+      }
       console.error('Failed to update task:', err)
       setToast({ type: 'error', message: 'Failed to update task' })
+      throw err
+    }
+  }
+
+  const handleCascadeConfirm = async (result) => {
+    setToast({ type: 'success', message: result.message || 'Cascade complete' })
+    setShowCascadeModal(false)
+    setCascadeTask(null)
+    setCascadeNewDate(null)
+    await loadData()
+  }
+
+  const handleDependencySave = async (taskId, predecessorIds) => {
+    try {
+      // Update dependencies via API
+      await api.patch(`/api/v1/sm_tasks/${taskId}`, {
+        sm_task: { predecessor_ids: predecessorIds }
+      })
+      setToast({ type: 'success', message: 'Dependencies updated' })
+      await loadData()
+    } catch (err) {
+      console.error('Failed to update dependencies:', err)
       throw err
     }
   }
@@ -313,7 +370,7 @@ export default function SmGanttPage() {
           {viewMode === 'gantt' ? (
             <SmGanttChart
               tasks={tasks}
-              dependencies={[]}
+              dependencies={dependencies}
               onTaskClick={handleTaskClick}
               onTaskUpdate={handleTaskUpdate}
             />
@@ -369,6 +426,31 @@ export default function SmGanttPage() {
         isOpen={showCopyTemplateModal}
         onClose={() => setShowCopyTemplateModal(false)}
         onCopy={handleCopyFromTemplate}
+      />
+
+      {/* Cascade Modal */}
+      <SmCascadeModal
+        isOpen={showCascadeModal}
+        onClose={() => {
+          setShowCascadeModal(false)
+          setCascadeTask(null)
+          setCascadeNewDate(null)
+        }}
+        task={cascadeTask}
+        newStartDate={cascadeNewDate}
+        onConfirm={handleCascadeConfirm}
+      />
+
+      {/* Dependency Editor Modal */}
+      <SmDependencyEditor
+        isOpen={showDependencyEditor}
+        onClose={() => {
+          setShowDependencyEditor(false)
+          setSelectedTask(null)
+        }}
+        task={selectedTask}
+        allTasks={tasks}
+        onSave={handleDependencySave}
       />
     </div>
   )

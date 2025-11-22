@@ -630,6 +630,59 @@ The Code Guardian Agent **replaces and consolidates:**
 
 ---
 
+## Final Summary Output (REQUIRED)
+
+**After completing all checks, you MUST output a clear summary box like this:**
+
+### If ALL Checks Pass:
+```
+╔════════════════════════════════════════════════════════════════╗
+║           CODE GUARDIAN REVIEW COMPLETE                        ║
+╠════════════════════════════════════════════════════════════════╣
+║  STATUS: ALL PATTERNS PASSED                                   ║
+╠════════════════════════════════════════════════════════════════╣
+║  Bug Pattern Detection:   Known patterns checked      [PASS]   ║
+║  PR Review:               Line-by-line analysis       [PASS]   ║
+║  Pattern Library:         References linked           [PASS]   ║
+║  Pre-Commit Integration:  Second layer defense        [PASS]   ║
+╠════════════════════════════════════════════════════════════════╣
+║  Files Scanned:           [X]                                  ║
+║  Patterns Checked:        4 (PATTERN-001 to 004)               ║
+║  Violations Found:        0                                    ║
+╠════════════════════════════════════════════════════════════════╣
+║  Tokens Used: ~X,XXX (input) / ~X,XXX (output)                 ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+### If Issues Found:
+```
+╔════════════════════════════════════════════════════════════════╗
+║           CODE GUARDIAN REVIEW COMPLETE                        ║
+╠════════════════════════════════════════════════════════════════╣
+║  STATUS: VIOLATIONS FOUND - ACTION REQUIRED                    ║
+╠════════════════════════════════════════════════════════════════╣
+║  Bug Pattern Detection:   [X] violations              [WARN]   ║
+║  PR Review:               Line-by-line analysis       [PASS]   ║
+║  Pattern Library:         References linked           [PASS]   ║
+║  Pre-Commit Integration:  Second layer defense        [PASS]   ║
+╠════════════════════════════════════════════════════════════════╣
+║  PATTERN-001 (Data Loss):         [X] violations               ║
+║  PATTERN-002 (Race Conditions):   [X] violations               ║
+║  PATTERN-003 (Infinite Loops):    [X] violations               ║
+║  PATTERN-004 (Deprecated):        [X] violations               ║
+╠════════════════════════════════════════════════════════════════╣
+║  VIOLATIONS:                                                   ║
+║  - [File:line] PATTERN-XXX: Description                        ║
+║  - [File:line] PATTERN-XXX: Description                        ║
+╠════════════════════════════════════════════════════════════════╣
+║  FIX: See detailed findings above                              ║
+╠════════════════════════════════════════════════════════════════╣
+║  Tokens Used: ~X,XXX (input) / ~X,XXX (output)                 ║
+╚════════════════════════════════════════════════════════════════╝
+```
+
+---
+
 **Agent Type:** Automated Code Review
 **Invocation:** Manual via Claude Code, or automated via GitHub Actions
 **Integration:** GitHub API, Trinity Bible API, Pattern Library

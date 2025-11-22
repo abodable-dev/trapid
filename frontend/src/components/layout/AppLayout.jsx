@@ -69,6 +69,7 @@ const navigation = [
   { name: 'Trinity', href: '/trinity', icon: BookOpenIcon },
   { name: 'DHTMLX Gantt', href: '/admin/system?tab=schedule-master&openGantt=dhtmlx', icon: ChartBarIcon },
   { name: 'SM Gantt', href: '/jobs/20/sm-gantt', icon: ChartBarIcon },
+  { name: 'SM Setup', href: '/admin/sm-setup', icon: Cog6ToothIcon },
 ]
 
 // Bottom navigation items

@@ -46,6 +46,7 @@ const PublicHolidaysPage = lazy(() => import('./pages/PublicHolidaysPage'))
 // Heavy components: Lazy load with priority (biggest bundle impact)
 const MasterSchedulePage = lazy(() => import('./pages/MasterSchedulePage')) // 3,952 lines Gantt!
 const SmGanttPage = lazy(() => import('./pages/SmGanttPage')) // SM Gantt v2 (new system)
+const SmSetupPage = lazy(() => import('./pages/SmSetupPage')) // SM Gantt setup/admin
 const PDFMeasurementTestPage = lazy(() => import('./pages/PDFMeasurementTestPage')) // PDF library
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage')) // PDF library
 const TrinityPage = lazy(() => import('./pages/TrinityPage')) // Trinity documentation viewer
@@ -137,6 +138,7 @@ function App() {
         <Route path="/jobs/:id/setup" element={<AppLayout><JobSetupPage /></AppLayout>} />
         <Route path="/jobs/:id/schedule" element={<AppLayout><MasterSchedulePage /></AppLayout>} />
         <Route path="/jobs/:id/sm-gantt" element={<AppLayout><SmGanttPage /></AppLayout>} />
+        <Route path="/admin/sm-setup" element={<AppLayout><SmSetupPage /></AppLayout>} />
         <Route path="/jobs/:id/:tab" element={<AppLayout><JobDetailPage /></AppLayout>} />
         <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
         <Route path="/meetings" element={<AppLayout><MeetingsPage /></AppLayout>} />

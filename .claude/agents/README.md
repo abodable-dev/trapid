@@ -152,6 +152,14 @@ The sync task uses this priority for attribution:
 - Provides product strategy guidance
 - Guards against internal tools shipping to external users
 
+### 17. agent-creator
+**Focus:** Automated Agent Creation Workflow | **Created by:** Robert
+- Guides through 7 multiple-choice questions
+- Generates box-format output mockup
+- Creates agent file with proper YAML frontmatter
+- Syncs to database automatically
+- Updates README with new agent listing
+
 ## How to Use
 
 ### Quick Commands
