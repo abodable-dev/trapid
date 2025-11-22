@@ -2767,7 +2767,7 @@ export default function TrapidTableView({
       `}</style>
       <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 min-h-0 overflow-hidden">
       {/* Bordered container wrapping toolbar and table */}
-      <div className="flex-1 flex flex-col mx-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 min-h-0 overflow-hidden">
 
         {/* Edit Mode Banner - Shows when edit mode is active */}
         {editModeActive && (
@@ -2871,7 +2871,7 @@ export default function TrapidTableView({
         )}
 
         {/* Header with Search, Filters, and Column Visibility (Chapter 20.20, #19.10) */}
-        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 space-y-1 flex-shrink-0 relative z-20">
+        <div className="py-2 border-b border-gray-200 dark:border-gray-700 space-y-1 flex-shrink-0 relative z-20">
         {/* Search Box with Clear Button (Chapter 20.20) */}
         <div className="flex items-end gap-3">
           <div className="relative flex-1">
@@ -3346,7 +3346,7 @@ export default function TrapidTableView({
         )}
 
         {/* Filters */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-end gap-3 flex-wrap">
           {/* Cascade Filters Button - Excel-style popup */}
           <div className="relative group flex items-center gap-2">
             <button
@@ -4527,7 +4527,7 @@ export default function TrapidTableView({
         {/* Table with Sticky Gradient Headers (Chapter 20.2) */}
         <div
           ref={scrollContainerRef}
-          className="trapid-table-scroll flex-1 min-h-0 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900 z-0 px-4"
+          className="trapid-table-scroll flex-1 min-h-0 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900 z-0"
         >
           <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
             <thead className="sticky top-0 z-10 backdrop-blur-sm">
