@@ -1619,8 +1619,11 @@ export default function TrapidTableView({
           <div
             className="flex items-center justify-center"
             onMouseDown={(e) => {
-              e.preventDefault() // Prevent text selection while dragging
-              handleDragSelectStart(entry.id)
+              // Only start drag selection on shift+click, otherwise let checkbox handle it
+              if (e.shiftKey) {
+                e.preventDefault()
+                handleDragSelectStart(entry.id)
+              }
             }}
             onMouseEnter={() => {
               if (isDragging) {
@@ -1631,11 +1634,9 @@ export default function TrapidTableView({
             <input
               type="checkbox"
               checked={selectedRows.has(entry.id)}
-              onChange={(e) => {
-                e.stopPropagation()
-                handleSelectRow(entry.id)
-              }}
-              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 pointer-events-none"
+              onChange={() => handleSelectRow(entry.id)}
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 cursor-pointer"
             />
           </div>
         )
@@ -4223,6 +4224,7 @@ export default function TrapidTableView({
                             <input
                               type="text"
                               id="editViewNameInput"
+                              key={editingViewId}
                               defaultValue={savedFilters.find(v => v.id === editingViewId)?.name || ''}
                               className="flex-1 max-w-[200px] text-sm font-semibold px-2 py-1 border-0 rounded bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
                               onKeyDown={(e) => {

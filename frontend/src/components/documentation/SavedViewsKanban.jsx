@@ -141,14 +141,8 @@ export default function SavedViewsKanban({
       setGroupByColumn(view.groupByColumn || null)
     }
     setActiveViewId(view.id)
-    // Update URL with view name (URL-friendly slug)
-    if (searchParams && setSearchParams) {
-      const viewSlug = view.name.toLowerCase().replace(/\s+/g, '-')
-      const newParams = new URLSearchParams(searchParams)
-      newParams.set('view', viewSlug)
-      setSearchParams(newParams, { replace: false })
-    }
-    setShowCascadeDropdown(false)
+    // Stay in cascade popup - just load settings into editor
+    // Don't close popup or update URL until user explicitly closes
   }
 
   const handleDeleteView = (view) => {
