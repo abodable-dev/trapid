@@ -367,6 +367,7 @@ export default function TrapidTableView({
   const [editingFilterId, setEditingFilterId] = useState(null) // Track which filter is being edited
   const [editingFilterValue, setEditingFilterValue] = useState('') // Track the temporary value while editing
   const [groupByColumn, setGroupByColumn] = useState(null) // Track which column to group by
+  const [collapsedGroups, setCollapsedGroups] = useState(new Set()) // Track which groups are collapsed
 
   // Helper to close cascade popup and clear state
   const closeCascadePopup = () => {
@@ -4947,6 +4948,69 @@ export default function TrapidTableView({
                           )}
                         </div>
                       </div>
+
+                      {/* Group By Panel */}
+                      <div className="mt-4">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                          Group By
+                        </label>
+                        <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700/30">
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={groupByColumn || ''}
+                              onChange={(e) => {
+                                const newGroup = e.target.value || null
+                                setGroupByColumn(newGroup)
+                                // Clear collapsed groups when changing grouping
+                                setCollapsedGroups(new Set())
+                              }}
+                              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300"
+                            >
+                              <option value="">No grouping</option>
+                              {COLUMNS.filter(col => col.key !== 'select' && col.key !== 'actions' && col.key !== 'id').map(col => (
+                                <option key={col.key} value={col.key}>{col.label}</option>
+                              ))}
+                            </select>
+                            {groupByColumn && (
+                              <button
+                                onClick={() => {
+                                  setGroupByColumn(null)
+                                  setCollapsedGroups(new Set())
+                                }}
+                                className="px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                          {groupByColumn && (
+                            <div className="mt-3 flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  // Collapse all groups
+                                  const allGroups = new Set()
+                                  filteredAndSorted.forEach(entry => {
+                                    allGroups.add(entry[groupByColumn] ?? '(empty)')
+                                  })
+                                  setCollapsedGroups(allGroups)
+                                }}
+                                className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded transition-colors"
+                              >
+                                Collapse All
+                              </button>
+                              <button
+                                onClick={() => setCollapsedGroups(new Set())}
+                                className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded transition-colors"
+                              >
+                                Expand All
+                              </button>
+                              <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
+                                Click row headers to collapse/expand
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     {/* COLUMN 3: Column Visibility - Combined with Default */}
@@ -5460,7 +5524,169 @@ export default function TrapidTableView({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900">
-            {filteredAndSorted.length > 0 ? filteredAndSorted.map((entry, index) => (
+            {filteredAndSorted.length > 0 ? (() => {
+              // Group rows if groupByColumn is set
+              if (groupByColumn) {
+                const groups = {}
+                filteredAndSorted.forEach(entry => {
+                  const groupValue = entry[groupByColumn] ?? '(empty)'
+                  if (!groups[groupValue]) {
+                    groups[groupValue] = []
+                  }
+                  groups[groupValue].push(entry)
+                })
+
+                // Sort group keys alphabetically
+                const sortedGroupKeys = Object.keys(groups).sort((a, b) => a.localeCompare(b))
+                const visibleColCount = columnOrder.filter(key => key === 'select' || key === 'actions' || visibleColumns[key]).length
+
+                let rowIndex = 0
+                return sortedGroupKeys.map(groupKey => {
+                  const groupRows = groups[groupKey]
+                  const isCollapsed = collapsedGroups.has(groupKey)
+
+                  return (
+                    <React.Fragment key={`group-${groupKey}`}>
+                      {/* Group Header Row */}
+                      <tr
+                        className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 cursor-pointer hover:from-indigo-200 hover:to-purple-200 dark:hover:from-indigo-900/60 dark:hover:to-purple-900/60 transition-colors"
+                        onClick={() => {
+                          setCollapsedGroups(prev => {
+                            const newSet = new Set(prev)
+                            if (newSet.has(groupKey)) {
+                              newSet.delete(groupKey)
+                            } else {
+                              newSet.add(groupKey)
+                            }
+                            return newSet
+                          })
+                        }}
+                      >
+                        <td colSpan={visibleColCount} className="px-3 py-2 font-semibold text-indigo-800 dark:text-indigo-200">
+                          <div className="flex items-center gap-2">
+                            <span className={`transform transition-transform ${isCollapsed ? '' : 'rotate-90'}`}>
+                              ▶
+                            </span>
+                            <span>{groupKey}</span>
+                            <span className="text-sm font-normal text-indigo-600 dark:text-indigo-400">
+                              ({groupRows.length} row{groupRows.length !== 1 ? 's' : ''})
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      {/* Group Child Rows */}
+                      {!isCollapsed && groupRows.map((entry) => {
+                        const currentIndex = rowIndex++
+                        return (
+                          <tr
+                            key={entry.id}
+                            onDoubleClick={(e) => {
+                              if (!editModeActive) {
+                                e.stopPropagation()
+                                if (onRowDoubleClick) {
+                                  onRowDoubleClick(entry)
+                                } else {
+                                  setModalEditData({...entry})
+                                  setShowEditableModal(true)
+                                }
+                              }
+                            }}
+                            className={`${
+                              editingRowId === entry.id
+                                ? 'bg-white dark:bg-gray-800 ring-4 ring-blue-500 shadow-lg'
+                                : selectedRows.has(entry.id)
+                                  ? 'bg-blue-200 dark:bg-blue-800/60 ring-2 ring-blue-400 dark:ring-blue-500'
+                                  : currentIndex % 2 === 0
+                                    ? 'bg-white dark:bg-gray-900'
+                                    : editModeActive
+                                      ? 'bg-orange-50 dark:bg-orange-900/20'
+                                      : 'bg-blue-50 dark:bg-blue-900/20'
+                            } ${!editModeActive ? 'cursor-pointer' : ''} ${editModeActive ? 'hover:bg-orange-100 dark:hover:bg-orange-800/30' : 'hover:bg-blue-100 dark:hover:bg-blue-800/30'} transition-colors duration-150`}
+                          >
+                            {columnOrder.filter(key => key === 'select' || key === 'actions' || visibleColumns[key]).map(colKey => {
+                              const column = COLUMNS.find(c => c.key === colKey)
+                              if (!column) return null
+
+                              return (
+                                <td
+                                  key={colKey}
+                                  onDoubleClick={(e) => {}}
+                                  onClick={(e) => {
+                                    console.log('Cell clicked:', { colKey, editModeActive, isComputed: column.isComputed, currentEditingRowId: editingRowId, clickedRowId: entry.id });
+                                    const textColumns = ['title', 'content'];
+                                    if (textColumns.includes(colKey) && !editModeActive) {
+                                      e.stopPropagation();
+                                      setSelectedEntry(entry);
+                                      setSelectedColumn(colKey);
+                                      return;
+                                    }
+                                    if (editModeActive && colKey !== 'select' && colKey !== 'id' && colKey !== 'user_id' && !column.isComputed) {
+                                      e.stopPropagation();
+                                      if (editingRowId !== entry.id) {
+                                        if (editingRowId !== null && Object.keys(editingData).length > 0) {
+                                          const errors = []
+                                          Object.keys(editingData).forEach(key => {
+                                            const error = validateField(key, editingData[key])
+                                            if (error) errors.push(error)
+                                          })
+                                          if (errors.length > 0) {
+                                            setValidationError(errors[0])
+                                            setTimeout(() => setValidationError(null), 4000)
+                                            return
+                                          }
+                                          if (onEdit) {
+                                            onEdit(editingData).catch(err => {
+                                              console.error('Failed to auto-save row:', err)
+                                              setValidationError('Failed to save changes')
+                                              setTimeout(() => setValidationError(null), 4000)
+                                            })
+                                          }
+                                        }
+                                        setValidationError(null)
+                                        setEditingRowId(entry.id);
+                                        const safeEditingData = { ...entry }
+                                        columns.forEach(col => {
+                                          if (safeEditingData[col.key] === undefined) {
+                                            safeEditingData[col.key] = ''
+                                          }
+                                        })
+                                        setEditingData(safeEditingData);
+                                        setSelectedRows(new Set([entry.id]));
+                                      }
+                                    }
+                                  }}
+                                  style={{
+                                    width: columnWidths[colKey],
+                                    minWidth: columnMinWidths[colKey] ?? 20,
+                                    maxWidth: columnWidths[colKey],
+                                    fontSize: '14px',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                                  }}
+                                  className={`group relative ${colKey === 'select' ? 'px-1 py-2' : 'px-3 py-2'} ${
+                                    !editModeActive && !isCellValid(entry, colKey, column) ? 'bg-red-600 text-white dark:bg-red-600 dark:text-white' :
+                                    editModeActive && column.isComputed ? 'text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-white'
+                                  } ${
+                                    colKey === 'select' ? 'text-center' : ['price', 'quantity', 'total_cost'].includes(colKey) ? 'text-right' : ''
+                                  } ${
+                                    ['title', 'content'].includes(colKey) && !editModeActive ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20' : ''
+                                  } ${
+                                    editModeActive && colKey !== 'select' && colKey !== 'id' && colKey !== 'user_id' && !column.isComputed ? 'cursor-pointer' : ''
+                                  } whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
+                                >
+                                  {renderCellContent(entry, colKey)}
+                                </td>
+                              )
+                            })}
+                          </tr>
+                        )
+                      })}
+                    </React.Fragment>
+                  )
+                })
+              }
+
+              // No grouping - render flat list
+              return filteredAndSorted.map((entry, index) => (
               <tr
                 key={entry.id}
                 onDoubleClick={(e) => {
@@ -5585,7 +5811,8 @@ export default function TrapidTableView({
                   )
                 })}
               </tr>
-            )) : (
+            ))
+            })() : (
               // When no rows match filters, show 10 empty placeholder rows to maintain table height
               // This keeps filter dropdowns accessible (Chapter 20: Table must remain usable even with no matches)
               Array.from({ length: 10 }).map((_, index) => (
