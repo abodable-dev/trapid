@@ -20,7 +20,9 @@ export default function SavedViewsKanban({
   cascadeFilters,
   visibleColumns,
   editingViewId,
-  setEditingViewId
+  setEditingViewId,
+  setVisibilityColumnOrder,
+  setColumnOrder
 }) {
   const [draggedIndex, setDraggedIndex] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
@@ -91,6 +93,11 @@ export default function SavedViewsKanban({
     })))
     if (view.visibleColumns) {
       setVisibleColumns(view.visibleColumns)
+    }
+    // Restore column order if saved
+    if (view.columnOrder && setVisibilityColumnOrder && setColumnOrder) {
+      setVisibilityColumnOrder(view.columnOrder)
+      setColumnOrder(view.columnOrder)
     }
     setActiveViewId(view.id)
     setShowCascadeDropdown(false)
