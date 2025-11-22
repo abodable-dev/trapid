@@ -26,7 +26,9 @@ import {
   ViewColumnsIcon,
   Cog8ToothIcon,
   WrenchScrewdriverIcon,
-  PlayIcon
+  PlayIcon,
+  PlusCircleIcon,
+  MinusCircleIcon
 } from '@heroicons/react/24/outline'
 
 const CHAPTER_NAMES = {
@@ -3438,6 +3440,19 @@ export default function TrapidTableView({
                   <MenuItem>
                     {({ focus }) => (
                       <button
+                        onClick={() => navigate(`/tables/${tableIdNumeric}/columns/new?name=${encodeURIComponent(tableName)}`)}
+                        className={`${
+                          focus ? 'bg-gray-100 dark:bg-gray-700' : ''
+                        } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                      >
+                        <PlusCircleIcon className="h-5 w-5 mr-3 text-green-600 dark:text-green-400" />
+                        <span>Create New Column</span>
+                      </button>
+                    )}
+                  </MenuItem>
+                  <MenuItem>
+                    {({ focus }) => (
+                      <button
                         onClick={() => navigate(`/tables/${tableIdNumeric}/columns?name=${encodeURIComponent(tableName)}`)}
                         className={`${
                           focus ? 'bg-gray-100 dark:bg-gray-700' : ''
@@ -3445,6 +3460,19 @@ export default function TrapidTableView({
                       >
                         <WrenchScrewdriverIcon className="h-5 w-5 mr-3 text-purple-600 dark:text-purple-400" />
                         <span>Edit Columns</span>
+                      </button>
+                    )}
+                  </MenuItem>
+                  <MenuItem>
+                    {({ focus }) => (
+                      <button
+                        onClick={() => navigate(`/tables/${tableIdNumeric}/columns?name=${encodeURIComponent(tableName)}&mode=delete`)}
+                        className={`${
+                          focus ? 'bg-gray-100 dark:bg-gray-700' : ''
+                        } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                      >
+                        <MinusCircleIcon className="h-5 w-5 mr-3 text-red-600 dark:text-red-400" />
+                        <span>Delete Column</span>
                       </button>
                     )}
                   </MenuItem>
@@ -3822,6 +3850,11 @@ export default function TrapidTableView({
                   // Combine: visible first, then hidden
                   const sortedOrder = [...visibleCols, ...hiddenCols]
                   setVisibilityColumnOrder(sortedOrder)
+                  // Clear sort/groupBy if no active view (fresh open)
+                  if (!activeViewId) {
+                    setSortColumns([])
+                    setGroupByColumn(null)
+                  }
                 }
                 setShowCascadeDropdown(!showCascadeDropdown)
               }}
