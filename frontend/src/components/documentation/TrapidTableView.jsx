@@ -114,7 +114,8 @@ export default function TrapidTableView({
   onRowDoubleClick = null,  // NEW: Custom handler for row double-click (overrides default edit modal)
   onView = null,  // NEW: Custom handler for View action button (e.g., navigate to detail page)
   onColumnUpdate = null,  // NEW: Callback when a column schema is updated (to refresh table data)
-  viewOnly = false  // NEW: When true, only show View button in action column (no edit/delete)
+  viewOnly = false,  // NEW: When true, only show View button in action column (no edit/delete)
+  loadingMore = false  // NEW: Shows loading indicator when more records are being fetched
 }) {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -277,6 +278,10 @@ export default function TrapidTableView({
   const [selectedRows, setSelectedRows] = useState(new Set())
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartRow, setDragStartRow] = useState(null)
+
+  // Display limit for large tables (performance optimization)
+  const [displayLimit, setDisplayLimit] = useState(200)
+  const ROWS_PER_PAGE = 200
 
   // Bulk action state - show delete only after edit clicked
   const [showDeleteButton, setShowDeleteButton] = useState(false)
@@ -5387,10 +5392,33 @@ export default function TrapidTableView({
           </div>
 
           {/* Showing count - right aligned */}
-          <div className="flex justify-end ml-auto">
+          <div className="flex justify-end ml-auto items-center gap-2">
+            {loadingMore && (
+              <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                <span className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></span>
+                Loading more...
+              </span>
+            )}
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              Showing {filteredAndSorted.length} of {entries.length}
+              Showing {Math.min(displayLimit, filteredAndSorted.length)} of {filteredAndSorted.length}
+              {filteredAndSorted.length !== entries.length && ` (${entries.length} total)`}
             </span>
+            {displayLimit < filteredAndSorted.length && (
+              <button
+                onClick={() => setDisplayLimit(prev => prev + ROWS_PER_PAGE)}
+                className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded transition-colors"
+              >
+                Load More
+              </button>
+            )}
+            {displayLimit > ROWS_PER_PAGE && (
+              <button
+                onClick={() => setDisplayLimit(ROWS_PER_PAGE)}
+                className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors"
+              >
+                Reset
+              </button>
+            )}
           </div>
         </div>
         {/* END BOTTOM SECTION - Filters */}
@@ -5907,8 +5935,9 @@ export default function TrapidTableView({
                 })
               }
 
-              // No grouping - render flat list
-              return filteredAndSorted.map((entry, index) => (
+              // No grouping - render flat list (with display limit for performance)
+              const displayedRows = filteredAndSorted.slice(0, displayLimit)
+              return displayedRows.map((entry, index) => (
               <tr
                 key={entry.id}
                 onDoubleClick={(e) => {

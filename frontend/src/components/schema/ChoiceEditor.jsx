@@ -35,13 +35,21 @@ const ChoiceEditor = ({ tableId, column, onUpdate }) => {
       setLoading(true);
       const response = await api.get(`/api/v1/tables/${tableId}/columns/${column.id}/choices`);
 
-      if (response.data.success) {
-        setChoices(response.data.choices);
-        setTotalRecords(response.data.total_records);
+      if (response?.data?.success) {
+        setChoices(response.data.choices || []);
+        setTotalRecords(response.data.total_records || 0);
+      } else if (response?.data?.error) {
+        alert('Failed to load choices: ' + response.data.error);
+      } else {
+        // Handle unexpected response format
+        console.error('Unexpected response:', response);
+        setChoices([]);
+        setTotalRecords(0);
       }
     } catch (error) {
       console.error('Error loading choices:', error);
-      alert('Failed to load choices: ' + (error.response?.data?.error || error.message));
+      const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+      alert('Failed to load choices: ' + errorMsg);
     } finally {
       setLoading(false);
     }

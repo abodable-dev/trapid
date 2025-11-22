@@ -87,6 +87,7 @@ export default function TablePage({ embedded = false }) {
   const [table, setTable] = useState(null)
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
   const [trapidColumns, setTrapidColumns] = useState([])
 
@@ -123,13 +124,45 @@ export default function TablePage({ embedded = false }) {
   const loadRecords = async () => {
     try {
       setLoading(true)
-      const response = await api.get(`/api/v1/tables/${id}/records?per_page=1000`)
-      setRecords(response.records || [])
+      // Load first page quickly (200 records)
+      const firstPage = await api.get(`/api/v1/tables/${id}/records?per_page=200&page=1`)
+      setRecords(firstPage.records || [])
+      setLoading(false)
+
+      // Check if there are more pages to load
+      const totalCount = firstPage.pagination?.total_count || 0
+      const totalPages = firstPage.pagination?.total_pages || 1
+
+      if (totalPages > 1) {
+        setLoadingMore(true)
+        // Load remaining pages in background
+        const remainingPages = []
+        for (let page = 2; page <= totalPages; page++) {
+          remainingPages.push(
+            api.get(`/api/v1/tables/${id}/records?per_page=200&page=${page}`)
+          )
+        }
+
+        // Load pages in parallel batches of 5
+        const batchSize = 5
+        let allRecords = [...(firstPage.records || [])]
+
+        for (let i = 0; i < remainingPages.length; i += batchSize) {
+          const batch = remainingPages.slice(i, i + batchSize)
+          const results = await Promise.all(batch)
+          results.forEach(result => {
+            allRecords = [...allRecords, ...(result.records || [])]
+          })
+          // Update records progressively
+          setRecords([...allRecords])
+        }
+        setLoadingMore(false)
+      }
     } catch (err) {
       setError('Failed to load records')
       console.error(err)
-    } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
   }
 
@@ -272,6 +305,7 @@ export default function TablePage({ embedded = false }) {
             tableName={table.name}
             entries={records}
             columns={trapidColumns}
+            loadingMore={loadingMore}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onBulkDelete={handleBulkDelete}
@@ -286,6 +320,8 @@ export default function TablePage({ embedded = false }) {
                 navigate(`/contacts/${entry.id}`)
               } else if (table.slug === 'jobs' || table.database_table_name === 'jobs') {
                 navigate(`/jobs/${entry.id}`)
+              } else if (table.slug === 'pricebook-items' || table.database_table_name === 'pricebook_items') {
+                navigate(`/price-books/${entry.id}`)
               }
               // For other tables, default edit modal opens
             }}
@@ -295,12 +331,15 @@ export default function TablePage({ embedded = false }) {
                 navigate(`/contacts/${entry.id}`)
               } else if (table.slug === 'jobs' || table.database_table_name === 'jobs') {
                 navigate(`/jobs/${entry.id}`)
+              } else if (table.slug === 'pricebook-items' || table.database_table_name === 'pricebook_items') {
+                navigate(`/price-books/${entry.id}`)
               }
             }}
             onColumnUpdate={() => {
               // Reload table data when column schema is updated
               loadTable()
             }}
+            viewOnly={table.slug === 'pricebook-items' || table.database_table_name === 'pricebook_items'}
             customActions={
               <button
                 onClick={handleAddNew}
