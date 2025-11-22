@@ -222,7 +222,9 @@ export default function TrapidTableView({
   const [showFilters, setShowFilters] = useState(true) // Toggle to show/hide filter inputs
 
   // Cascade filters - Excel-style dropdown filters that can be applied in any order
-  const [cascadeFilters, setCascadeFilters] = useState([]) // Array of {id, column, value, label}
+  const [cascadeFilters, setCascadeFilters] = useState([]) // Array of {id, column, value, label, groupId}
+  const [filterGroups, setFilterGroups] = useState([{ id: 'default', logic: 'AND' }]) // Array of {id, logic: 'AND'|'OR'}
+  const [interGroupLogic, setInterGroupLogic] = useState('OR') // Logic between groups: 'AND' or 'OR'
   const [showCascadeDropdown, setShowCascadeDropdown] = useState(false)
 
   // Saved custom filters - load from localStorage on mount (per table)
@@ -267,8 +269,23 @@ export default function TrapidTableView({
   })
   const [activeViewId, setActiveViewId] = useState(null) // Track which saved view is currently active
   const [editingViewId, setEditingViewId] = useState(null) // Track which view is being edited
+  const [creatingNewView, setCreatingNewView] = useState(false) // Track if creating a new view
+  const [newViewName, setNewViewName] = useState('') // Name for new view being created
   const [editingFilterId, setEditingFilterId] = useState(null) // Track which filter is being edited
   const [editingFilterValue, setEditingFilterValue] = useState('') // Track the temporary value while editing
+  const [groupByColumn, setGroupByColumn] = useState(null) // Track which column to group by
+
+  // Helper to close cascade popup and clear state
+  const closeCascadePopup = () => {
+    setShowCascadeDropdown(false)
+    setCascadeFilters([])
+    setFilterGroups([{ id: 'default', logic: 'AND' }])
+    setInterGroupLogic('OR')
+    setEditingViewId(null)
+    setCreatingNewView(false)
+    setNewViewName('')
+    setActiveViewId(null)
+  }
 
   // Cascade popup resizing state
   const [cascadePopupSize, setCascadePopupSize] = useState(() => {
@@ -280,6 +297,11 @@ export default function TrapidTableView({
   })
   const [isResizing, setIsResizing] = useState(null) // 'right', 'bottom', 'corner', or null
   const cascadePopupRef = useRef(null)
+
+  // Cascade popup dragging state
+  const [cascadePopupPosition, setCascadePopupPosition] = useState({ x: 0, y: 0 }) // Offset from center
+  const [isDraggingPopup, setIsDraggingPopup] = useState(false)
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 })
 
   // Save filters to localStorage whenever they change (per table)
   useEffect(() => {
@@ -428,6 +450,44 @@ export default function TrapidTableView({
       document.removeEventListener('mouseup', handleMouseUp)
     }
   }, [isResizing])
+
+  // Handle cascade popup dragging
+  useEffect(() => {
+    if (!isDraggingPopup) return
+
+    const handleMouseMove = (e) => {
+      const deltaX = e.clientX - dragStartPos.x
+      const deltaY = e.clientY - dragStartPos.y
+
+      // Calculate bounds to keep popup on screen
+      const popupWidth = (cascadePopupSize.width / 100) * window.innerWidth
+      const popupHeight = (cascadePopupSize.height / 100) * window.innerHeight
+      const maxX = (window.innerWidth - popupWidth) / 2
+      const maxY = (window.innerHeight - popupHeight) / 2
+
+      setCascadePopupPosition(prev => ({
+        x: Math.max(-maxX, Math.min(maxX, prev.x + deltaX)),
+        y: Math.max(-maxY, Math.min(maxY, prev.y + deltaY))
+      }))
+      setDragStartPos({ x: e.clientX, y: e.clientY })
+    }
+
+    const handleMouseUp = () => {
+      setIsDraggingPopup(false)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    document.body.style.cursor = 'move'
+    document.body.style.userSelect = 'none'
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDraggingPopup, dragStartPos, cascadePopupSize])
 
   // Column resizing state
   const [resizingColumn, setResizingColumn] = useState(null)
@@ -802,139 +862,163 @@ export default function TrapidTableView({
       }
     })
 
-    // Apply cascade filters - Excel-style filters applied in order
-    cascadeFilters.forEach(filter => {
-      if (!filter.value && filter.value !== 0) return
+    // Apply cascade filters with group support
+    // Helper function to check if a single filter matches an entry
+    const filterMatches = (filter, entry) => {
+      if (!filter.value && filter.value !== 0) return true // Empty filter passes
 
       const key = filter.column
       const value = filter.value
       const operator = filter.operator || '='
+      const entryValue = entry[key]
 
-      // Generic filter that works for any column
-      result = result.filter(entry => {
-        const entryValue = entry[key]
+      // Handle different value types
+      if (typeof value === 'boolean') {
+        return entryValue === value
+      }
 
-        // Handle different value types
-        if (typeof value === 'boolean') {
-          return entryValue === value
-        }
+      // Handle date comparison - check if this looks like a date filter
+      const dateKeywords = ['date', 'created_at', 'updated_at', 'datetime', '_at', 'timestamp']
+      const isDateColumn = dateKeywords.some(keyword => key.toLowerCase().includes(keyword))
 
-        // Handle date comparison - check if this looks like a date filter
-        const dateKeywords = ['date', 'created_at', 'updated_at', 'datetime', '_at', 'timestamp']
-        const isDateColumn = dateKeywords.some(keyword => key.toLowerCase().includes(keyword))
+      if (isDateColumn && entryValue) {
+        const entryDate = new Date(entryValue)
+        const entryDateOnly = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate())
 
-        if (isDateColumn && entryValue) {
-          const entryDate = new Date(entryValue)
-          const entryDateOnly = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate())
-
-          // Handle RELATIVE date filters (today, yesterday, last7days, etc.)
-          if (operator === 'relative') {
-            const today = new Date()
-            const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-
-            switch (value) {
-              case 'today':
-                return entryDateOnly.getTime() === todayOnly.getTime()
-              case 'yesterday': {
-                const yesterday = new Date(todayOnly)
-                yesterday.setDate(yesterday.getDate() - 1)
-                return entryDateOnly.getTime() === yesterday.getTime()
-              }
-              case 'last7days': {
-                const weekAgo = new Date(todayOnly)
-                weekAgo.setDate(weekAgo.getDate() - 7)
-                return entryDateOnly >= weekAgo && entryDateOnly <= todayOnly
-              }
-              case 'last30days': {
-                const monthAgo = new Date(todayOnly)
-                monthAgo.setDate(monthAgo.getDate() - 30)
-                return entryDateOnly >= monthAgo && entryDateOnly <= todayOnly
-              }
-              case 'thisMonth': {
-                const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-                return entryDateOnly >= monthStart && entryDateOnly <= todayOnly
-              }
-              case 'lastMonth': {
-                const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-                const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
-                return entryDateOnly >= lastMonthStart && entryDateOnly <= lastMonthEnd
-              }
-              default:
-                return true
-            }
-          }
-
-          // Handle fixed date filters
-          const filterDate = new Date(value)
-          const filterDateOnly = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate())
-
-          switch (operator) {
-            case 'between':
-              if (filter.value2) {
-                const filterDate2 = new Date(filter.value2)
-                const filterDate2Only = new Date(filterDate2.getFullYear(), filterDate2.getMonth(), filterDate2.getDate())
-                return entryDateOnly >= filterDateOnly && entryDateOnly <= filterDate2Only
-              }
-              return true
-            case '>': return entryDateOnly > filterDateOnly
-            case '<': return entryDateOnly < filterDateOnly
-            case '>=': return entryDateOnly >= filterDateOnly
-            case '<=': return entryDateOnly <= filterDateOnly
-            case '=':
-            default: return entryDateOnly.getTime() === filterDateOnly.getTime()
-          }
-        }
-
-        // Handle relative filters (hasValue, empty) - works for any column type
+        // Handle RELATIVE date filters (today, yesterday, last7days, etc.)
         if (operator === 'relative') {
+          const today = new Date()
+          const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
           switch (value) {
-            case 'hasValue':
-              return entryValue !== null && entryValue !== undefined && entryValue !== ''
-            case 'empty':
-              return entryValue === null || entryValue === undefined || entryValue === ''
+            case 'today':
+              return entryDateOnly.getTime() === todayOnly.getTime()
+            case 'yesterday': {
+              const yesterday = new Date(todayOnly)
+              yesterday.setDate(yesterday.getDate() - 1)
+              return entryDateOnly.getTime() === yesterday.getTime()
+            }
+            case 'last7days': {
+              const weekAgo = new Date(todayOnly)
+              weekAgo.setDate(weekAgo.getDate() - 7)
+              return entryDateOnly >= weekAgo && entryDateOnly <= todayOnly
+            }
+            case 'last30days': {
+              const monthAgo = new Date(todayOnly)
+              monthAgo.setDate(monthAgo.getDate() - 30)
+              return entryDateOnly >= monthAgo && entryDateOnly <= todayOnly
+            }
+            case 'thisMonth': {
+              const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+              return entryDateOnly >= monthStart && entryDateOnly <= todayOnly
+            }
+            case 'lastMonth': {
+              const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+              const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
+              return entryDateOnly >= lastMonthStart && entryDateOnly <= lastMonthEnd
+            }
             default:
               return true
           }
         }
 
-        // Handle text operators (contains, startsWith, endsWith)
-        if (operator === 'contains') {
-          return String(entryValue || '').toLowerCase().includes(String(value).toLowerCase())
-        }
-        if (operator === 'startsWith') {
-          return String(entryValue || '').toLowerCase().startsWith(String(value).toLowerCase())
-        }
-        if (operator === 'endsWith') {
-          return String(entryValue || '').toLowerCase().endsWith(String(value).toLowerCase())
-        }
+        // Handle fixed date filters
+        const filterDate = new Date(value)
+        const filterDateOnly = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate())
 
-        // Handle numeric comparison with operators
-        if (typeof entryValue === 'number' && !isNaN(parseFloat(value))) {
-          const numValue = parseFloat(value)
-          switch (operator) {
-            case 'between':
-              if (filter.value2) {
-                const numValue2 = parseFloat(filter.value2)
-                return entryValue >= numValue && entryValue <= numValue2
-              }
-              return true
-            case '>': return entryValue > numValue
-            case '<': return entryValue < numValue
-            case '>=': return entryValue >= numValue
-            case '<=': return entryValue <= numValue
-            case '!=': return entryValue !== numValue
-            case '=':
-            default: return entryValue === numValue
+        switch (operator) {
+          case 'between':
+            if (filter.value2) {
+              const filterDate2 = new Date(filter.value2)
+              const filterDate2Only = new Date(filterDate2.getFullYear(), filterDate2.getMonth(), filterDate2.getDate())
+              return entryDateOnly >= filterDateOnly && entryDateOnly <= filterDate2Only
+            }
+            return true
+          case '>': return entryDateOnly > filterDateOnly
+          case '<': return entryDateOnly < filterDateOnly
+          case '>=': return entryDateOnly >= filterDateOnly
+          case '<=': return entryDateOnly <= filterDateOnly
+          case '=':
+          default: return entryDateOnly.getTime() === filterDateOnly.getTime()
+        }
+      }
+
+      // Handle relative filters (hasValue, empty) - works for any column type
+      if (operator === 'relative') {
+        switch (value) {
+          case 'hasValue':
+            return entryValue !== null && entryValue !== undefined && entryValue !== ''
+          case 'empty':
+            return entryValue === null || entryValue === undefined || entryValue === ''
+          default:
+            return true
+        }
+      }
+
+      // Handle text operators (contains, startsWith, endsWith)
+      if (operator === 'contains') {
+        return String(entryValue || '').toLowerCase().includes(String(value).toLowerCase())
+      }
+      if (operator === 'startsWith') {
+        return String(entryValue || '').toLowerCase().startsWith(String(value).toLowerCase())
+      }
+      if (operator === 'endsWith') {
+        return String(entryValue || '').toLowerCase().endsWith(String(value).toLowerCase())
+      }
+
+      // Handle numeric comparison with operators
+      if (typeof entryValue === 'number' && !isNaN(parseFloat(value))) {
+        const numValue = parseFloat(value)
+        switch (operator) {
+          case 'between':
+            if (filter.value2) {
+              const numValue2 = parseFloat(filter.value2)
+              return entryValue >= numValue && entryValue <= numValue2
+            }
+            return true
+          case '>': return entryValue > numValue
+          case '<': return entryValue < numValue
+          case '>=': return entryValue >= numValue
+          case '<=': return entryValue <= numValue
+          case '!=': return entryValue !== numValue
+          case '=':
+          default: return entryValue === numValue
+        }
+      }
+
+      // Handle string comparison (case-insensitive)
+      if (operator === '!=') {
+        return String(entryValue).toLowerCase() !== String(value).toLowerCase()
+      }
+      return String(entryValue).toLowerCase() === String(value).toLowerCase()
+    }
+
+    // Apply cascade filters with group logic
+    if (cascadeFilters.length > 0) {
+      result = result.filter(entry => {
+        // Group filters by their groupId
+        const groupResults = filterGroups.map(group => {
+          const groupFilters = cascadeFilters.filter(f => (f.groupId || 'default') === group.id)
+          if (groupFilters.length === 0) return true // Empty group passes
+
+          // Apply group's internal logic (AND/OR)
+          if (group.logic === 'OR') {
+            return groupFilters.some(filter => filterMatches(filter, entry))
+          } else {
+            // AND logic (default)
+            return groupFilters.every(filter => filterMatches(filter, entry))
           }
-        }
+        })
 
-        // Handle string comparison (case-insensitive)
-        if (operator === '!=') {
-          return String(entryValue).toLowerCase() !== String(value).toLowerCase()
+        // Apply inter-group logic
+        if (interGroupLogic === 'OR') {
+          return groupResults.some(r => r)
+        } else {
+          // AND logic (default between groups)
+          return groupResults.every(r => r)
         }
-        return String(entryValue).toLowerCase() === String(value).toLowerCase()
       })
-    })
+    }
 
     // Apply global filters (legacy)
     if (filters.chapter !== 'all') {
@@ -1058,7 +1142,7 @@ export default function TrapidTableView({
     })
 
     return result
-  }, [entries, search, filters, sortBy, sortDir, columnFilters, category, cascadeFilters, selectedComponents])
+  }, [entries, search, filters, sortBy, sortDir, columnFilters, category, cascadeFilters, filterGroups, interGroupLogic, selectedComponents])
 
   const handleSort = (column) => {
     if (sortBy === column) {
@@ -2585,6 +2669,55 @@ export default function TrapidTableView({
           background: #1E3A8A;
         }
 
+        /* Cascade popup scrollbar styling - HUGE and always visible */
+        .cascade-popup-scroll {
+          scrollbar-width: auto;
+          scrollbar-color: #6366F1 #D1D5DB;
+          overflow-y: scroll !important;
+        }
+        .cascade-popup-scroll::-webkit-scrollbar {
+          width: 48px !important;
+          height: 48px !important;
+          display: block !important;
+          background: #E5E7EB !important;
+        }
+        .cascade-popup-scroll::-webkit-scrollbar-track {
+          background: #E5E7EB !important;
+          border-radius: 24px !important;
+          margin: 4px !important;
+          border: 3px solid #F3F4F6 !important;
+        }
+        .cascade-popup-scroll::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #6366F1 0%, #8B5CF6 100%) !important;
+          border-radius: 24px !important;
+          border: 6px solid #E5E7EB !important;
+          min-height: 80px !important;
+          cursor: grab !important;
+        }
+        .cascade-popup-scroll::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        }
+        .cascade-popup-scroll::-webkit-scrollbar-thumb:active {
+          cursor: grabbing;
+          background: linear-gradient(135deg, #4338CA 0%, #6D28D9 100%);
+        }
+        .dark .cascade-popup-scroll {
+          scrollbar-color: #4F46E5 #374151;
+        }
+        .dark .cascade-popup-scroll::-webkit-scrollbar-track {
+          background: #374151;
+        }
+        .dark .cascade-popup-scroll::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+          border-color: #374151;
+        }
+        .dark .cascade-popup-scroll::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, #4338CA 0%, #6D28D9 100%);
+        }
+        .dark .cascade-popup-scroll::-webkit-scrollbar-thumb:active {
+          background: linear-gradient(135deg, #3730A3 0%, #5B21B6 100%);
+        }
+
         /* Cursor styles for table headers */
         .trinity-resize-handle {
           cursor: col-resize;
@@ -2976,7 +3109,24 @@ export default function TrapidTableView({
           {/* Cascade Filters Button - Excel-style popup */}
           <div className="relative group flex items-center gap-2">
             <button
-              onClick={() => setShowCascadeDropdown(!showCascadeDropdown)}
+              onClick={() => {
+                if (!showCascadeDropdown) {
+                  // Reset position to center when opening
+                  setCascadePopupPosition({ x: 0, y: 0 })
+                  // Sort columns: visible (ticked) first, then hidden (unticked) at bottom
+                  const filteredCols = COLUMNS.filter(col => col.key !== 'select')
+                  const currentOrder = visibilityColumnOrder
+                    ? [...visibilityColumnOrder]
+                    : filteredCols.sort((a, b) => a.label.localeCompare(b.label)).map(c => c.key)
+                  // Separate visible and hidden columns
+                  const visibleCols = currentOrder.filter(key => visibleColumns[key] !== false)
+                  const hiddenCols = currentOrder.filter(key => visibleColumns[key] === false)
+                  // Combine: visible first, then hidden
+                  const sortedOrder = [...visibleCols, ...hiddenCols]
+                  setVisibilityColumnOrder(sortedOrder)
+                }
+                setShowCascadeDropdown(!showCascadeDropdown)
+              }}
               className="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-200 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
             >
               <FunnelIcon className="w-4 h-4" />
@@ -3006,12 +3156,24 @@ export default function TrapidTableView({
                   column: f.column,
                   value: f.value,
                   operator: f.operator || '=',
-                  label: f.label
+                  label: f.label,
+                  groupId: f.groupId || 'default'
                 })))
+                // Restore filter groups and inter-group logic
+                if (view.filterGroups) {
+                  setFilterGroups(view.filterGroups)
+                } else {
+                  setFilterGroups([{ id: 'default', logic: 'AND' }])
+                }
+                if (view.interGroupLogic) {
+                  setInterGroupLogic(view.interGroupLogic)
+                } else {
+                  setInterGroupLogic('OR')
+                }
                 if (view.visibleColumns) {
                   setVisibleColumns(view.visibleColumns)
                 }
-                // Restore column order if saved
+                // Restore column order for both visibility panel and table
                 if (view.columnOrder) {
                   setVisibilityColumnOrder(view.columnOrder)
                   setColumnOrder(view.columnOrder)
@@ -3076,7 +3238,9 @@ export default function TrapidTableView({
                     v.id === activeViewId
                       ? {
                           ...v,
-                          filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label })),
+                          filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label, groupId: f.groupId })),
+                          filterGroups: [...filterGroups],
+                          interGroupLogic,
                           visibleColumns: { ...visibleColumns }
                         }
                       : v
@@ -3094,15 +3258,16 @@ export default function TrapidTableView({
             {showCascadeDropdown && (
               <>
                 {/* Backdrop */}
-                <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowCascadeDropdown(false)} />
+                <div className="fixed inset-0 bg-black/30 z-50" onClick={closeCascadePopup} />
                 {/* Dropdown positioned in center like a modal - resizable */}
                 <div
                   ref={cascadePopupRef}
                   style={{
                     width: `${cascadePopupSize.width}vw`,
-                    height: `${cascadePopupSize.height}vh`
+                    height: `${cascadePopupSize.height}vh`,
+                    transform: `translate(calc(-50% + ${cascadePopupPosition.x}px), calc(-50% + ${cascadePopupPosition.y}px))`
                   }}
-                  className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl overflow-hidden z-[60]"
+                  className="fixed top-1/2 left-1/2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl overflow-hidden z-[60]"
                   onClick={(e) => e.stopPropagation()}
                 >
                 {/* Right resize handle */}
@@ -3136,27 +3301,263 @@ export default function TrapidTableView({
                     <path d="M22 22H20V20H22V22ZM22 18H20V16H22V18ZM18 22H16V20H18V22ZM22 14H20V12H22V14ZM18 18H16V16H18V18ZM14 22H12V20H14V22Z" />
                   </svg>
                 </div>
-                <div className="p-3 h-full overflow-y-auto">
-                  {/* Header */}
-                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2 mb-3">
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <div className="p-3 h-full overflow-hidden flex flex-col">
+                  {/* Header - Draggable */}
+                  <div
+                    className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2 mb-3 select-none cursor-move"
+                    onMouseDown={(e) => {
+                      // Don't start drag if clicking buttons
+                      if (e.target.tagName === 'BUTTON') return
+                      e.preventDefault()
+                      setIsDraggingPopup(true)
+                      setDragStartPos({ x: e.clientX, y: e.clientY })
+                    }}
+                  >
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z" />
+                      </svg>
                       Cascade Filters
                     </span>
                     <button
-                      onClick={() => setShowCascadeDropdown(false)}
+                      onClick={closeCascadePopup}
                       className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       ✕
                     </button>
                   </div>
 
-                  {/* Main content: 4 columns - Saved Views | Column Select | Value Select | Column Visibility */}
-                  <div className="grid grid-cols-[280px,1fr,1.5fr,fit-content(200px)] gap-4" style={{ height: `calc(${cascadePopupSize.height}vh - 4rem)` }}>
+                  {/* Two separate header boxes */}
+                  <div className="grid grid-cols-[340px,1fr] gap-4 -mx-3 px-3 mb-3">
+                    {/* LEFT: Saved Views header box */}
+                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2.5 rounded-lg shadow-lg">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold">Saved Views</span>
+                          <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] bg-white/20 backdrop-blur-sm text-white rounded-full text-xs font-bold">
+                            {savedFilters.length}
+                          </span>
+                        </div>
+                        <div className="text-xs opacity-75">Drag to reorder</div>
+                      </div>
+                    </div>
+                    {/* RIGHT: Create New or Edit View header box */}
+                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2.5 rounded-lg shadow-lg">
+                      <div className="flex items-center gap-3">
+                        {editingViewId ? (
+                          <>
+                            <span className="text-sm font-bold whitespace-nowrap">Edit View:</span>
+                            <input
+                              type="text"
+                              id="editViewNameInput"
+                              defaultValue={savedFilters.find(v => v.id === editingViewId)?.name || ''}
+                              className="flex-1 max-w-[200px] text-sm font-semibold px-2 py-1 border-0 rounded bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Escape') {
+                                  setEditingViewId(null)
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => {
+                                // Save all changes: name, filters, groups, and columns
+                                const nameInput = document.getElementById('editViewNameInput')
+                                const newName = nameInput?.value?.trim() || savedFilters.find(v => v.id === editingViewId)?.name
+                                setSavedFilters(savedFilters.map(v =>
+                                  v.id === editingViewId
+                                    ? {
+                                        ...v,
+                                        name: newName,
+                                        filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label, groupId: f.groupId })),
+                                        filterGroups: [...filterGroups],
+                                        interGroupLogic,
+                                        visibleColumns: { ...visibleColumns },
+                                        columnOrder: visibilityColumnOrder
+                                      }
+                                    : v
+                                ))
+                                setEditingViewId(null)
+                                setActiveViewId(null)
+                                setCascadeFilters([])
+                                setFilterGroups([{ id: 'default', logic: 'AND' }])
+                                setInterGroupLogic('OR')
+                              }}
+                              className="text-xs px-3 py-1 bg-green-500 hover:bg-green-600 rounded transition-colors whitespace-nowrap font-medium"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Save all changes: name, filters, groups, and columns
+                                const nameInput = document.getElementById('editViewNameInput')
+                                const newName = nameInput?.value?.trim() || savedFilters.find(v => v.id === editingViewId)?.name
+                                setSavedFilters(savedFilters.map(v =>
+                                  v.id === editingViewId
+                                    ? {
+                                        ...v,
+                                        name: newName,
+                                        filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label, groupId: f.groupId })),
+                                        filterGroups: [...filterGroups],
+                                        interGroupLogic,
+                                        visibleColumns: { ...visibleColumns },
+                                        columnOrder: visibilityColumnOrder
+                                      }
+                                    : v
+                                ))
+                                setEditingViewId(null)
+                                setActiveViewId(null)
+                                setCascadeFilters([])
+                                setFilterGroups([{ id: 'default', logic: 'AND' }])
+                                setInterGroupLogic('OR')
+                                setShowCascadeDropdown(false) // Close the popup
+                              }}
+                              className="text-xs px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded transition-colors whitespace-nowrap font-medium"
+                            >
+                              Save & Close
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingViewId(null)
+                                setCascadeFilters([])
+                              }}
+                              className="text-xs px-2 py-1 bg-white/20 hover:bg-white/30 rounded transition-colors whitespace-nowrap"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : creatingNewView ? (
+                          <>
+                            <span className="text-sm font-bold whitespace-nowrap">New View:</span>
+                            <input
+                              type="text"
+                              autoFocus
+                              value={newViewName}
+                              onChange={(e) => setNewViewName(e.target.value.slice(0, 20))}
+                              placeholder="Enter view name..."
+                              className="flex-1 max-w-[200px] text-sm font-semibold px-2 py-1 border-0 rounded bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Escape') {
+                                  setCreatingNewView(false)
+                                  setNewViewName('')
+                                } else if (e.key === 'Enter' && newViewName.trim()) {
+                                  // Save the new view
+                                  const columnsToSave = {}
+                                  COLUMNS.filter(col => col.key !== 'select').forEach(col => {
+                                    columnsToSave[col.key] = visibleColumns[col.key] !== false
+                                  })
+                                  const orderToSave = columnOrder || COLUMNS.map(c => c.key)
+                                  const newViewId = Date.now()
+                                  setSavedFilters([...savedFilters, {
+                                    id: newViewId,
+                                    name: newViewName.trim(),
+                                    filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label, groupId: f.groupId })),
+                                    filterGroups: [...filterGroups],
+                                    interGroupLogic,
+                                    visibleColumns: columnsToSave,
+                                    columnOrder: orderToSave,
+                                    isDefault: savedFilters.length === 0
+                                  }])
+                                  setActiveViewId(newViewId)
+                                  setCreatingNewView(false)
+                                  setNewViewName('')
+                                }
+                              }}
+                            />
+                            <span className="text-[10px] opacity-60">{newViewName.length}/20</span>
+                            <button
+                              onClick={() => {
+                                if (!newViewName.trim()) return
+                                // Save the new view
+                                const columnsToSave = {}
+                                COLUMNS.filter(col => col.key !== 'select').forEach(col => {
+                                  columnsToSave[col.key] = visibleColumns[col.key] !== false
+                                })
+                                const orderToSave = columnOrder || COLUMNS.map(c => c.key)
+                                const newViewId = Date.now()
+                                setSavedFilters([...savedFilters, {
+                                  id: newViewId,
+                                  name: newViewName.trim(),
+                                  filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label, groupId: f.groupId })),
+                                  filterGroups: [...filterGroups],
+                                  interGroupLogic,
+                                  visibleColumns: columnsToSave,
+                                  columnOrder: orderToSave,
+                                  isDefault: savedFilters.length === 0
+                                }])
+                                setActiveViewId(newViewId)
+                                setCreatingNewView(false)
+                                setNewViewName('')
+                              }}
+                              disabled={!newViewName.trim()}
+                              className="text-xs px-3 py-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed rounded transition-colors whitespace-nowrap font-medium"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (!newViewName.trim()) return
+                                // Save the new view and close popup
+                                const columnsToSave = {}
+                                COLUMNS.filter(col => col.key !== 'select').forEach(col => {
+                                  columnsToSave[col.key] = visibleColumns[col.key] !== false
+                                })
+                                const orderToSave = columnOrder || COLUMNS.map(c => c.key)
+                                const newViewId = Date.now()
+                                setSavedFilters([...savedFilters, {
+                                  id: newViewId,
+                                  name: newViewName.trim(),
+                                  filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label, groupId: f.groupId })),
+                                  filterGroups: [...filterGroups],
+                                  interGroupLogic,
+                                  visibleColumns: columnsToSave,
+                                  columnOrder: orderToSave,
+                                  isDefault: savedFilters.length === 0
+                                }])
+                                setActiveViewId(newViewId)
+                                setCreatingNewView(false)
+                                setNewViewName('')
+                                setShowCascadeDropdown(false) // Close the popup
+                              }}
+                              disabled={!newViewName.trim()}
+                              className="text-xs px-3 py-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed rounded transition-colors whitespace-nowrap font-medium"
+                            >
+                              Save & Close
+                            </button>
+                            <button
+                              onClick={() => {
+                                setCreatingNewView(false)
+                                setNewViewName('')
+                              }}
+                              className="text-xs px-2 py-1 bg-white/20 hover:bg-white/30 rounded transition-colors whitespace-nowrap"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setCreatingNewView(true)}
+                              className="text-xs px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded transition-colors whitespace-nowrap font-medium flex items-center gap-1"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                              Create New
+                            </button>
+                            <span className="text-xs opacity-75">Select columns & filters, then save as a new view</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Main content: 3 columns - Saved Views | Filter Builder | Column Visibility */}
+                  <div className="grid grid-cols-[340px,1fr,300px] gap-4 flex-1 min-h-0">
                     {/* COLUMN 1: Saved Views Section (moved to left) */}
                     <div className="border-r border-gray-200 dark:border-gray-700 pr-4 h-full overflow-hidden flex flex-col">
                     {useKanbanSavedViews ? (
                       <div className="flex-1 min-h-0">
-                        {/* NEW: Kanban-style drag-and-drop saved views */}
+                        {/* Kanban-style drag-and-drop saved views - without its own header now */}
                         <SavedViewsKanban
                           savedFilters={savedFilters}
                           setSavedFilters={setSavedFilters}
@@ -3173,6 +3574,9 @@ export default function TrapidTableView({
                           setEditingViewId={setEditingViewId}
                           setVisibilityColumnOrder={setVisibilityColumnOrder}
                           setColumnOrder={setColumnOrder}
+                          setFilterGroups={setFilterGroups}
+                          setInterGroupLogic={setInterGroupLogic}
+                          hideHeader={true}
                         />
                       </div>
                     ) : (
@@ -3217,13 +3621,17 @@ export default function TrapidTableView({
                                 v.id === activeViewId
                                   ? {
                                       ...v,
-                                      filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label })),
+                                      filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label, groupId: f.groupId })),
+                                      filterGroups: [...filterGroups],
+                                      interGroupLogic,
                                       visibleColumns: { ...visibleColumns }
                                     }
                                   : v
                               ))
                               // Clear active filters and view
                               setCascadeFilters([])
+                              setFilterGroups([{ id: 'default', logic: 'AND' }])
+                              setInterGroupLogic('OR')
                               setActiveViewId(null)
                               setShowCascadeDropdown(false)
                             }}
@@ -3293,7 +3701,9 @@ export default function TrapidTableView({
                               setSavedFilters([...updatedFilters, {
                                 id: newViewId,
                                 name: filterName.trim(),
-                                filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, value2: f.value2, operator: f.operator, label: f.label })),
+                                filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, value2: f.value2, operator: f.operator, label: f.label, groupId: f.groupId })),
+                                filterGroups: [...filterGroups],
+                                interGroupLogic,
                                 visibleColumns: columnsToSave,
                                 columnOrder: orderToSave,
                                 isDefault: isDefault
@@ -3365,7 +3775,7 @@ export default function TrapidTableView({
                                         if (saved.visibleColumns) {
                                           setVisibleColumns(saved.visibleColumns)
                                         }
-                                        // Restore column order if saved
+                                        // Restore column order for both visibility panel and table
                                         if (saved.columnOrder) {
                                           setVisibilityColumnOrder(saved.columnOrder)
                                           setColumnOrder(saved.columnOrder)
@@ -3429,7 +3839,7 @@ export default function TrapidTableView({
                                       if (saved.visibleColumns) {
                                         setVisibleColumns(saved.visibleColumns)
                                       }
-                                      // Restore column order if saved
+                                      // Restore column order for both visibility panel and table
                                       if (saved.columnOrder) {
                                         setVisibilityColumnOrder(saved.columnOrder)
                                         setColumnOrder(saved.columnOrder)
@@ -3488,832 +3898,221 @@ export default function TrapidTableView({
                     {/* END COLUMN 1 (Saved Views) */}
                     </div>
 
-                    {/* COLUMN 2: Column Selection */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                        Select Column:
-                      </label>
-                      {/* Column search box */}
-                      <input
-                        type="text"
-                        value={columnSearchQuery}
-                        onChange={(e) => setColumnSearchQuery(e.target.value)}
-                        placeholder="Search columns..."
-                        className="w-full text-xs px-2 py-1.5 mb-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
-                      />
-                      <div className="h-[calc(100%-3rem)] overflow-y-auto border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800">
-                        {(() => {
-                          const filteredColumns = COLUMNS
-                            .filter(col => col.key !== 'select')
-                            .filter(col => col.label.toLowerCase().includes(columnSearchQuery.toLowerCase()))
-
-                          return filteredColumns.length > 0 ? filteredColumns.map((col, index) => (
+                    {/* COLUMN 2: Filter Builder */}
+                    <div className="flex flex-col h-full overflow-hidden">
+                      {/* View Filter - Filter Builder UI */}
+                      <div className="flex-1 overflow-y-auto cascade-popup-scroll">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                          View Filter
+                        </label>
+                        <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700/30">
+                          {/* Top action bar */}
+                          <div className="flex items-center gap-2 mb-3 flex-wrap">
                             <button
-                              key={`cascade-${col.key}`}
-                              draggable
-                              onDragStart={(e) => {
-                                setDraggedCascadeColumn(col.key)
-                                e.dataTransfer.effectAllowed = 'move'
-                                e.dataTransfer.setData('text/plain', col.key)
-                              }}
-                              onDragEnd={() => setDraggedCascadeColumn(null)}
                               onClick={() => {
-                                setSelectedCascadeColumn(col.key === selectedCascadeColumn ? '' : col.key)
-                                setColumnSearchQuery('') // Clear search after selection
-                                setCascadeOperator('=') // Reset operator to default
-                                setCascadeInputValue('') // Clear input value
+                                const newGroupId = `group_${Date.now()}`
+                                setFilterGroups([...filterGroups, { id: newGroupId, logic: 'AND' }])
                               }}
-                              className={`w-full text-left text-xs px-3 py-0.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors cursor-grab active:cursor-grabbing ${
-                                draggedCascadeColumn === col.key
-                                  ? 'opacity-50 bg-blue-300 dark:bg-blue-800'
-                                  : selectedCascadeColumn === col.key
-                                    ? 'bg-blue-200 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-medium'
-                                    : index % 2 === 0
-                                      ? 'bg-blue-50 dark:bg-blue-900/10 text-gray-700 dark:text-gray-300'
-                                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                              }`}
+                              className="px-3 py-1.5 border border-blue-300 dark:border-blue-500 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                             >
-                              <span className="mr-1 text-gray-400">⠿</span>
-                              {col.label}
+                              +Group
                             </button>
-                          )) : (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3">
-                              No matching columns
-                            </div>
-                          )
-                        })()}
-                      </div>
-                    </div>
+                            {filterGroups.length > 1 && (
+                              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                <span>Between groups:</span>
+                                <select
+                                  value={interGroupLogic}
+                                  onChange={(e) => setInterGroupLogic(e.target.value)}
+                                  className="px-2 py-1 border border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                                >
+                                  <option value="AND">AND</option>
+                                  <option value="OR">OR</option>
+                                </select>
+                              </div>
+                            )}
+                            {(cascadeFilters.length > 0 || filterGroups.length > 1) && (
+                              <button
+                                onClick={() => {
+                                  setCascadeFilters([])
+                                  setFilterGroups([{ id: 'default', logic: 'AND' }])
+                                  setInterGroupLogic('OR')
+                                  setGroupByColumn(null)
+                                  setVisibleColumns({ ...defaultColumnsForNewViews })
+                                }}
+                                className="ml-auto px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                              >
+                                Clear All
+                              </button>
+                            )}
+                          </div>
 
-                    {/* RIGHT COLUMN: Value Selection */}
-                    <div className="flex flex-col h-full">
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                        Select Values:
-                      </label>
-                      <div
-                        className="h-[40%] overflow-y-auto"
-                        onDragOver={(e) => {
-                          e.preventDefault()
-                          e.dataTransfer.dropEffect = 'move'
-                          setIsDragOverValues(true)
-                        }}
-                        onDragLeave={() => setIsDragOverValues(false)}
-                        onDrop={(e) => {
-                          e.preventDefault()
-                          setIsDragOverValues(false)
-                          const columnKey = e.dataTransfer.getData('text/plain') || draggedCascadeColumn
-                          if (columnKey) {
-                            setSelectedCascadeColumn(columnKey)
-                            setColumnSearchQuery('')
-                            setCascadeOperator('=')
-                            setCascadeInputValue('')
-                          }
-                          setDraggedCascadeColumn(null)
-                        }}
-                      >
-                      {!selectedCascadeColumn ? (
-                        <div className={`h-full flex items-center justify-center border-2 border-dashed rounded text-xs text-center p-4 transition-colors ${
-                          isDragOverValues
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                            : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/30 text-gray-500 dark:text-gray-400'
-                        }`}>
-                          {isDragOverValues ? (
-                            <span className="font-medium">Drop column here to filter</span>
-                          ) : (
-                            <span>Drag a column here or click to select</span>
+                          {/* Filter groups */}
+                          <div className="space-y-3">
+                            {filterGroups.map((group, groupIndex) => {
+                              const groupFilters = cascadeFilters.filter(f => (f.groupId || 'default') === group.id)
+                              return (
+                                <div
+                                  key={group.id}
+                                  className={`border-2 rounded-lg p-3 ${
+                                    filterGroups.length > 1
+                                      ? 'border-blue-200 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-900/10'
+                                      : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'
+                                  }`}
+                                >
+                                  {/* Group header */}
+                                  <div className="flex items-center gap-2 mb-2">
+                                    {filterGroups.length > 1 && (
+                                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded">
+                                        Group {groupIndex + 1}
+                                      </span>
+                                    )}
+                                    <select
+                                      value={group.logic}
+                                      onChange={(e) => {
+                                        setFilterGroups(filterGroups.map(g =>
+                                          g.id === group.id ? { ...g, logic: e.target.value } : g
+                                        ))
+                                      }}
+                                      className="px-2 py-1 border border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                                    >
+                                      <option value="AND">AND</option>
+                                      <option value="OR">OR</option>
+                                    </select>
+                                    <button
+                                      onClick={() => {
+                                        const newFilter = {
+                                          id: Date.now() + Math.random(),
+                                          groupId: group.id,
+                                          column: '',
+                                          operator: 'contains',
+                                          value: '',
+                                          label: ''
+                                        }
+                                        setCascadeFilters([...cascadeFilters, newFilter])
+                                      }}
+                                      className="px-2 py-1 border border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                                    >
+                                      +Rule
+                                    </button>
+                                    {filterGroups.length > 1 && (
+                                      <button
+                                        onClick={() => {
+                                          // Remove group and its filters
+                                          setCascadeFilters(cascadeFilters.filter(f => (f.groupId || 'default') !== group.id))
+                                          setFilterGroups(filterGroups.filter(g => g.id !== group.id))
+                                        }}
+                                        className="ml-auto p-1 text-red-400 hover:text-red-600 dark:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                        title="Delete group"
+                                      >
+                                        <span className="text-xs font-bold">✕</span>
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  {/* Rules in this group */}
+                                  <div className="space-y-2">
+                                    {groupFilters.length === 0 ? (
+                                      <div className="text-xs text-gray-400 dark:text-gray-500 text-center py-2 italic">
+                                        No rules. Click +Rule to add one.
+                                      </div>
+                                    ) : (
+                                      groupFilters.map((filter) => (
+                                        <div
+                                          key={filter.id}
+                                          className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg"
+                                        >
+                                          {/* Column dropdown */}
+                                          <select
+                                            value={filter.column}
+                                            onChange={(e) => {
+                                              const newColumn = e.target.value
+                                              const columnLabel = COLUMNS.find(col => col.key === newColumn)?.label || newColumn
+                                              setCascadeFilters(cascadeFilters.map(f =>
+                                                f.id === filter.id
+                                                  ? { ...f, column: newColumn, label: filter.value ? `${columnLabel}: ${filter.value}` : '' }
+                                                  : f
+                                              ))
+                                            }}
+                                            className="flex-1 min-w-[120px] px-2 py-1.5 border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300"
+                                          >
+                                            <option value="">Select column...</option>
+                                            {COLUMNS.filter(col => col.key !== 'select' && col.key !== 'id').map(col => (
+                                              <option key={col.key} value={col.key}>{col.label}</option>
+                                            ))}
+                                          </select>
+
+                                          {/* Operator dropdown */}
+                                          <select
+                                            value={filter.operator || 'contains'}
+                                            onChange={(e) => {
+                                              const newOp = e.target.value
+                                              const columnLabel = COLUMNS.find(col => col.key === filter.column)?.label || filter.column
+                                              const opLabels = { 'contains': 'contains', '=': '=', '!=': '≠', '>': '>', '<': '<', '>=': '≥', '<=': '≤' }
+                                              setCascadeFilters(cascadeFilters.map(f =>
+                                                f.id === filter.id
+                                                  ? { ...f, operator: newOp, label: filter.value ? `${columnLabel} ${opLabels[newOp]} ${filter.value}` : '' }
+                                                  : f
+                                              ))
+                                            }}
+                                            className="w-[100px] px-2 py-1.5 border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300"
+                                          >
+                                            <option value="contains">contains</option>
+                                            <option value="=">=</option>
+                                            <option value="!=">≠</option>
+                                            <option value=">">{'>'}</option>
+                                            <option value="<">{'<'}</option>
+                                            <option value=">=">≥</option>
+                                            <option value="<=">≤</option>
+                                          </select>
+
+                                          {/* Value input */}
+                                          <input
+                                            type="text"
+                                            value={filter.value}
+                                            onChange={(e) => {
+                                              const newValue = e.target.value
+                                              const columnLabel = COLUMNS.find(col => col.key === filter.column)?.label || filter.column
+                                              const opLabels = { 'contains': 'contains', '=': '=', '!=': '≠', '>': '>', '<': '<', '>=': '≥', '<=': '≤' }
+                                              setCascadeFilters(cascadeFilters.map(f =>
+                                                f.id === filter.id
+                                                  ? { ...f, value: newValue, label: `${columnLabel} ${opLabels[f.operator || 'contains']} ${newValue}` }
+                                                  : f
+                                              ))
+                                            }}
+                                            placeholder="Value..."
+                                            className="flex-1 min-w-[80px] px-2 py-1.5 border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400"
+                                          />
+
+                                          {/* Delete button */}
+                                          <button
+                                            onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.id !== filter.id))}
+                                            className="p-1 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 border border-gray-300 dark:border-gray-500 rounded hover:border-red-300 dark:hover:border-red-500 transition-colors"
+                                          >
+                                            <span className="text-xs font-bold">✕</span>
+                                          </button>
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          {/* Inter-group logic indicator */}
+                          {filterGroups.length > 1 && (
+                            <div className="mt-2 text-center">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                                Groups combined with <strong>{interGroupLogic}</strong>
+                              </span>
+                            </div>
                           )}
                         </div>
-                      ) : (() => {
-                        const column = COLUMNS.find(c => c.key === selectedCascadeColumn)
-                      const columnLabel = column?.label || selectedCascadeColumn
-
-                      // Boolean type - show sliding toggle switch
-                      if (column?.filterType === 'boolean') {
-                        const hasYesFilter = cascadeFilters.some(f => f.column === selectedCascadeColumn && f.value === true)
-                        const hasNoFilter = cascadeFilters.some(f => f.column === selectedCascadeColumn && f.value === false)
-                        const currentState = hasYesFilter ? true : hasNoFilter ? false : null
-
-                        return (
-                          <div className="space-y-2">
-                            <button
-                              onClick={() => {
-                                if (currentState === true) {
-                                  // Switch to No
-                                  const filtered = cascadeFilters.filter(f => f.column !== selectedCascadeColumn)
-                                  setCascadeFilters([...filtered, {
-                                    id: Date.now(),
-                                    column: selectedCascadeColumn,
-                                    value: false,
-                                    label: `${columnLabel}: No`
-                                  }])
-                                } else {
-                                  // Switch to Yes (from No or null)
-                                  const filtered = cascadeFilters.filter(f => f.column !== selectedCascadeColumn)
-                                  setCascadeFilters([...filtered, {
-                                    id: Date.now(),
-                                    column: selectedCascadeColumn,
-                                    value: true,
-                                    label: `${columnLabel}: Yes`
-                                  }])
-                                }
-                              }}
-                              className={`relative w-full h-12 rounded-full transition-all ${
-                                currentState === true ? 'bg-green-600' : currentState === false ? 'bg-red-600' : 'bg-gray-400 dark:bg-gray-600'
-                              }`}
-                            >
-                              <div className={`absolute top-1 w-10 h-10 bg-white rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-lg font-bold ${
-                                currentState === true ? 'right-1 translate-x-0' : 'left-1 translate-x-0'
-                              }`}>
-                                {currentState === true ? '✓' : currentState === false ? '✗' : '-'}
-                              </div>
-                              <div className="flex items-center justify-between px-3 text-white font-medium text-sm">
-                                <span className={currentState === false ? 'font-bold' : 'opacity-70'}>No</span>
-                                <span className={currentState === true ? 'font-bold' : 'opacity-70'}>Yes</span>
-                              </div>
-                            </button>
-                            {currentState !== null && (
-                              <button
-                                onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.column !== selectedCascadeColumn))}
-                                className="w-full text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                              >
-                                Clear filter
-                              </button>
-                            )}
-                          </div>
-                        )
-                      }
-
-                      // Date fields - check if column is a date type
-                      const dateKeywords = ['date', 'created_at', 'updated_at', 'datetime', '_at', 'timestamp']
-                      const isDateColumn = dateKeywords.some(keyword =>
-                        selectedCascadeColumn.toLowerCase().includes(keyword)
-                      ) || column?.filterType === 'date' || column?.filterType === 'datetime'
-
-                      if (isDateColumn) {
-                        const dateOperators = [
-                          { value: '=', label: 'On' },
-                          { value: '<', label: 'Before' },
-                          { value: '>', label: 'After' },
-                          { value: 'between', label: 'Between' }
-                        ]
-
-                        return (
-                          <div className="space-y-2">
-                            {/* Date operator buttons */}
-                            <div>
-                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                                Date Filter:
-                              </label>
-                              <div className="grid grid-cols-4 gap-1">
-                                {dateOperators.map(op => (
-                                  <button
-                                    key={op.value}
-                                    onClick={() => {
-                                      setCascadeOperator(op.value)
-                                      if (op.value !== 'between') {
-                                        setCascadeDateValue2('')
-                                      }
-                                    }}
-                                    className={`px-2 py-1.5 text-xs font-medium rounded transition-colors ${
-                                      cascadeOperator === op.value
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                                    }`}
-                                  >
-                                    {op.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Date inputs */}
-                            <div className="space-y-1">
-                              <div className="flex gap-1 items-center">
-                                <input
-                                  type="date"
-                                  value={cascadeDateValue}
-                                  onChange={(e) => setCascadeDateValue(e.target.value)}
-                                  className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
-                                />
-                                {cascadeOperator !== 'between' && (
-                                  <button
-                                    onClick={() => {
-                                      if (cascadeDateValue) {
-                                        const opLabel = dateOperators.find(op => op.value === cascadeOperator)?.label || 'On'
-                                        const formattedDate = new Date(cascadeDateValue).toLocaleDateString('en-AU')
-                                        setCascadeFilters([...cascadeFilters, {
-                                          id: Date.now(),
-                                          column: selectedCascadeColumn,
-                                          value: cascadeDateValue,
-                                          operator: cascadeOperator,
-                                          label: `${columnLabel} ${opLabel} ${formattedDate}`
-                                        }])
-                                        setCascadeDateValue('')
-                                        setCascadeOperator('=')
-                                        setSelectedCascadeColumn('')
-                                      }
-                                    }}
-                                    disabled={!cascadeDateValue}
-                                    className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    Add
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* Second date for "between" */}
-                              {cascadeOperator === 'between' && (
-                                <>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 text-center">and</div>
-                                  <div className="flex gap-1 items-center">
-                                    <input
-                                      type="date"
-                                      value={cascadeDateValue2}
-                                      onChange={(e) => setCascadeDateValue2(e.target.value)}
-                                      className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
-                                    />
-                                    <button
-                                      onClick={() => {
-                                        if (cascadeDateValue && cascadeDateValue2) {
-                                          const formattedDate1 = new Date(cascadeDateValue).toLocaleDateString('en-AU')
-                                          const formattedDate2 = new Date(cascadeDateValue2).toLocaleDateString('en-AU')
-                                          setCascadeFilters([...cascadeFilters, {
-                                            id: Date.now(),
-                                            column: selectedCascadeColumn,
-                                            value: cascadeDateValue,
-                                            value2: cascadeDateValue2,
-                                            operator: 'between',
-                                            label: `${columnLabel} Between ${formattedDate1} - ${formattedDate2}`
-                                          }])
-                                          setCascadeDateValue('')
-                                          setCascadeDateValue2('')
-                                          setCascadeOperator('=')
-                                          setSelectedCascadeColumn('')
-                                        }
-                                      }}
-                                      disabled={!cascadeDateValue || !cascadeDateValue2}
-                                      className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                      Add
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-
-                            {/* Relative date filters - always recalculated */}
-                            <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
-                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                                Relative (always current):
-                              </label>
-                              <div className="grid grid-cols-2 gap-1">
-                                {[
-                                  { label: 'Today', relative: 'today' },
-                                  { label: 'Yesterday', relative: 'yesterday' },
-                                  { label: 'Last 7 days', relative: 'last7days' },
-                                  { label: 'Last 30 days', relative: 'last30days' },
-                                  { label: 'This month', relative: 'thisMonth' },
-                                  { label: 'Last month', relative: 'lastMonth' }
-                                ].map(shortcut => (
-                                  <button
-                                    key={shortcut.label}
-                                    onClick={() => {
-                                      setCascadeFilters([...cascadeFilters, {
-                                        id: Date.now(),
-                                        column: selectedCascadeColumn,
-                                        value: shortcut.relative,
-                                        operator: 'relative',
-                                        label: `${columnLabel} ${shortcut.label}`
-                                      }])
-                                      setSelectedCascadeColumn('')
-                                    }}
-                                    className="px-2 py-1 text-[10px] bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded transition-colors"
-                                  >
-                                    {shortcut.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      // Numeric fields - show operator buttons and number input
-                      // Check if this is a numeric column based on key name or if the data is numeric
-                      const numericKeywords = ['price', 'quantity', 'qty', 'amount', 'count', 'number', 'currency', 'percent', 'cost', 'total', 'sum', 'value']
-                      const isNumericColumn = numericKeywords.some(keyword =>
-                        selectedCascadeColumn.toLowerCase().includes(keyword) ||
-                        column?.label?.toLowerCase().includes(keyword)
-                      ) || column?.sumType === 'number' || column?.sumType === 'currency'
-
-                      if (isNumericColumn) {
-                        const operators = [
-                          { value: '=', label: '=' },
-                          { value: '!=', label: '≠' },
-                          { value: '>', label: '>' },
-                          { value: '<', label: '<' },
-                          { value: '>=', label: '≥' },
-                          { value: '<=', label: '≤' },
-                          { value: 'between', label: '↔' }
-                        ]
-
-                        return (
-                          <div className="space-y-2">
-                            {/* Operator buttons */}
-                            <div>
-                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                                Operator:
-                              </label>
-                              <div className="grid grid-cols-7 gap-1">
-                                {operators.map(op => (
-                                  <button
-                                    key={op.value}
-                                    onClick={() => {
-                                      setCascadeOperator(op.value)
-                                      if (op.value !== 'between') {
-                                        setCascadeDateValue2('')
-                                      }
-                                    }}
-                                    className={`px-2 py-1.5 text-xs font-medium rounded transition-colors ${
-                                      cascadeOperator === op.value
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                                    }`}
-                                    title={op.value === 'between' ? 'Between (range)' : op.label}
-                                  >
-                                    {op.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Number input(s) */}
-                            <div className="space-y-1">
-                              <div className="flex gap-1 items-center">
-                                <input
-                                  type="number"
-                                  value={cascadeInputValue}
-                                  onChange={(e) => setCascadeInputValue(e.target.value)}
-                                  placeholder={cascadeOperator === 'between' ? 'Min value...' : `Enter ${columnLabel.toLowerCase()}...`}
-                                  className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && cascadeInputValue.trim() && cascadeOperator !== 'between') {
-                                      const operatorLabel = operators.find(op => op.value === cascadeOperator)?.label || '='
-                                      setCascadeFilters([...cascadeFilters, {
-                                        id: Date.now(),
-                                        column: selectedCascadeColumn,
-                                        value: cascadeInputValue.trim(),
-                                        operator: cascadeOperator,
-                                        label: `${columnLabel} ${operatorLabel} ${cascadeInputValue.trim()}`
-                                      }])
-                                      setCascadeInputValue('')
-                                      setCascadeOperator('=')
-                                      setSelectedCascadeColumn('')
-                                    }
-                                  }}
-                                />
-                                {cascadeOperator !== 'between' && (
-                                  <button
-                                    onClick={() => {
-                                      if (cascadeInputValue.trim()) {
-                                        const operatorLabel = operators.find(op => op.value === cascadeOperator)?.label || '='
-                                        setCascadeFilters([...cascadeFilters, {
-                                          id: Date.now(),
-                                          column: selectedCascadeColumn,
-                                          value: cascadeInputValue.trim(),
-                                          operator: cascadeOperator,
-                                          label: `${columnLabel} ${operatorLabel} ${cascadeInputValue.trim()}`
-                                        }])
-                                        setCascadeInputValue('')
-                                        setCascadeOperator('=')
-                                        setSelectedCascadeColumn('')
-                                      }
-                                    }}
-                                    disabled={!cascadeInputValue.trim()}
-                                    className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    Add
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* Second input for "between" */}
-                              {cascadeOperator === 'between' && (
-                                <>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 text-center">and</div>
-                                  <div className="flex gap-1 items-center">
-                                    <input
-                                      type="number"
-                                      value={cascadeDateValue2}
-                                      onChange={(e) => setCascadeDateValue2(e.target.value)}
-                                      placeholder="Max value..."
-                                      className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
-                                    />
-                                    <button
-                                      onClick={() => {
-                                        if (cascadeInputValue.trim() && cascadeDateValue2.trim()) {
-                                          setCascadeFilters([...cascadeFilters, {
-                                            id: Date.now(),
-                                            column: selectedCascadeColumn,
-                                            value: cascadeInputValue.trim(),
-                                            value2: cascadeDateValue2.trim(),
-                                            operator: 'between',
-                                            label: `${columnLabel} ${cascadeInputValue.trim()} - ${cascadeDateValue2.trim()}`
-                                          }])
-                                          setCascadeInputValue('')
-                                          setCascadeDateValue2('')
-                                          setCascadeOperator('=')
-                                          setSelectedCascadeColumn('')
-                                        }
-                                      }}
-                                      disabled={!cascadeInputValue.trim() || !cascadeDateValue2.trim()}
-                                      className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                      Add
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-
-                            {/* Quick numeric filters */}
-                            <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
-                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                                Quick Filters:
-                              </label>
-                              <div className="grid grid-cols-3 gap-1">
-                                {[
-                                  { label: 'Zero', value: '0', operator: '=' },
-                                  { label: 'Not Zero', value: '0', operator: '!=' },
-                                  { label: 'Positive', value: '0', operator: '>' },
-                                  { label: 'Negative', value: '0', operator: '<' },
-                                  { label: 'Has Value', relative: 'hasValue' },
-                                  { label: 'Empty', relative: 'empty' }
-                                ].map(shortcut => (
-                                  <button
-                                    key={shortcut.label}
-                                    onClick={() => {
-                                      if (shortcut.relative) {
-                                        setCascadeFilters([...cascadeFilters, {
-                                          id: Date.now(),
-                                          column: selectedCascadeColumn,
-                                          value: shortcut.relative,
-                                          operator: 'relative',
-                                          label: `${columnLabel} ${shortcut.label}`
-                                        }])
-                                      } else {
-                                        const opLabel = operators.find(op => op.value === shortcut.operator)?.label || '='
-                                        setCascadeFilters([...cascadeFilters, {
-                                          id: Date.now(),
-                                          column: selectedCascadeColumn,
-                                          value: shortcut.value,
-                                          operator: shortcut.operator,
-                                          label: `${columnLabel} ${shortcut.label}`
-                                        }])
-                                      }
-                                      setSelectedCascadeColumn('')
-                                    }}
-                                    className="px-2 py-1 text-[10px] bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded transition-colors"
-                                  >
-                                    {shortcut.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      // Text fields - check filterType='text' instead of specific column names
-                      if (column?.filterType === 'text') {
-                        return (
-                          <div className="space-y-2">
-                            <div className="flex gap-1">
-                              <input
-                                type="text"
-                                value={cascadeInputValue}
-                                onChange={(e) => setCascadeInputValue(e.target.value)}
-                                placeholder={`Enter ${columnLabel.toLowerCase()}...`}
-                                className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && cascadeInputValue.trim()) {
-                                    setCascadeFilters([...cascadeFilters, {
-                                      id: Date.now(),
-                                      column: selectedCascadeColumn,
-                                      value: cascadeInputValue.trim(),
-                                      operator: 'contains',
-                                      label: `${columnLabel} contains "${cascadeInputValue.trim()}"`
-                                    }])
-                                    setCascadeInputValue('')
-                                    setSelectedCascadeColumn('')
-                                  }
-                                }}
-                              />
-                              <button
-                                onClick={() => {
-                                  if (cascadeInputValue.trim()) {
-                                    setCascadeFilters([...cascadeFilters, {
-                                      id: Date.now(),
-                                      column: selectedCascadeColumn,
-                                      value: cascadeInputValue.trim(),
-                                      operator: 'contains',
-                                      label: `${columnLabel} contains "${cascadeInputValue.trim()}"`
-                                    }])
-                                    setCascadeInputValue('')
-                                    setSelectedCascadeColumn('')
-                                  }
-                                }}
-                                disabled={!cascadeInputValue.trim()}
-                                className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Add
-                              </button>
-                            </div>
-
-                            {/* Quick text filters */}
-                            <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
-                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                                Quick Filters:
-                              </label>
-                              <div className="grid grid-cols-2 gap-1">
-                                {[
-                                  { label: 'Has Value', relative: 'hasValue' },
-                                  { label: 'Empty', relative: 'empty' },
-                                  { label: 'Starts with...', relative: 'startsWith' },
-                                  { label: 'Ends with...', relative: 'endsWith' }
-                                ].map(shortcut => (
-                                  <button
-                                    key={shortcut.label}
-                                    onClick={() => {
-                                      if (shortcut.relative === 'startsWith' || shortcut.relative === 'endsWith') {
-                                        // For these, use the current input value
-                                        if (cascadeInputValue.trim()) {
-                                          setCascadeFilters([...cascadeFilters, {
-                                            id: Date.now(),
-                                            column: selectedCascadeColumn,
-                                            value: cascadeInputValue.trim(),
-                                            operator: shortcut.relative,
-                                            label: `${columnLabel} ${shortcut.relative === 'startsWith' ? 'starts with' : 'ends with'} "${cascadeInputValue.trim()}"`
-                                          }])
-                                          setCascadeInputValue('')
-                                          setSelectedCascadeColumn('')
-                                        }
-                                      } else {
-                                        setCascadeFilters([...cascadeFilters, {
-                                          id: Date.now(),
-                                          column: selectedCascadeColumn,
-                                          value: shortcut.relative,
-                                          operator: 'relative',
-                                          label: `${columnLabel} ${shortcut.label}`
-                                        }])
-                                        setSelectedCascadeColumn('')
-                                      }
-                                    }}
-                                    disabled={(shortcut.relative === 'startsWith' || shortcut.relative === 'endsWith') && !cascadeInputValue.trim()}
-                                    className="px-2 py-1 text-[10px] bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {shortcut.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      // Dropdown/Lookup fields - show checkboxes with search filter
-                      const uniqueValues = [...new Set(filteredAndSorted.map(entry => entry[selectedCascadeColumn]).filter(val => val !== null && val !== undefined && val !== ''))]
-                      const filteredValues = uniqueValues.filter(val =>
-                        val.toString().toLowerCase().includes(cascadeInputValue.toLowerCase())
-                      )
-
-                      return (
-                        <div className="space-y-2">
-                          {/* Quick filters for dropdowns */}
-                          <div className="grid grid-cols-3 gap-1">
-                            {[
-                              { label: 'Has Value', relative: 'hasValue' },
-                              { label: 'Empty', relative: 'empty' },
-                              { label: 'Select All', action: 'selectAll' }
-                            ].map(shortcut => (
-                              <button
-                                key={shortcut.label}
-                                onClick={() => {
-                                  if (shortcut.action === 'selectAll') {
-                                    // Add all visible values as filters
-                                    const newFilters = filteredValues
-                                      .filter(val => !cascadeFilters.some(f => f.column === selectedCascadeColumn && f.value === val))
-                                      .map(val => ({
-                                        id: Date.now() + Math.random(),
-                                        column: selectedCascadeColumn,
-                                        value: val,
-                                        label: `${columnLabel}: ${val}`
-                                      }))
-                                    setCascadeFilters([...cascadeFilters, ...newFilters])
-                                  } else {
-                                    setCascadeFilters([...cascadeFilters, {
-                                      id: Date.now(),
-                                      column: selectedCascadeColumn,
-                                      value: shortcut.relative,
-                                      operator: 'relative',
-                                      label: `${columnLabel} ${shortcut.label}`
-                                    }])
-                                    setSelectedCascadeColumn('')
-                                  }
-                                }}
-                                className="px-2 py-1 text-[10px] bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded transition-colors"
-                              >
-                                {shortcut.label}
-                              </button>
-                            ))}
-                          </div>
-
-                          <input
-                            type="text"
-                            value={cascadeInputValue}
-                            onChange={(e) => setCascadeInputValue(e.target.value)}
-                            placeholder={`Type to search ${columnLabel.toLowerCase()}...`}
-                            className="w-full text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
-                          />
-                          <div className="max-h-40 overflow-y-auto space-y-1 border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-800">
-                            {filteredValues.length > 0 ? filteredValues.map(val => (
-                              <label key={val} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setCascadeFilters([...cascadeFilters, {
-                                        id: Date.now(),
-                                        column: selectedCascadeColumn,
-                                        value: val,
-                                        label: `${columnLabel}: ${val}`
-                                      }])
-                                    } else {
-                                      setCascadeFilters(cascadeFilters.filter(f => !(f.column === selectedCascadeColumn && f.value === val)))
-                                    }
-                                  }}
-                                  checked={cascadeFilters.some(f => f.column === selectedCascadeColumn && f.value === val)}
-                                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="text-xs text-gray-700 dark:text-gray-300">{val}</span>
-                              </label>
-                            )) : (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3 space-y-1">
-                                <div className="font-medium">No matches found</div>
-                                {uniqueValues.length === 0 ? (
-                                  <div className="text-xs">
-                                    No values available in this column for the currently filtered rows.
-                                    {cascadeFilters.length > 0 && ' Try removing or adjusting previous filters.'}
-                                  </div>
-                                ) : cascadeInputValue && (
-                                  <div className="text-xs">
-                                    No values match "{cascadeInputValue}". Try a different search term.
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })()}
-                      </div>
-
-                      {/* Active filters list - moved under Select Values */}
-                      <div className="flex-1 mt-2 overflow-y-auto">
-                      {cascadeFilters.length > 0 ? (
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                              Active Filters ({cascadeFilters.length}):
-                            </label>
-                            <button
-                              onClick={() => {
-                                // Clear all filters AND reset visible columns to defaults only
-                                setCascadeFilters([])
-                                setVisibleColumns({ ...defaultColumnsForNewViews })
-                              }}
-                              className="px-2 py-0.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-[10px] font-medium rounded transition-colors"
-                            >
-                              Clear All
-                            </button>
-                          </div>
-                          <div className="space-y-1 max-h-48 overflow-y-auto">
-                            {cascadeFilters.map((filter, index) => (
-                              <div
-                                key={filter.id}
-                                draggable
-                                onDragStart={(e) => {
-                                  setDraggedFilterId(filter.id)
-                                  e.dataTransfer.effectAllowed = 'move'
-                                }}
-                                onDragEnd={() => {
-                                  setDraggedFilterId(null)
-                                  setDragOverFilterId(null)
-                                }}
-                                onDragOver={(e) => {
-                                  e.preventDefault()
-                                  if (draggedFilterId && draggedFilterId !== filter.id) {
-                                    setDragOverFilterId(filter.id)
-                                  }
-                                }}
-                                onDragLeave={() => setDragOverFilterId(null)}
-                                onDrop={(e) => {
-                                  e.preventDefault()
-                                  if (draggedFilterId && draggedFilterId !== filter.id) {
-                                    const draggedIndex = cascadeFilters.findIndex(f => f.id === draggedFilterId)
-                                    const targetIndex = cascadeFilters.findIndex(f => f.id === filter.id)
-                                    const newFilters = [...cascadeFilters]
-                                    const [draggedFilter] = newFilters.splice(draggedIndex, 1)
-                                    newFilters.splice(targetIndex, 0, draggedFilter)
-                                    setCascadeFilters(newFilters)
-                                  }
-                                  setDraggedFilterId(null)
-                                  setDragOverFilterId(null)
-                                }}
-                                className={`flex items-center gap-1.5 px-2 py-1 rounded border cursor-grab active:cursor-grabbing transition-all ${
-                                  draggedFilterId === filter.id
-                                    ? 'opacity-50 bg-blue-100 dark:bg-blue-900/50 border-blue-400'
-                                    : dragOverFilterId === filter.id
-                                      ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-400 border-dashed'
-                                      : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'
-                                }`}
-                              >
-                                {/* Drag handle */}
-                                <span className="text-gray-400 dark:text-gray-500 text-[10px] cursor-grab">⠿</span>
-                                <span className="flex-1 text-[11px] text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                  <span className="font-semibold text-purple-600 dark:text-purple-400">{index + 1}.</span>
-                                  <span className="font-medium text-blue-600 dark:text-blue-400">
-                                    {COLUMNS.find(col => col.key === filter.column)?.label || filter.column}:
-                                  </span>
-                                  {editingFilterId === filter.id ? (
-                                    <input
-                                      type="text"
-                                      value={editingFilterValue}
-                                      onChange={(e) => setEditingFilterValue(e.target.value)}
-                                      onBlur={(e) => {
-                                        const newValue = e.target.value.trim()
-                                        if (newValue) {
-                                          const columnLabel = COLUMNS.find(col => col.key === filter.column)?.label || filter.column
-                                          // Match the original label format
-                                          const operatorMap = { '=': '=', '!=': '≠', '>': '>', '<': '<', '>=': '≥', '<=': '≤' }
-                                          const operatorLabel = operatorMap[filter.operator] || filter.operator
-                                          const newLabel = filter.operator && filter.operator !== '='
-                                            ? `${columnLabel} ${operatorLabel} ${newValue}`
-                                            : `${columnLabel}: ${newValue}`
-
-                                          setCascadeFilters(cascadeFilters.map(f =>
-                                            f.id === filter.id
-                                              ? { ...f, value: newValue, label: newLabel }
-                                              : f
-                                          ))
-                                        }
-                                        setEditingFilterId(null)
-                                        setEditingFilterValue('')
-                                      }}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') e.target.blur()
-                                        if (e.key === 'Escape') {
-                                          setEditingFilterId(null)
-                                          setEditingFilterValue('')
-                                        }
-                                      }}
-                                      autoFocus
-                                      className="flex-1 px-1 py-0.5 border border-blue-400 rounded bg-white dark:bg-gray-700 dark:text-white text-[11px] font-semibold min-w-[60px]"
-                                    />
-                                  ) : (
-                                    <span
-                                      className="font-semibold cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 px-1 rounded"
-                                      onClick={() => {
-                                        setEditingFilterId(filter.id)
-                                        setEditingFilterValue(filter.value)
-                                      }}
-                                      title="Click to edit value"
-                                    >
-                                      {filter.operator && filter.operator !== '=' && <span className="text-orange-600 dark:text-orange-400">{filter.operator} </span>}
-                                      {filter.value}
-                                    </span>
-                                  )}
-                                </span>
-                                <button
-                                  onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.id !== filter.id))}
-                                  className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs font-bold"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-2 bg-gray-50 dark:bg-gray-700/30 rounded">
-                          No filters applied
-                        </div>
-                      )}
                       </div>
                     </div>
 
                     {/* COLUMN 3: Column Visibility - Combined with Default */}
-                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 h-full overflow-y-auto w-fit min-w-[240px]">
+                    <div className="border-l border-gray-200 dark:border-gray-700 pl-4 pr-2 h-full overflow-y-auto cascade-popup-scroll w-[300px] min-w-[240px]">
                       {/* Header with toggle buttons */}
                       <div className="flex items-center justify-between mb-2">
                         <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
@@ -4405,32 +4204,46 @@ export default function TrapidTableView({
                               setDraggedVisibilityColumn(null)
                               setDragOverVisibilityColumn(null)
                             }}
-                            className={`flex items-center gap-2 text-[11px] text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-grab active:cursor-grabbing ${
-                              visibleColumns[column.key] !== false ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-800'
+                            className={`flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 px-2 py-1.5 rounded cursor-pointer select-none transition-colors ${
+                              visibleColumns[column.key] !== false
+                                ? 'bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 border border-green-300 dark:border-green-700'
+                                : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600'
                             } ${draggedVisibilityColumn === column.key ? 'opacity-50' : ''} ${dragOverVisibilityColumn === column.key ? 'border-t-2 border-blue-500' : ''}`}
+                            onClick={() => {
+                              // Toggle visibility on row click
+                              setVisibleColumns({
+                                ...visibleColumns,
+                                [column.key]: visibleColumns[column.key] === false ? true : false
+                              })
+                            }}
                           >
                             {/* Drag handle */}
-                            <span className="text-gray-400 cursor-grab text-[10px]">⠿</span>
-                            {/* Visible checkbox (blue) */}
+                            <span
+                              className="text-gray-400 cursor-grab text-sm"
+                              onClick={(e) => e.stopPropagation()}
+                            >⠿</span>
+                            {/* Visible checkbox (blue) - larger */}
                             <input
                               type="checkbox"
                               checked={visibleColumns[column.key] !== false}
                               onChange={(e) => {
+                                e.stopPropagation()
                                 setVisibleColumns({
                                   ...visibleColumns,
                                   [column.key]: e.target.checked
                                 })
                               }}
-                              className="rounded border-blue-300 w-3 h-3 text-blue-600 cursor-pointer"
+                              className="rounded border-blue-400 w-4 h-4 text-blue-600 cursor-pointer flex-shrink-0"
                               title="Show/hide now"
                             />
                             {/* Column name */}
-                            <span className="flex-1 truncate">{column.label}</span>
-                            {/* Default checkbox (purple) - mirrors to visible */}
+                            <span className="flex-1 truncate font-medium">{column.label}</span>
+                            {/* Default checkbox (purple) - larger */}
                             <input
                               type="checkbox"
                               checked={defaultColumnsForNewViews[column.key] !== false}
                               onChange={(e) => {
+                                e.stopPropagation()
                                 setDefaultColumnsForNewViews({
                                   ...defaultColumnsForNewViews,
                                   [column.key]: e.target.checked
@@ -4441,7 +4254,7 @@ export default function TrapidTableView({
                                   [column.key]: e.target.checked
                                 })
                               }}
-                              className="rounded border-purple-300 w-3 h-3 text-purple-600 cursor-pointer"
+                              className="rounded border-purple-400 w-4 h-4 text-purple-600 cursor-pointer flex-shrink-0"
                               title="Include in new views (also updates visibility)"
                             />
                           </div>
