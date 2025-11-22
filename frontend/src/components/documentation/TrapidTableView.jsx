@@ -139,9 +139,7 @@ export default function TrapidTableView({
       return {
         columnWidths: DEFAULT_COLUMN_WIDTHS,
         columnOrder: DEFAULT_COLUMN_ORDER,
-        visibleColumns: getDefaultVisibleColumns(),
-        sortBy: 'chapter',
-        sortDir: 'asc'
+        visibleColumns: getDefaultVisibleColumns()
       }
     }
     try {
@@ -172,9 +170,7 @@ export default function TrapidTableView({
         return {
           columnWidths: mergedWidths,
           columnOrder: mergedOrder,
-          visibleColumns: mergedVisible,
-          sortBy: state.sortBy || 'chapter',
-          sortDir: state.sortDir || 'asc'
+          visibleColumns: mergedVisible
         }
       }
       // Fallback: Check legacy default columns storage
@@ -192,27 +188,21 @@ export default function TrapidTableView({
           return {
             columnWidths: DEFAULT_COLUMN_WIDTHS,
             columnOrder: DEFAULT_COLUMN_ORDER,
-            visibleColumns: mergedVisible,
-            sortBy: 'chapter',
-            sortDir: 'asc'
+            visibleColumns: mergedVisible
           }
         }
       }
       return {
         columnWidths: DEFAULT_COLUMN_WIDTHS,
         columnOrder: DEFAULT_COLUMN_ORDER,
-        visibleColumns: getDefaultVisibleColumns(),
-        sortBy: 'chapter',
-        sortDir: 'asc'
+        visibleColumns: getDefaultVisibleColumns()
       }
     } catch (error) {
       console.error('Error loading table state from localStorage:', error)
       return {
         columnWidths: DEFAULT_COLUMN_WIDTHS,
         columnOrder: DEFAULT_COLUMN_ORDER,
-        visibleColumns: getDefaultVisibleColumns(),
-        sortBy: 'chapter',
-        sortDir: 'asc'
+        visibleColumns: getDefaultVisibleColumns()
       }
     }
   }
@@ -227,13 +217,9 @@ export default function TrapidTableView({
   const [search, setSearch] = useState('')
   // Multi-column sorting: array of {column, dir} objects
   // First item is primary sort, second is secondary, etc.
-  const [sortColumns, setSortColumns] = useState(() => {
-    // Convert legacy sortBy/sortDir to new format
-    if (initialTableState.sortBy) {
-      return [{ column: initialTableState.sortBy, dir: initialTableState.sortDir || 'asc' }]
-    }
-    return []
-  })
+  // Sort and group by are per-view settings, not persisted with table state
+  // They start empty and are only populated when loading a saved view
+  const [sortColumns, setSortColumns] = useState([])
   const [filters, setFilters] = useState({
     chapter: 'all',
     type: 'all',
@@ -386,6 +372,8 @@ export default function TrapidTableView({
     setCascadeFilters([])
     setFilterGroups([{ id: 'default', logic: 'AND' }])
     setInterGroupLogic('OR')
+    setSortColumns([])
+    setGroupByColumn(null)
     setEditingViewId(null)
     setCreatingNewView(false)
     setNewViewName('')
@@ -445,6 +433,10 @@ export default function TrapidTableView({
           setVisibilityColumnOrder(view.columnOrder)
           setColumnOrder(view.columnOrder)
         }
+        // Load sort columns (clear if view doesn't have any)
+        setSortColumns(view.sortColumns || [])
+        // Load group by column
+        setGroupByColumn(view.groupByColumn || null)
         setActiveViewId(view.id)
       }
     } else if (!viewParam && activeViewId) {
@@ -452,6 +444,8 @@ export default function TrapidTableView({
       setCascadeFilters([])
       setFilterGroups([{ id: 'default', logic: 'AND' }])
       setInterGroupLogic('OR')
+      setSortColumns([])
+      setGroupByColumn(null)
       setActiveViewId(null)
     }
   }, [searchParams, savedFilters]) // Re-run when URL or saved filters change
@@ -466,25 +460,53 @@ export default function TrapidTableView({
     }
   }, [activeViewId])
 
-  // Auto-load default view on mount - DISABLED to start with clean slate
-  // useEffect(() => {
-  //   const defaultView = savedFilters.find(view => view.isDefault)
-  //   if (defaultView) {
-  //     // Load default view's filters
-  //     setCascadeFilters(defaultView.filters.map(f => ({
-  //       id: Date.now() + Math.random(),
-  //       column: f.column,
-  //       value: f.value,
-  //       operator: f.operator || '=',
-  //       label: f.label
-  //     })))
-  //     // Load default view's column visibility if available
-  //     if (defaultView.visibleColumns) {
-  //       setVisibleColumns(defaultView.visibleColumns)
-  //     }
-  //     setActiveViewId(defaultView.id)
-  //   }
-  // }, []) // Only run on mount
+  // Auto-load default view on mount (if one exists and no URL view param)
+  const hasLoadedDefaultView = useRef(false)
+  useEffect(() => {
+    // Only run once on mount, and only if no URL view param
+    if (hasLoadedDefaultView.current) return
+    if (searchParams.get('view')) return // URL view takes precedence
+
+    const defaultView = savedFilters.find(view => view.isDefault)
+    if (defaultView) {
+      hasLoadedDefaultView.current = true
+      // Load default view's filters
+      setCascadeFilters(defaultView.filters.map(f => ({
+        id: Date.now() + Math.random(),
+        column: f.column,
+        value: f.value,
+        operator: f.operator || '=',
+        label: f.label,
+        groupId: f.groupId || 'default'
+      })))
+      // Restore filter groups and inter-group logic
+      if (defaultView.filterGroups) {
+        setFilterGroups(defaultView.filterGroups)
+      }
+      if (defaultView.interGroupLogic) {
+        setInterGroupLogic(defaultView.interGroupLogic)
+      }
+      // Load default view's column visibility
+      if (defaultView.visibleColumns) {
+        setVisibleColumns(defaultView.visibleColumns)
+      }
+      // Load column order
+      if (defaultView.columnOrder) {
+        setVisibilityColumnOrder(defaultView.columnOrder)
+        setColumnOrder(defaultView.columnOrder)
+      }
+      // Load sort columns
+      setSortColumns(defaultView.sortColumns || [])
+      // Load group by column
+      setGroupByColumn(defaultView.groupByColumn || null)
+      setActiveViewId(defaultView.id)
+      // Update URL with default view
+      const viewSlug = defaultView.name.toLowerCase().replace(/\s+/g, '-')
+      const newParams = new URLSearchParams(searchParams)
+      newParams.set('view', viewSlug)
+      setSearchParams(newParams, { replace: true })
+    }
+  }, [savedFilters]) // Run when savedFilters loads
 
   // Component multi-select checkbox state
   const [selectedComponents, setSelectedComponents] = useState(new Set())
@@ -735,14 +757,10 @@ export default function TrapidTableView({
         setColumnWidths(state.columnWidths || DEFAULT_COLUMN_WIDTHS)
         setColumnOrder(state.columnOrder || DEFAULT_COLUMN_ORDER)
         setVisibleColumns(state.visibleColumns || DEFAULT_VISIBLE_COLUMNS)
-        // Support both legacy sortBy/sortDir and new sortColumns format
-        if (state.sortColumns) {
-          setSortColumns(state.sortColumns)
-        } else if (state.sortBy) {
-          setSortColumns([{ column: state.sortBy, dir: state.sortDir || 'asc' }])
-        } else {
-          setSortColumns([{ column: 'chapter', dir: 'asc' }])
-        }
+        // sortColumns and groupByColumn are per-view, not persisted with table state
+        // Start with empty sort when switching tables
+        setSortColumns([])
+        setGroupByColumn(null)
       } catch (e) {
         console.error('Failed to load table state:', e)
       }
@@ -751,21 +769,22 @@ export default function TrapidTableView({
       setColumnWidths(DEFAULT_COLUMN_WIDTHS)
       setColumnOrder(DEFAULT_COLUMN_ORDER)
       setVisibleColumns(getDefaultVisibleColumns())
-      setSortColumns([{ column: 'chapter', dir: 'asc' }])
+      setSortColumns([])
+      setGroupByColumn(null)
     }
   }, [tableId, category])
 
   // Save table state to localStorage whenever it changes (Chapter 20.5B)
+  // NOTE: sortColumns and groupByColumn are NOT persisted here - they are per-view settings
   useEffect(() => {
     const storageKey = `trapidTableViewState_${tableId || category || 'default'}`
     const state = {
       columnWidths,
       columnOrder,
-      visibleColumns,
-      sortColumns
+      visibleColumns
     }
     localStorage.setItem(storageKey, JSON.stringify(state))
-  }, [columnWidths, columnOrder, visibleColumns, sortColumns, tableId, category])
+  }, [columnWidths, columnOrder, visibleColumns, tableId, category])
 
   // Column resizing handlers (Chapter 20.4)
   const handleResizeStart = (e, columnKey) => {
@@ -3857,6 +3876,10 @@ export default function TrapidTableView({
                   setVisibilityColumnOrder(view.columnOrder)
                   setColumnOrder(view.columnOrder)
                 }
+                // Restore sort columns (clear if view doesn't have any)
+                setSortColumns(view.sortColumns || [])
+                // Restore group by column
+                setGroupByColumn(view.groupByColumn || null)
                 setActiveViewId(view.id)
                 // Update URL with view name (URL-friendly slug)
                 const viewSlug = view.name.toLowerCase().replace(/\s+/g, '-')
@@ -3912,8 +3935,10 @@ export default function TrapidTableView({
             const savedFiltersStr = JSON.stringify(activeView.filters.map(normalizeFilter))
             const filtersChanged = currentFilters !== savedFiltersStr
             const columnsChanged = activeView.visibleColumns && JSON.stringify(visibleColumns) !== JSON.stringify(activeView.visibleColumns)
+            const sortChanged = JSON.stringify(sortColumns) !== JSON.stringify(activeView.sortColumns || [])
+            const groupByChanged = groupByColumn !== (activeView.groupByColumn || null)
 
-            if (!filtersChanged && !columnsChanged) return null
+            if (!filtersChanged && !columnsChanged && !sortChanged && !groupByChanged) return null
 
             return (
               <button
@@ -3925,7 +3950,10 @@ export default function TrapidTableView({
                           filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, operator: f.operator, label: f.label, groupId: f.groupId })),
                           filterGroups: [...filterGroups],
                           interGroupLogic,
-                          visibleColumns: { ...visibleColumns }
+                          visibleColumns: { ...visibleColumns },
+                          columnOrder: visibilityColumnOrder,
+                          sortColumns: [...sortColumns],
+                          groupByColumn
                         }
                       : v
                   ))
@@ -4049,7 +4077,7 @@ export default function TrapidTableView({
                             />
                             <button
                               onClick={() => {
-                                // Save all changes: name, filters, groups, columns, and sort
+                                // Save all changes: name, filters, groups, columns, sort, and groupBy
                                 const nameInput = document.getElementById('editViewNameInput')
                                 const newName = nameInput?.value?.trim() || savedFilters.find(v => v.id === editingViewId)?.name
                                 setSavedFilters(savedFilters.map(v =>
@@ -4062,7 +4090,8 @@ export default function TrapidTableView({
                                         interGroupLogic,
                                         visibleColumns: { ...visibleColumns },
                                         columnOrder: visibilityColumnOrder,
-                                        sortColumns: [...sortColumns]
+                                        sortColumns: [...sortColumns],
+                                        groupByColumn
                                       }
                                     : v
                                 ))
@@ -4078,7 +4107,7 @@ export default function TrapidTableView({
                             </button>
                             <button
                               onClick={() => {
-                                // Save all changes: name, filters, groups, columns, and sort
+                                // Save all changes: name, filters, groups, columns, sort, and groupBy
                                 const nameInput = document.getElementById('editViewNameInput')
                                 const newName = nameInput?.value?.trim() || savedFilters.find(v => v.id === editingViewId)?.name
                                 setSavedFilters(savedFilters.map(v =>
@@ -4091,7 +4120,8 @@ export default function TrapidTableView({
                                         interGroupLogic,
                                         visibleColumns: { ...visibleColumns },
                                         columnOrder: visibilityColumnOrder,
-                                        sortColumns: [...sortColumns]
+                                        sortColumns: [...sortColumns],
+                                        groupByColumn
                                       }
                                     : v
                                 ))
@@ -4147,6 +4177,7 @@ export default function TrapidTableView({
                                     visibleColumns: columnsToSave,
                                     columnOrder: orderToSave,
                                     sortColumns: [...sortColumns],
+                                    groupByColumn,
                                     isDefault: savedFilters.length === 0
                                   }])
                                   setActiveViewId(newViewId)
@@ -4175,6 +4206,7 @@ export default function TrapidTableView({
                                   visibleColumns: columnsToSave,
                                   columnOrder: orderToSave,
                                   sortColumns: [...sortColumns],
+                                  groupByColumn,
                                   isDefault: savedFilters.length === 0
                                 }])
                                 setActiveViewId(newViewId)
@@ -4205,6 +4237,7 @@ export default function TrapidTableView({
                                   visibleColumns: columnsToSave,
                                   columnOrder: orderToSave,
                                   sortColumns: [...sortColumns],
+                                  groupByColumn,
                                   isDefault: savedFilters.length === 0
                                 }])
                                 setActiveViewId(newViewId)
@@ -4230,7 +4263,17 @@ export default function TrapidTableView({
                         ) : (
                           <>
                             <button
-                              onClick={() => setCreatingNewView(true)}
+                              onClick={() => {
+                                // Clear all view state when creating new
+                                setCascadeFilters([])
+                                setFilterGroups([{ id: 'default', logic: 'AND' }])
+                                setInterGroupLogic('OR')
+                                setSortColumns([])
+                                setGroupByColumn(null)
+                                setActiveViewId(null)
+                                setEditingViewId(null)
+                                setCreatingNewView(true)
+                              }}
                               className="text-xs px-3 py-1.5 bg-green-500 hover:bg-green-600 rounded transition-colors whitespace-nowrap font-medium flex items-center gap-1"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
