@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { StarIcon, PencilIcon, TrashIcon, FunnelIcon, EyeIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 
@@ -31,27 +31,28 @@ export default function SavedViewsKanban({
 }) {
   const [draggedIndex, setDraggedIndex] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
+  const [lastDragEndTime, setLastDragEndTime] = useState(0)
 
-  // Auto-set first card as default when order changes
-  useEffect(() => {
-    if (savedFilters.length > 0) {
-      const firstView = savedFilters[0]
-      // Only update if the first view is not already default
-      if (!firstView.isDefault) {
-        setSavedFilters(savedFilters.map((v, idx) => ({
-          ...v,
-          isDefault: idx === 0
-        })))
-      }
-    }
-  }, [savedFilters.map(v => v.id).join(',')]) // Only trigger when order changes
+  // Helper to reorder and set default flags in one operation
+  const reorderFilters = (fromIndex, toIndex) => {
+    setSavedFilters(prev => {
+      const newFilters = [...prev]
+      const [draggedItem] = newFilters.splice(fromIndex, 1)
+      newFilters.splice(toIndex, 0, draggedItem)
+      // Set isDefault on first item, clear on others
+      return newFilters.map((v, idx) => ({
+        ...v,
+        isDefault: idx === 0
+      }))
+    })
+  }
 
   // Edit name is now handled in the parent header - no prompt needed
 
   const handleDragStart = (e, index) => {
     setDraggedIndex(index)
     e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/html', e.currentTarget)
+    e.dataTransfer.setData('text/plain', index.toString())
   }
 
   const handleDragOver = (e, index) => {
@@ -63,15 +64,29 @@ export default function SavedViewsKanban({
     }
   }
 
-  const handleDragEnd = () => {
+  const handleDrop = (e, index) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (draggedIndex !== null && draggedIndex !== index) {
+      console.log('handleDrop reordering from', draggedIndex, 'to', index)
+      reorderFilters(draggedIndex, index)
+      // Clear drag state immediately after successful drop
+      setDraggedIndex(null)
+      setDragOverIndex(null)
+    }
+  }
+
+  const handleDragEnd = (e) => {
+    e.stopPropagation()
+    // If dragOverIndex is set but drop didn't fire, do the reorder now
     if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
-      const newFilters = [...savedFilters]
-      const [draggedItem] = newFilters.splice(draggedIndex, 1)
-      newFilters.splice(dragOverIndex, 0, draggedItem)
-      setSavedFilters(newFilters)
+      console.log('handleDragEnd reordering from', draggedIndex, 'to', dragOverIndex)
+      reorderFilters(draggedIndex, dragOverIndex)
     }
     setDraggedIndex(null)
     setDragOverIndex(null)
+    // Record when drag ended to prevent click from firing
+    setLastDragEndTime(Date.now())
   }
 
   const handleLoadView = (view) => {
@@ -214,7 +229,7 @@ export default function SavedViewsKanban({
       <div className="flex-1 overflow-y-auto cascade-popup-scroll px-3 py-3 space-y-2">
         {savedFilters.map((view, index) => {
           const isActive = activeViewId === view.id
-          const isDragging = draggedIndex === index
+          const isThisCardDragging = draggedIndex === index
           const isDragOver = dragOverIndex === index
           const isFirst = index === 0
 
@@ -224,12 +239,22 @@ export default function SavedViewsKanban({
               draggable
               onDragStart={(e) => handleDragStart(e, index)}
               onDragOver={(e) => handleDragOver(e, index)}
+              onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
-              onClick={() => handleLoadView(view)}
+              onClick={(e) => {
+                // Ignore clicks that happen within 300ms of a drag ending
+                // This prevents the click event that fires after dragEnd
+                if (Date.now() - lastDragEndTime < 300) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  return
+                }
+                handleLoadView(view)
+              }}
               className={`
                 group relative rounded-lg shadow-md p-3 cursor-pointer
                 transition-all duration-200 ease-out
-                ${isDragging ? 'opacity-40 scale-95' : 'opacity-100 scale-100'}
+                ${isThisCardDragging ? 'opacity-40 scale-95' : 'opacity-100 scale-100'}
                 ${isDragOver ? 'border-t-4 border-indigo-500' : ''}
                 ${isActive
                   ? 'bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 border-2 border-blue-500 dark:border-blue-400 shadow-lg'

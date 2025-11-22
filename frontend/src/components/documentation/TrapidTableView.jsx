@@ -483,6 +483,48 @@ export default function TrapidTableView({
   const [visibleColumns, setVisibleColumns] = useState(initialTableState.visibleColumns)
   const [defaultColumnsForNewViews, setDefaultColumnsForNewViews] = useState(initialTableState.visibleColumns)
 
+  // Sync columnOrder and visibleColumns when COLUMNS change (e.g., new columns added from API)
+  // This ensures new columns appear in the table instead of being hidden due to stale localStorage
+  useEffect(() => {
+    const columnKeys = COLUMNS.map(c => c.key)
+
+    // Find new columns that aren't in the current columnOrder
+    const newColumns = columnKeys.filter(key => !columnOrder.includes(key))
+
+    if (newColumns.length > 0) {
+      // Add new columns to the end of columnOrder
+      setColumnOrder(prev => [...prev.filter(k => columnKeys.includes(k)), ...newColumns])
+
+      // Set new columns as visible by default
+      setVisibleColumns(prev => {
+        const updated = { ...prev }
+        newColumns.forEach(key => {
+          if (updated[key] === undefined) {
+            updated[key] = true
+          }
+        })
+        // Also remove visibility settings for columns that no longer exist
+        Object.keys(updated).forEach(key => {
+          if (!columnKeys.includes(key)) {
+            delete updated[key]
+          }
+        })
+        return updated
+      })
+
+      // Update column widths for new columns
+      setColumnWidths(prev => {
+        const updated = { ...prev }
+        COLUMNS.forEach(col => {
+          if (updated[col.key] === undefined) {
+            updated[col.key] = col.width || 150
+          }
+        })
+        return updated
+      })
+    }
+  }, [COLUMNS])
+
   // Per-column minimum widths (default 20px for all columns)
   const [columnMinWidths, setColumnMinWidths] = useState(() => {
     if (typeof window === 'undefined') return {}
@@ -2681,6 +2723,170 @@ export default function TrapidTableView({
         const columnDef = COLUMNS.find(col => col.key === columnKey)
         const isSystemColumn = columnKey === 'id' || columnKey === 'user_id'
         const isComputedColumn = columnDef?.isComputed
+        const columnType = columnDef?.column_type
+
+        // Handle column_type-based rendering for dynamic columns (e.g., from API)
+        // This allows columns like 'contract_value' with type 'currency' to render correctly
+        if (columnType === 'currency') {
+          if (editingRowId === entry.id) {
+            return (
+              <div className="relative flex items-center">
+                <span className="absolute left-2 text-gray-500 dark:text-gray-400">$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editingData[columnKey] ?? ''}
+                  onChange={(e) => setEditingData({ ...editingData, [columnKey]: e.target.value })}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.target.select()}
+                  className="w-full pl-6 pr-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-right"
+                />
+              </div>
+            )
+          }
+          return (
+            <div className="text-right font-medium">
+              {entry[columnKey] != null ? `$${parseFloat(entry[columnKey]).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+            </div>
+          )
+        }
+
+        if (columnType === 'percentage') {
+          if (editingRowId === entry.id) {
+            return (
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editingData[columnKey] ?? ''}
+                  onChange={(e) => setEditingData({ ...editingData, [columnKey]: e.target.value })}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.target.select()}
+                  className="w-full pr-6 pl-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-right"
+                />
+                <span className="absolute right-2 text-gray-500 dark:text-gray-400">%</span>
+              </div>
+            )
+          }
+          return (
+            <div className="text-right font-medium">
+              {entry[columnKey] != null ? `${parseFloat(entry[columnKey]).toFixed(2)}%` : '-'}
+            </div>
+          )
+        }
+
+        if (columnType === 'number' || columnType === 'whole_number') {
+          if (editingRowId === entry.id) {
+            return (
+              <input
+                type="number"
+                step={columnType === 'whole_number' ? '1' : 'any'}
+                value={editingData[columnKey] ?? ''}
+                onChange={(e) => setEditingData({ ...editingData, [columnKey]: e.target.value })}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-right"
+              />
+            )
+          }
+          return (
+            <div className="text-right font-medium">
+              {entry[columnKey] != null ? entry[columnKey].toLocaleString('en-AU') : '-'}
+            </div>
+          )
+        }
+
+        if (columnType === 'date') {
+          if (editingRowId === entry.id) {
+            return (
+              <input
+                type="date"
+                value={editingData[columnKey] || ''}
+                onChange={(e) => setEditingData({ ...editingData, [columnKey]: e.target.value })}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              />
+            )
+          }
+          // Format date for display
+          if (entry[columnKey]) {
+            const date = new Date(entry[columnKey])
+            return <span>{date.toLocaleDateString('en-AU')}</span>
+          }
+          return <span className="text-gray-400">-</span>
+        }
+
+        if (columnType === 'date_and_time') {
+          if (editingRowId === entry.id) {
+            return (
+              <input
+                type="datetime-local"
+                value={editingData[columnKey] || ''}
+                onChange={(e) => setEditingData({ ...editingData, [columnKey]: e.target.value })}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              />
+            )
+          }
+          // Format datetime for display
+          if (entry[columnKey]) {
+            const date = new Date(entry[columnKey])
+            return <span>{date.toLocaleDateString('en-AU')} {date.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}</span>
+          }
+          return <span className="text-gray-400">-</span>
+        }
+
+        if (columnType === 'email') {
+          if (editingRowId === entry.id) {
+            return (
+              <input
+                type="email"
+                value={editingData[columnKey] || ''}
+                onChange={(e) => setEditingData({ ...editingData, [columnKey]: e.target.value })}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              />
+            )
+          }
+          return entry[columnKey] ? (
+            <a href={`mailto:${entry[columnKey]}`} className="text-blue-600 dark:text-blue-400 underline" onClick={(e) => e.stopPropagation()}>
+              {entry[columnKey]}
+            </a>
+          ) : <span className="text-gray-400">-</span>
+        }
+
+        if (columnType === 'phone') {
+          if (editingRowId === entry.id) {
+            return (
+              <input
+                type="tel"
+                value={editingData[columnKey] || ''}
+                onChange={(e) => setEditingData({ ...editingData, [columnKey]: e.target.value })}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              />
+            )
+          }
+          return entry[columnKey] ? (
+            <a href={`tel:${entry[columnKey].replace(/[\s()]/g, '')}`} className="text-blue-600 dark:text-blue-400 hover:underline" onClick={(e) => e.stopPropagation()}>
+              {entry[columnKey]}
+            </a>
+          ) : <span className="text-gray-400">-</span>
+        }
+
+        if (columnType === 'choice') {
+          // Render choice as badge
+          if (entry[columnKey]) {
+            return (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                {entry[columnKey]}
+              </span>
+            )
+          }
+          return <span className="text-gray-400">-</span>
+        }
 
         // Check if this is a long text field that should have expand button
         const isLongTextField = ['description', 'details', 'summary', 'notes', 'scenario', 'solution', 'examples', 'code_example', 'common_mistakes'].includes(columnKey)
@@ -4780,7 +4986,9 @@ export default function TrapidTableView({
                         />
                       </div>
                     ) : (
-                      <div className="flex flex-col justify-between h-full gap-2 overflow-hidden">
+                      <div className={`flex flex-col h-full gap-2 overflow-hidden ${
+                        showFilters && (columnShowFilters[colKey] ?? true) && column.filterType ? 'justify-between' : 'justify-start'
+                      }`}>
                         <div className="flex items-start gap-1 min-w-0">
                           {column.resizable && (
                             <div
