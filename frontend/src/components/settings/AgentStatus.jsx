@@ -23,14 +23,15 @@ export default function AgentStatus() {
   const [globalSearch, setGlobalSearch] = useState('');
   const [columnFilters, setColumnFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [columnWidths, setColumnWidths] = useState(() => {
     const defaultWidths = {
       agent: 180,
+      category: 100,
       description: 200,
       status: 75,
       lastRun: 90,
       totalRuns: 50,
-      successRate: 60,
       tokens: 70,
       createdBy: 90,
       updatedBy: 90
@@ -53,11 +54,11 @@ export default function AgentStatus() {
   const [visibleColumns, setVisibleColumns] = useState(() => {
     const defaultVisible = {
       agent: true,
+      category: true,
       description: true,
       status: true,
       lastRun: true,
       totalRuns: true,
-      successRate: true,
       tokens: true,
       createdBy: true,
       updatedBy: true
@@ -77,7 +78,7 @@ export default function AgentStatus() {
   const [showColumnPicker, setShowColumnPicker] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [columnOrder, setColumnOrder] = useState(() => {
-    const defaultOrder = ['agent', 'description', 'status', 'lastRun', 'totalRuns', 'successRate', 'tokens', 'createdBy', 'updatedBy'];
+    const defaultOrder = ['agent', 'category', 'description', 'status', 'lastRun', 'totalRuns', 'tokens', 'createdBy', 'updatedBy'];
     const saved = localStorage.getItem('agentStatus_columnOrder');
     if (saved) {
       try {
@@ -227,27 +228,37 @@ export default function AgentStatus() {
         name: agent.name,
         displayName: getAgentDisplayName(agent),
         icon: getAgentIcon(agent),
+        category: agent.category,
         description: getAgentDescription(agent),
         last_run: agent.last_run_at,
-        last_run_by: agent.last_run_by,
+        last_run_by_name: agent.last_run_by_name,
+        last_run_details: agent.last_run_details,
         status: agent.last_status,
         total_runs: agent.total_runs || 0,
         success_rate: agent.success_rate || 0,
         created_at: agent.created_at,
-        created_by: agent.created_by,
+        created_by_name: agent.created_by_name,
         updated_at: agent.updated_at,
-        updated_by: agent.updated_by
+        updated_by_name: agent.updated_by_name
       }))
     : [];
+
+  // Get unique categories for filter dropdown
+  const categories = [...new Set(agentsArray.map(a => a.category).filter(Boolean))].sort();
 
   // Filter and sort
   const filteredAgents = agentsArray
     .filter(agent => {
+      // Category filter
+      if (categoryFilter !== 'all' && agent.category !== categoryFilter) {
+        return false;
+      }
       if (globalSearch) {
         const search = globalSearch.toLowerCase();
         if (
           !agent.displayName?.toLowerCase().includes(search) &&
-          !agent.description?.toLowerCase().includes(search)
+          !agent.description?.toLowerCase().includes(search) &&
+          !agent.category?.toLowerCase().includes(search)
         ) {
           return false;
         }
@@ -284,12 +295,12 @@ export default function AgentStatus() {
 
   const columns = [
     { key: 'agent', label: 'Agent', sortable: true, searchable: true },
+    { key: 'category', label: 'Category', sortable: true, searchable: true },
     { key: 'description', label: 'Description', sortable: true, searchable: true },
     { key: 'status', label: 'Status', sortable: true, searchable: false },
     { key: 'lastRun', label: 'Last Run', sortable: true, searchable: false },
     { key: 'totalRuns', label: 'Total Runs', sortable: true, searchable: false },
-    { key: 'successRate', label: 'Success Rate', sortable: true, searchable: false },
-    { key: 'tokens', label: 'Est. Tokens', sortable: true, searchable: false },
+    { key: 'tokens', label: 'Tokens (Last Run)', sortable: true, searchable: false },
     { key: 'createdBy', label: 'Created By', sortable: true, searchable: true },
     { key: 'updatedBy', label: 'Updated', sortable: true, searchable: true }
   ];
@@ -491,7 +502,7 @@ export default function AgentStatus() {
                             )}
                           </div>
                         </div>
-                        {column.searchable && (
+                        {column.searchable && column.key !== 'category' && (
                           <input
                             type="text"
                             placeholder="Filter..."
@@ -500,6 +511,24 @@ export default function AgentStatus() {
                             onClick={(e) => e.stopPropagation()}
                             className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                           />
+                        )}
+                        {column.key === 'category' && (
+                          <select
+                            value={categoryFilter}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              setCategoryFilter(e.target.value);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                          >
+                            <option value="all">All</option>
+                            {categories.map(cat => (
+                              <option key={cat} value={cat}>
+                                {cat.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                              </option>
+                            ))}
+                          </select>
                         )}
                       </div>
                     </div>
@@ -555,6 +584,25 @@ export default function AgentStatus() {
                             </div>
                           </td>
                         );
+                      } else if (key === 'category') {
+                        const categoryColors = {
+                          'validation': 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+                          'deployment': 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+                          'planning': 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+                          'development': 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
+                        };
+                        const colorClass = categoryColors[agent.category] || 'bg-gray-50 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300';
+                        return (
+                          <td key="category" className="px-3 py-2 overflow-hidden" style={{ width: columnWidths.category }}>
+                            {agent.category ? (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colorClass}`}>
+                                {agent.category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
+                          </td>
+                        );
                       } else if (key === 'description') {
                         return (
                           <td
@@ -575,7 +623,7 @@ export default function AgentStatus() {
                       } else if (key === 'status') {
                         return (
                           <td key="status" className="px-3 py-2 overflow-hidden" style={{ width: columnWidths.status }}>
-                            {getStatusBadge(agent.last_status)}
+                            {getStatusBadge(agent.status)}
                           </td>
                         );
                       } else if (key === 'lastRun') {
@@ -584,13 +632,11 @@ export default function AgentStatus() {
                             {agent.last_run ? (
                               <>
                                 <div className="text-xs text-gray-900 dark:text-white truncate">
+                                  {agent.last_run_by_name || '-'}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                   {formatDate(agent.last_run)}
                                 </div>
-                                {agent.last_run_by && (
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                    by {agent.last_run_by.name || agent.last_run_by.email}
-                                  </div>
-                                )}
                               </>
                             ) : (
                               <span className="text-xs text-gray-400">-</span>
@@ -602,14 +648,6 @@ export default function AgentStatus() {
                           <td key="totalRuns" className="px-3 py-2 overflow-hidden" style={{ width: columnWidths.totalRuns }}>
                             <div className="text-sm text-gray-900 dark:text-white">
                               {agent.total_runs || 0}
-                            </div>
-                          </td>
-                        );
-                      } else if (key === 'successRate') {
-                        return (
-                          <td key="successRate" className="px-3 py-2 overflow-hidden" style={{ width: columnWidths.successRate }}>
-                            <div className="text-sm text-gray-900 dark:text-white">
-                              {agent.total_runs > 0 ? `${agent.success_rate}%` : 'N/A'}
                             </div>
                           </td>
                         );
@@ -630,7 +668,7 @@ export default function AgentStatus() {
                         return (
                           <td key="createdBy" className="px-3 py-2 overflow-hidden" style={{ width: columnWidths.createdBy }}>
                             <div className="text-xs text-gray-900 dark:text-white truncate">
-                              {agent.created_by?.name || agent.created_by?.email || '-'}
+                              {agent.created_by_name || '-'}
                             </div>
                             {agent.created_at && (
                               <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -643,7 +681,7 @@ export default function AgentStatus() {
                         return (
                           <td key="updatedBy" className="px-3 py-2 overflow-hidden" style={{ width: columnWidths.updatedBy }}>
                             <div className="text-xs text-gray-900 dark:text-white truncate">
-                              {agent.updated_by?.name || agent.updated_by?.email || '-'}
+                              {agent.updated_by_name || '-'}
                             </div>
                             {agent.updated_at && (
                               <div className="text-xs text-gray-500 dark:text-gray-400 truncate">

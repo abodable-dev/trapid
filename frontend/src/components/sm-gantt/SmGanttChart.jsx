@@ -54,17 +54,81 @@ const generateDateColumns = (start, end) => {
   return dates
 }
 
-// Task bar component
-const TaskBar = ({ task, startOffset, width, dayWidth, onClick }) => {
+// Task bar component with drag support
+const TaskBar = ({ task, startOffset, width, dayWidth, onClick, onDrag, onDragEnd, dateRange }) => {
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStartX, setDragStartX] = useState(0)
+  const [currentOffset, setCurrentOffset] = useState(startOffset)
+  const barRef = useRef(null)
+
+  // Reset offset when startOffset prop changes
+  useEffect(() => {
+    setCurrentOffset(startOffset)
+  }, [startOffset])
+
+  // Stage-based color mapping
+  const STAGE_COLORS = {
+    'pre-construction': { bg: 'bg-slate-500', hex: '#64748b' },
+    'slab': { bg: 'bg-amber-600', hex: '#d97706' },
+    'frame': { bg: 'bg-orange-500', hex: '#f97316' },
+    'lockup': { bg: 'bg-blue-500', hex: '#3b82f6' },
+    'fixing': { bg: 'bg-indigo-500', hex: '#6366f1' },
+    'finishing': { bg: 'bg-purple-500', hex: '#a855f7' },
+    'handover': { bg: 'bg-green-500', hex: '#22c55e' },
+  }
+
   const getBarColor = () => {
+    // Priority 1: Hold tasks are always red
     if (task.is_hold_task) return 'bg-red-500'
-    if (task.status === 'completed') return 'bg-green-500'
-    if (task.status === 'started') return 'bg-blue-500'
+
+    // Priority 2: Status-based colors for active jobs
+    if (task.status === 'completed') return 'bg-green-600'
+    if (task.status === 'started') return 'bg-blue-600'
+
+    // Priority 3: Lock types
     if (task.locked) {
       if (task.lock_type === 'supplier_confirm') return 'bg-purple-500'
       if (task.lock_type === 'confirm') return 'bg-indigo-500'
     }
+
+    // Priority 4: Custom color from task (hex format)
+    if (task.color) return null // Will use inline style instead
+
+    // Priority 5: Stage-based color
+    if (task.stage && STAGE_COLORS[task.stage]) {
+      return STAGE_COLORS[task.stage].bg
+    }
+
+    // Priority 6: Trade-based colors (for templates without stage)
+    const TRADE_COLORS = {
+      'earthworks': 'bg-amber-700',
+      'surveyor': 'bg-slate-600',
+      'concreter': 'bg-stone-500',
+      'carpenter': 'bg-orange-600',
+      'roofer': 'bg-red-600',
+      'plumber': 'bg-blue-600',
+      'electrician': 'bg-yellow-500',
+      'plasterer': 'bg-gray-400',
+      'tiler': 'bg-cyan-600',
+      'painter': 'bg-pink-500',
+      'joiner': 'bg-amber-600',
+      'insulation': 'bg-violet-500',
+      'cleaner': 'bg-emerald-500',
+      'supervisor': 'bg-indigo-600',
+    }
+
+    if (task.trade && TRADE_COLORS[task.trade]) {
+      return TRADE_COLORS[task.trade]
+    }
+
     return 'bg-gray-400'
+  }
+
+  // Get hex color for inline style (when custom color is set)
+  const getBarHexColor = () => {
+    if (task.color) return task.color
+    if (task.stage && STAGE_COLORS[task.stage]) return STAGE_COLORS[task.stage].hex
+    return null
   }
 
   const getProgressWidth = () => {
@@ -72,24 +136,76 @@ const TaskBar = ({ task, startOffset, width, dayWidth, onClick }) => {
     return `${task.progress_percentage || 0}%`
   }
 
+  const handleMouseDown = (e) => {
+    if (task.locked) return // Don't allow dragging locked tasks
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+    setDragStartX(e.clientX)
+  }
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return
+    const deltaX = e.clientX - dragStartX
+    const daysDelta = Math.round(deltaX / dayWidth)
+    const newOffset = Math.max(0, startOffset + daysDelta)
+    setCurrentOffset(newOffset)
+    onDrag?.(task.id, newOffset)
+  }
+
+  const handleMouseUp = () => {
+    if (!isDragging) return
+    setIsDragging(false)
+
+    // Calculate new start date
+    const newStartDate = new Date(dateRange.start)
+    newStartDate.setDate(newStartDate.getDate() + currentOffset)
+
+    onDragEnd?.(task.id, newStartDate.toISOString().split('T')[0], currentOffset)
+  }
+
+  // Global mouse listeners for drag
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove)
+        window.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isDragging, dragStartX, startOffset])
+
   return (
     <div
-      className="absolute h-6 rounded cursor-pointer group transition-all hover:brightness-110"
+      ref={barRef}
+      className={`absolute h-6 rounded group transition-all ${
+        isDragging ? 'cursor-grabbing z-50 shadow-lg scale-105' : 'cursor-grab hover:brightness-110'
+      } ${task.locked ? 'cursor-not-allowed opacity-75' : ''}`}
       style={{
-        left: `${startOffset * dayWidth}px`,
+        left: `${currentOffset * dayWidth}px`,
         width: `${Math.max(width * dayWidth, dayWidth)}px`,
         top: '4px',
       }}
-      onClick={() => onClick?.(task)}
-      title={`${task.name}\n${task.start_date} - ${task.end_date}\nStatus: ${task.status}`}
+      onMouseDown={handleMouseDown}
+      onClick={(e) => {
+        if (!isDragging) onClick?.(task)
+      }}
+      title={`${task.name}\n${task.start_date} - ${task.end_date}\nStatus: ${task.status}${task.stage ? `\nStage: ${task.stage}` : ''}${task.trade ? `\nTrade: ${task.trade}` : ''}${task.locked ? '\n(Locked - cannot drag)' : '\n(Drag to move)'}`}
     >
       {/* Background bar */}
-      <div className={`absolute inset-0 rounded ${getBarColor()} opacity-30`} />
+      <div
+        className={`absolute inset-0 rounded ${getBarColor() || ''} ${isDragging ? 'opacity-50' : 'opacity-30'}`}
+        style={getBarHexColor() && !getBarColor() ? { backgroundColor: getBarHexColor() } : undefined}
+      />
 
       {/* Progress fill */}
       <div
-        className={`absolute inset-y-0 left-0 rounded-l ${getBarColor()}`}
-        style={{ width: getProgressWidth() }}
+        className={`absolute inset-y-0 left-0 rounded-l ${getBarColor() || ''}`}
+        style={{
+          width: getProgressWidth(),
+          ...(getBarHexColor() && !getBarColor() ? { backgroundColor: getBarHexColor() } : {})
+        }}
       />
 
       {/* Task label */}
@@ -104,38 +220,144 @@ const TaskBar = ({ task, startOffset, width, dayWidth, onClick }) => {
       {task.locked && (
         <div className="absolute -right-1 -top-1 w-3 h-3 bg-yellow-400 rounded-full border border-white" />
       )}
+
+      {/* Drag handles on hover */}
+      {!task.locked && (
+        <>
+          <div className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/30 rounded-l" />
+          <div className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/30 rounded-r" />
+        </>
+      )}
     </div>
   )
 }
 
-// Dependency line component
-const DependencyLine = ({ fromTask, toTask, tasks, dateRange, dayWidth, rowHeight }) => {
+// Dependency line component with type support
+// Types: FS (Finish-to-Start), SS (Start-to-Start), FF (Finish-to-Finish), SF (Start-to-Finish)
+const DependencyLine = ({ fromTask, toTask, tasks, dateRange, dayWidth, rowHeight, depType = 'FS', lag = 0 }) => {
   // Find task positions
   const fromIndex = tasks.findIndex(t => t.id === fromTask.id)
   const toIndex = tasks.findIndex(t => t.id === toTask.id)
 
+  console.log('DependencyLine rendering:', { fromTask: fromTask.name, toTask: toTask.name, fromIndex, toIndex, depType })
+
   if (fromIndex === -1 || toIndex === -1) return null
 
+  // Calculate X positions based on dependency type
+  let fromX, toX
+  const fromStartOffset = daysBetween(dateRange.start, new Date(fromTask.start_date)) - 1
   const fromEndOffset = daysBetween(dateRange.start, new Date(fromTask.end_date))
   const toStartOffset = daysBetween(dateRange.start, new Date(toTask.start_date)) - 1
+  const toEndOffset = daysBetween(dateRange.start, new Date(toTask.end_date))
 
-  const fromX = fromEndOffset * dayWidth
-  const toX = toStartOffset * dayWidth
-  const fromY = fromIndex * rowHeight + rowHeight / 2
-  const toY = toIndex * rowHeight + rowHeight / 2
+  // Set connection points based on dependency type
+  switch (depType) {
+    case 'SS': // Start-to-Start
+      fromX = fromStartOffset * dayWidth
+      toX = toStartOffset * dayWidth
+      break
+    case 'FF': // Finish-to-Finish
+      fromX = fromEndOffset * dayWidth
+      toX = toEndOffset * dayWidth
+      break
+    case 'SF': // Start-to-Finish
+      fromX = fromStartOffset * dayWidth
+      toX = toEndOffset * dayWidth
+      break
+    case 'FS': // Finish-to-Start (default)
+    default:
+      fromX = fromEndOffset * dayWidth
+      toX = toStartOffset * dayWidth
+      break
+  }
 
-  // Simple right-angle path
-  const midX = (fromX + toX) / 2
+  // Task bars have top: 4px and height: 24px (h-6), so center is at 4 + 12 = 16px from row top
+  const taskBarOffset = 4 + 12 // top offset + half of bar height
+  const fromY = fromIndex * rowHeight + taskBarOffset
+  const toY = toIndex * rowHeight + taskBarOffset
+
+  // Determine path style based on dependency type
+  const getStrokeDasharray = () => {
+    switch (depType) {
+      case 'SS': return '4,4'      // Dashed
+      case 'FF': return '2,2'      // Dotted
+      case 'SF': return '6,3,2,3'  // Dash-dot
+      case 'FS':
+      default: return 'none'       // Solid
+    }
+  }
+
+  // Build path - route dependency lines cleanly between task bars
+  const buildPath = () => {
+    const padding = 8
+
+    // For FS dependencies going to the next row, use a simple elbow connector
+    if (depType === 'FS') {
+      if (toIndex > fromIndex) {
+        // Going down: exit right from end, go down, enter left to start
+        const midX = fromX + padding
+        return `M ${fromX} ${fromY} L ${midX} ${fromY} L ${midX} ${toY} L ${toX} ${toY}`
+      } else {
+        // Going up: need to route around
+        const midX = Math.max(fromX, toX) + padding * 2
+        return `M ${fromX} ${fromY} L ${midX} ${fromY} L ${midX} ${toY} L ${toX} ${toY}`
+      }
+    }
+
+    if (depType === 'SS') {
+      // Start-to-Start: exit left, go to target start
+      const minX = Math.min(fromX, toX) - padding
+      return `M ${fromX} ${fromY} L ${minX} ${fromY} L ${minX} ${toY} L ${toX} ${toY}`
+    }
+
+    if (depType === 'FF') {
+      // Finish-to-Finish: exit right, go to target end
+      const maxX = Math.max(fromX, toX) + padding
+      return `M ${fromX} ${fromY} L ${maxX} ${fromY} L ${maxX} ${toY} L ${toX} ${toY}`
+    }
+
+    if (depType === 'SF') {
+      // Start-to-Finish: exit left from start, route to end
+      const midX = fromX - padding
+      return `M ${fromX} ${fromY} L ${midX} ${fromY} L ${midX} ${toY} L ${toX} ${toY}`
+    }
+
+    // Default fallback
+    return `M ${fromX} ${fromY} L ${toX} ${toY}`
+  }
+
+  // Marker ID based on type (for correct arrowhead color)
+  const markerId = `arrowhead-${depType.toLowerCase()}`
+  const pathD = buildPath()
+
+  console.log('Dependency path:', { fromX, toX, fromY, toY, pathD })
 
   return (
-    <path
-      d={`M ${fromX} ${fromY} L ${midX} ${fromY} L ${midX} ${toY} L ${toX} ${toY}`}
-      fill="none"
-      stroke="#6B7280"
-      strokeWidth="1.5"
-      markerEnd="url(#arrowhead)"
-      className="pointer-events-none"
-    />
+    <g>
+      <path
+        d={pathD}
+        fill="none"
+        stroke="#F59E0B"
+        strokeWidth="2.5"
+        strokeDasharray={getStrokeDasharray()}
+        markerEnd={`url(#${markerId})`}
+        className="pointer-events-none"
+        style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))' }}
+      />
+      {/* Show lag label if non-zero */}
+      {lag !== 0 && (
+        <text
+          x={(fromX + toX) / 2}
+          y={Math.min(fromY, toY) - 4}
+          fontSize="10"
+          fill="#F59E0B"
+          textAnchor="middle"
+          className="pointer-events-none font-medium"
+        >
+          {lag > 0 ? `+${lag}d` : `${lag}d`}
+        </text>
+      )}
+    </g>
   )
 }
 
@@ -203,10 +425,42 @@ export default function SmGanttChart({ tasks = [], dependencies = [], onTaskClic
     <div className="h-full flex flex-col bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <span className="text-sm text-gray-600 dark:text-gray-400">
             {tasks.length} tasks
           </span>
+          {/* Stage Legend */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-gray-400">Stages:</span>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-slate-500" title="Pre-construction" />
+              <span className="text-gray-500">Pre</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-amber-600" title="Slab" />
+              <span className="text-gray-500">Slab</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-orange-500" title="Frame" />
+              <span className="text-gray-500">Frame</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-blue-500" title="Lockup" />
+              <span className="text-gray-500">Lockup</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-indigo-500" title="Fixing" />
+              <span className="text-gray-500">Fixing</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-purple-500" title="Finishing" />
+              <span className="text-gray-500">Finish</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-green-500" title="Handover" />
+              <span className="text-gray-500">Handover</span>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -229,27 +483,51 @@ export default function SmGanttChart({ tasks = [], dependencies = [], onTaskClic
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Task names column (fixed) */}
-        <div className="w-64 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 overflow-hidden">
-          {/* Header spacer */}
-          <div className="h-[52px] border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center px-3">
-            <span className="text-xs font-medium text-gray-500 uppercase">Task Name</span>
+        {/* Task grid (fixed left panel) */}
+        <div className="flex-shrink-0 border-r border-gray-200 dark:border-gray-700 overflow-hidden" style={{ width: '420px' }}>
+          {/* Grid Header */}
+          <div className="h-[52px] border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center">
+            <div className="w-10 px-2 text-xs font-medium text-gray-500 uppercase">#</div>
+            <div className="flex-1 min-w-[180px] px-2 text-xs font-medium text-gray-500 uppercase">Task Name</div>
+            <div className="w-14 px-2 text-xs font-medium text-gray-500 uppercase text-center">Days</div>
+            <div className="w-20 px-2 text-xs font-medium text-gray-500 uppercase">Trade</div>
+            <div className="w-20 px-2 text-xs font-medium text-gray-500 uppercase">Stage</div>
           </div>
-          {/* Task names */}
+          {/* Grid Rows */}
           <div className="overflow-y-auto" style={{ height: `calc(100% - 52px)` }}>
             {tasks.map((task, index) => (
               <div
                 key={task.id}
-                className={`flex items-center px-3 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                className={`flex items-center border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
                   task.is_hold_task ? 'bg-red-50 dark:bg-red-900/20' : ''
                 }`}
                 style={{ height: `${rowHeight}px` }}
                 onClick={() => onTaskClick?.(task)}
               >
-                <span className="text-xs text-gray-400 w-6">{task.task_number}</span>
-                <span className={`text-sm truncate ${task.is_hold_task ? 'text-red-600 font-medium' : 'text-gray-900 dark:text-gray-100'}`}>
-                  {task.name}
-                </span>
+                <div className="w-10 px-2 text-xs text-gray-400 font-medium">{task.task_number}</div>
+                <div className="flex-1 min-w-[180px] px-2 flex items-center gap-2 overflow-hidden">
+                  {/* Color indicator */}
+                  <div
+                    className="w-2 h-4 rounded-sm flex-shrink-0"
+                    style={{
+                      backgroundColor: task.color || (task.stage ? {
+                        'pre-construction': '#64748b',
+                        'slab': '#d97706',
+                        'frame': '#f97316',
+                        'lockup': '#3b82f6',
+                        'fixing': '#6366f1',
+                        'finishing': '#a855f7',
+                        'handover': '#22c55e',
+                      }[task.stage] : '#9ca3af')
+                    }}
+                  />
+                  <span className={`text-sm truncate ${task.is_hold_task ? 'text-red-600 font-medium' : 'text-gray-900 dark:text-gray-100'}`}>
+                    {task.name}
+                  </span>
+                </div>
+                <div className="w-14 px-2 text-xs text-gray-500 text-center">{task.duration_days || '-'}</div>
+                <div className="w-20 px-2 text-xs text-gray-500 truncate capitalize">{task.trade || '-'}</div>
+                <div className="w-20 px-2 text-xs text-gray-500 truncate capitalize">{task.stage?.replace('-', ' ') || '-'}</div>
               </div>
             ))}
           </div>
@@ -327,27 +605,61 @@ export default function SmGanttChart({ tasks = [], dependencies = [], onTaskClic
               />
             ))}
 
-            {/* Dependency lines SVG */}
+            {/* Dependency lines SVG - rendered with z-index to appear above task bars */}
             <svg
-              className="absolute inset-0 pointer-events-none"
+              className="absolute inset-0 pointer-events-none z-20"
               style={{ width: `${totalWidth}px`, height: `${totalHeight}px` }}
             >
               <defs>
+                {/* Yellow arrowheads for each dependency type */}
                 <marker
-                  id="arrowhead"
-                  markerWidth="6"
-                  markerHeight="6"
-                  refX="5"
-                  refY="3"
+                  id="arrowhead-fs"
+                  markerWidth="8"
+                  markerHeight="8"
+                  refX="7"
+                  refY="4"
                   orient="auto"
                 >
-                  <polygon points="0 0, 6 3, 0 6" fill="#6B7280" />
+                  <polygon points="0 0, 8 4, 0 8" fill="#F59E0B" />
+                </marker>
+                <marker
+                  id="arrowhead-ss"
+                  markerWidth="8"
+                  markerHeight="8"
+                  refX="7"
+                  refY="4"
+                  orient="auto"
+                >
+                  <polygon points="0 0, 8 4, 0 8" fill="#F59E0B" />
+                </marker>
+                <marker
+                  id="arrowhead-ff"
+                  markerWidth="8"
+                  markerHeight="8"
+                  refX="7"
+                  refY="4"
+                  orient="auto"
+                >
+                  <polygon points="0 0, 8 4, 0 8" fill="#F59E0B" />
+                </marker>
+                <marker
+                  id="arrowhead-sf"
+                  markerWidth="8"
+                  markerHeight="8"
+                  refX="7"
+                  refY="4"
+                  orient="auto"
+                >
+                  <polygon points="0 0, 8 4, 0 8" fill="#F59E0B" />
                 </marker>
               </defs>
               {dependencies.map((dep, i) => {
-                const fromTask = tasks.find(t => t.id === dep.source)
-                const toTask = tasks.find(t => t.id === dep.target)
-                if (!fromTask || !toTask) return null
+                const fromTask = tasks.find(t => t.id === dep.source || t.id === dep.predecessor_id)
+                const toTask = tasks.find(t => t.id === dep.target || t.id === dep.successor_id)
+                if (!fromTask || !toTask) {
+                  console.log('Dependency not found:', dep, 'fromTask:', fromTask, 'toTask:', toTask, 'tasks:', tasks.map(t => ({ id: t.id, task_number: t.task_number })))
+                  return null
+                }
                 return (
                   <DependencyLine
                     key={i}
@@ -357,12 +669,14 @@ export default function SmGanttChart({ tasks = [], dependencies = [], onTaskClic
                     dateRange={dateRange}
                     dayWidth={dayWidth}
                     rowHeight={rowHeight}
+                    depType={dep.type || dep.dependency_type || 'FS'}
+                    lag={dep.lag || dep.lag_days || 0}
                   />
                 )
               })}
             </svg>
 
-            {/* Task bars */}
+            {/* Task bars - z-10 to be below dependency lines */}
             {tasks.map((task, index) => {
               const taskStart = new Date(task.start_date)
               const taskEnd = new Date(task.end_date)
@@ -372,7 +686,7 @@ export default function SmGanttChart({ tasks = [], dependencies = [], onTaskClic
               return (
                 <div
                   key={task.id}
-                  className="absolute left-0 right-0"
+                  className="absolute left-0 right-0 z-10"
                   style={{ top: `${index * rowHeight}px`, height: `${rowHeight}px` }}
                 >
                   <TaskBar
@@ -381,6 +695,18 @@ export default function SmGanttChart({ tasks = [], dependencies = [], onTaskClic
                     width={duration}
                     dayWidth={dayWidth}
                     onClick={onTaskClick}
+                    dateRange={dateRange}
+                    onDragEnd={(taskId, newStartDate, newOffset) => {
+                      // Calculate new end date based on duration
+                      const start = new Date(newStartDate)
+                      const end = new Date(start)
+                      end.setDate(start.getDate() + (task.duration_days || duration) - 1)
+
+                      onTaskUpdate?.(taskId, {
+                        start_date: newStartDate,
+                        end_date: end.toISOString().split('T')[0]
+                      })
+                    }}
                   />
                 </div>
               )

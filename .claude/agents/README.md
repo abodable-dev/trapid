@@ -420,33 +420,32 @@ Add the agent to the "Available Agents" list above.
 
 ## Recording Agent Runs
 
-When an agent completes, record the run via API. Pass your git email to track who ran it:
+When an agent completes, record the run via API. Pass your git user name to track who ran it:
 
 **Via curl (from CLI/hooks):**
 ```bash
-# Get git user email
-GIT_EMAIL=$(git config user.email)
+# Get git user name
+GIT_NAME=$(git config user.name)
 
 # Record success
 curl -X POST http://localhost:3000/api/v1/agent_definitions/your-agent-name/record_run \
   -H "Content-Type: application/json" \
-  -d "{\"status\": \"success\", \"message\": \"Task completed\", \"user_email\": \"$GIT_EMAIL\"}"
+  -d "{\"status\": \"success\", \"message\": \"Task completed\", \"user_name\": \"$GIT_NAME\"}"
 
 # Record failure
 curl -X POST http://localhost:3000/api/v1/agent_definitions/your-agent-name/record_run \
   -H "Content-Type: application/json" \
-  -d "{\"status\": \"failure\", \"message\": \"Error occurred\", \"user_email\": \"$GIT_EMAIL\"}"
+  -d "{\"status\": \"failure\", \"message\": \"Error occurred\", \"user_name\": \"$GIT_NAME\"}"
 ```
 
 **Via Rails console:**
 ```ruby
-# Success with user
+# Success with user name
 agent = AgentDefinition.find_by(agent_id: 'your-agent-name')
-user = User.find_by(email: 'robert@tekna.com.au')
-agent.record_success('Task completed', { details: 'metadata' }, user: user)
+agent.record_success('Task completed', { details: 'metadata' }, user_name: 'RobertJHarder')
 
 # Failure
-agent.record_failure('Error message', { error: 'details' }, user: user)
+agent.record_failure('Error message', { error: 'details' }, user_name: 'RobertJHarder')
 ```
 
 This updates:
@@ -456,3 +455,4 @@ This updates:
 - `last_status` ('success' or 'failure')
 - `last_message` (your message)
 - `last_run_details` (optional metadata)
+- `last_run_by_name` (git user name)
