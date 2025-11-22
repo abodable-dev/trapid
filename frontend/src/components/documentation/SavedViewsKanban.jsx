@@ -25,7 +25,9 @@ export default function SavedViewsKanban({
   setColumnOrder,
   setFilterGroups,
   setInterGroupLogic,
-  hideHeader = false
+  hideHeader = false,
+  searchParams,
+  setSearchParams
 }) {
   const [draggedIndex, setDraggedIndex] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
@@ -114,6 +116,13 @@ export default function SavedViewsKanban({
       if (setColumnOrder) setColumnOrder(view.columnOrder)
     }
     setActiveViewId(view.id)
+    // Update URL with view name (URL-friendly slug)
+    if (searchParams && setSearchParams) {
+      const viewSlug = view.name.toLowerCase().replace(/\s+/g, '-')
+      const newParams = new URLSearchParams(searchParams)
+      newParams.set('view', viewSlug)
+      setSearchParams(newParams, { replace: false })
+    }
     setShowCascadeDropdown(false)
   }
 

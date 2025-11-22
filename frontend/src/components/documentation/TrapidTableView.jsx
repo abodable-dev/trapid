@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import RichTextEditor from '../common/RichTextEditor'
 import ColumnEditorModal from '../schema/ColumnEditorModal'
@@ -114,6 +114,7 @@ export default function TrapidTableView({
   onColumnUpdate = null  // NEW: Callback when a column schema is updated (to refresh table data)
 }) {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   // Use custom columns if provided, otherwise use default Trinity columns
   const COLUMNS = columns || DEFAULT_TRINITY_COLUMNS
@@ -382,6 +383,55 @@ export default function TrapidTableView({
     }
   }, [savedFilters, tableId])
 
+  // URL-based view selection - load view from URL on mount and when URL changes
+  useEffect(() => {
+    const viewParam = searchParams.get('view')
+    if (viewParam && savedFilters.length > 0) {
+      // Find view by name (URL-friendly slug)
+      const view = savedFilters.find(v =>
+        v.name.toLowerCase().replace(/\s+/g, '-') === viewParam.toLowerCase() ||
+        v.id.toString() === viewParam
+      )
+      if (view && activeViewId !== view.id) {
+        // Load the view's filters
+        setCascadeFilters(view.filters.map(f => ({
+          id: Date.now() + Math.random(),
+          column: f.column,
+          value: f.value,
+          operator: f.operator || '=',
+          label: f.label,
+          groupId: f.groupId || 'default'
+        })))
+        // Load visible columns
+        if (view.visibleColumns) {
+          setVisibleColumns(view.visibleColumns)
+        }
+        // Load column order
+        if (view.columnOrder) {
+          setVisibilityColumnOrder(view.columnOrder)
+          setColumnOrder(view.columnOrder)
+        }
+        setActiveViewId(view.id)
+      }
+    } else if (!viewParam && activeViewId) {
+      // URL has no view param but we have an active view - clear it (back button pressed)
+      setCascadeFilters([])
+      setFilterGroups([{ id: 'default', logic: 'AND' }])
+      setInterGroupLogic('OR')
+      setActiveViewId(null)
+    }
+  }, [searchParams, savedFilters]) // Re-run when URL or saved filters change
+
+  // Sync URL when activeViewId changes to null (view cleared)
+  useEffect(() => {
+    if (activeViewId === null && searchParams.get('view')) {
+      // Active view was cleared, remove from URL
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('view')
+      setSearchParams(newParams, { replace: true })
+    }
+  }, [activeViewId])
+
   // Auto-load default view on mount - DISABLED to start with clean slate
   // useEffect(() => {
   //   const defaultView = savedFilters.find(view => view.isDefault)
@@ -432,6 +482,42 @@ export default function TrapidTableView({
   const [columnOrder, setColumnOrder] = useState(initialTableState.columnOrder)
   const [visibleColumns, setVisibleColumns] = useState(initialTableState.visibleColumns)
   const [defaultColumnsForNewViews, setDefaultColumnsForNewViews] = useState(initialTableState.visibleColumns)
+
+  // Per-column minimum widths (default 20px for all columns)
+  const [columnMinWidths, setColumnMinWidths] = useState(() => {
+    if (typeof window === 'undefined') return {}
+    try {
+      const stored = localStorage.getItem(`trapid-column-min-widths-${tableId}`)
+      return stored ? JSON.parse(stored) : {}
+    } catch { return {} }
+  })
+
+  // Per-column filter visibility (true = show filter, default is true for all columns)
+  const [columnShowFilters, setColumnShowFilters] = useState(() => {
+    if (typeof window === 'undefined') return {}
+    try {
+      const stored = localStorage.getItem(`trapid-column-show-filters-${tableId}`)
+      return stored ? JSON.parse(stored) : {}
+    } catch { return {} }
+  })
+
+  // Save column min widths to localStorage whenever they change (per table)
+  useEffect(() => {
+    try {
+      localStorage.setItem(`trapid-column-min-widths-${tableId}`, JSON.stringify(columnMinWidths))
+    } catch (error) {
+      console.error('Error saving column min widths to localStorage:', error)
+    }
+  }, [columnMinWidths, tableId])
+
+  // Save column show filters to localStorage whenever they change (per table)
+  useEffect(() => {
+    try {
+      localStorage.setItem(`trapid-column-show-filters-${tableId}`, JSON.stringify(columnShowFilters))
+    } catch (error) {
+      console.error('Error saving column show filters to localStorage:', error)
+    }
+  }, [columnShowFilters, tableId])
 
   // Save default columns to localStorage whenever they change (per table)
   useEffect(() => {
@@ -612,7 +698,8 @@ export default function TrapidTableView({
   const handleResizeMove = (e) => {
     if (!resizingColumn) return
     const diff = e.clientX - resizeStartX
-    const newWidth = Math.max(100, resizeStartWidth + diff) // Min 100px
+    const minWidth = columnMinWidths[resizingColumn] ?? 20 // Per-column min width, default 20px
+    const newWidth = Math.max(minWidth, resizeStartWidth + diff)
     setColumnWidths(prev => ({
       ...prev,
       [resizingColumn]: newWidth
@@ -3246,6 +3333,8 @@ export default function TrapidTableView({
                         <th className="text-left py-2 font-medium">Column Name</th>
                         <th className="text-left py-2 font-medium w-32">SQL Type</th>
                         <th className="text-left py-2 font-medium w-28">Display Type</th>
+                        <th className="text-left py-2 font-medium w-20">Min Width</th>
+                        <th className="text-center py-2 font-medium w-24">Show Filter</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3254,21 +3343,52 @@ export default function TrapidTableView({
                         return (
                           <tr
                             key={column.key}
-                            onClick={() => handleToggleColumn(column.key)}
-                            className="group hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                            className="group hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                           >
-                            <td className="py-2 px-2">
+                            <td className="py-2 px-2 cursor-pointer" onClick={() => handleToggleColumn(column.key)}>
                               <input
                                 type="checkbox"
                                 checked={visibleColumns[column.key]}
                                 onChange={() => {}}
-                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 cursor-pointer"
                               />
                             </td>
-                            <td className="py-2 text-base">{getColumnTypeEmoji(colType)}</td>
-                            <td className="py-2 text-sm text-gray-700 dark:text-gray-200">{column.label}</td>
-                            <td className="py-2 text-xs font-mono text-gray-400 dark:text-gray-500">{getColumnTypeSqlType(colType)}</td>
-                            <td className="py-2 text-xs text-gray-400 dark:text-gray-500">{getColumnTypeLabel(colType)}</td>
+                            <td className="py-2 text-base cursor-pointer" onClick={() => handleToggleColumn(column.key)}>{getColumnTypeEmoji(colType)}</td>
+                            <td className="py-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer" onClick={() => handleToggleColumn(column.key)}>{column.label}</td>
+                            <td className="py-2 text-xs font-mono text-gray-400 dark:text-gray-500 cursor-pointer" onClick={() => handleToggleColumn(column.key)}>{getColumnTypeSqlType(colType)}</td>
+                            <td className="py-2 text-xs text-gray-400 dark:text-gray-500 cursor-pointer" onClick={() => handleToggleColumn(column.key)}>{getColumnTypeLabel(colType)}</td>
+                            <td className="py-2 px-1">
+                              <input
+                                type="number"
+                                min="0"
+                                max="500"
+                                value={columnMinWidths[column.key] ?? 20}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value) || 0
+                                  setColumnMinWidths(prev => ({
+                                    ...prev,
+                                    [column.key]: Math.max(0, Math.min(500, value))
+                                  }))
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-16 px-2 py-1 text-xs text-center border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                              />
+                            </td>
+                            <td className="py-2 px-1 text-center">
+                              <input
+                                type="checkbox"
+                                checked={columnShowFilters[column.key] ?? true}
+                                onChange={(e) => {
+                                  setColumnShowFilters(prev => ({
+                                    ...prev,
+                                    [column.key]: e.target.checked
+                                  }))
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 cursor-pointer"
+                                title="Uncheck to hide filter for this column"
+                              />
+                            </td>
                           </tr>
                         )
                       })}
@@ -3487,6 +3607,11 @@ export default function TrapidTableView({
                   setColumnOrder(view.columnOrder)
                 }
                 setActiveViewId(view.id)
+                // Update URL with view name (URL-friendly slug)
+                const viewSlug = view.name.toLowerCase().replace(/\s+/g, '-')
+                const newParams = new URLSearchParams(searchParams)
+                newParams.set('view', viewSlug)
+                setSearchParams(newParams, { replace: false })
               }}
               className={`px-3 py-1.5 ${
                 activeViewId === view.id
@@ -3885,6 +4010,8 @@ export default function TrapidTableView({
                           setFilterGroups={setFilterGroups}
                           setInterGroupLogic={setInterGroupLogic}
                           hideHeader={true}
+                          searchParams={searchParams}
+                          setSearchParams={setSearchParams}
                         />
                       </div>
                     ) : (
@@ -4625,13 +4752,15 @@ export default function TrapidTableView({
                     }}
                     style={{
                       width: columnWidths[colKey],
-                      minWidth: columnWidths[colKey],
+                      minWidth: columnMinWidths[colKey] ?? 20,
+                      maxWidth: columnWidths[colKey],
                       position: 'relative',
                       fontSize: '16px',
                       fontWeight: '600',
                       verticalAlign: 'top',
+                      overflow: 'hidden',
                     }}
-                    className={`group align-top ${colKey === 'select' ? 'px-2 py-3' : 'px-4 py-3'} text-white border-r-2 border-white/50 last:border-r-0 ${
+                    className={`group align-top ${colKey === 'select' ? 'px-2 py-3' : 'px-2 py-3'} text-white border-r-2 border-white/50 last:border-r-0 ${
                       isSystemGenerated ? 'bg-gradient-to-b from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700' : ''
                     } ${column.sortable ? 'cursor-pointer hover:bg-blue-400/20 dark:hover:bg-blue-600/20' : ''} ${
                       isFirst ? 'rounded-tl-lg' : ''
@@ -4651,15 +4780,16 @@ export default function TrapidTableView({
                         />
                       </div>
                     ) : (
-                      <div className="flex flex-col justify-between h-full gap-2">
-                        <div className="flex items-start gap-1">
+                      <div className="flex flex-col justify-between h-full gap-2 overflow-hidden">
+                        <div className="flex items-start gap-1 min-w-0">
                           {column.resizable && (
                             <div
-                              draggable
+                              draggable="true"
                               onDragStart={(e) => {
                                 e.stopPropagation()
-                                handleDragStart(e, colKey)
+                                e.dataTransfer.setData('text/plain', colKey)
                                 e.dataTransfer.effectAllowed = 'move'
+                                handleDragStart(e, colKey)
                               }}
                               onDragEnd={(e) => {
                                 e.stopPropagation()
@@ -4669,12 +4799,13 @@ export default function TrapidTableView({
                                 e.preventDefault()
                                 e.stopPropagation()
                               }}
-                              className="cursor-grab active:cursor-grabbing"
+                              className="cursor-grab active:cursor-grabbing flex-shrink-0"
+                              title="Drag to reorder column"
                             >
-                              <Bars3Icon className="h-4 w-4 text-gray-200 hover:text-white transition-colors" />
+                              <Bars3Icon className="h-5 w-5 text-white/70 hover:text-white transition-colors" />
                             </div>
                           )}
-                          <span>{column.label}</span>
+                          <span className="truncate" title={column.label}>{column.label}</span>
                           {isSystemGenerated && <span className="ml-1 text-sm">🔒</span>}
                           {column.sortable && <SortIcon column={colKey} />}
                           {/* Schema Editor Cog Icon - only show in Edit Individual mode */}
@@ -4729,8 +4860,8 @@ export default function TrapidTableView({
                           />
                         )}
 
-                        {/* Inline Column Filter (Chapter 20.1) - Show only if showFilters is true */}
-                        {showFilters && column.filterType === 'text' && (
+                        {/* Inline Column Filter (Chapter 20.1) - Show only if showFilters is true AND column filter is enabled */}
+                        {showFilters && (columnShowFilters[colKey] ?? true) && column.filterType === 'text' && (
                           <input
                             type="text"
                             placeholder="Filter..."
@@ -4741,7 +4872,7 @@ export default function TrapidTableView({
                           />
                         )}
 
-                        {showFilters && column.filterType === 'boolean' && (
+                        {showFilters && (columnShowFilters[colKey] ?? true) && column.filterType === 'boolean' && (
                           <select
                             value={columnFilters[colKey] || ''}
                             onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
@@ -4754,7 +4885,7 @@ export default function TrapidTableView({
                           </select>
                         )}
 
-                        {showFilters && column.filterType === 'dropdown' && colKey !== 'component' && (
+                        {showFilters && (columnShowFilters[colKey] ?? true) && column.filterType === 'dropdown' && colKey !== 'component' && (
                           <select
                             value={columnFilters[colKey] || ''}
                             onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
@@ -4896,7 +5027,8 @@ export default function TrapidTableView({
                         )}
 
                         {/* Default text filter for columns without specific filterType - Show only if showFilters is true */}
-                        {showFilters && !column.filterType && colKey !== 'component' && colKey !== 'select' && (
+                        {/* Exclude: select, component, columns with filterable: false, and columns with showFilter unchecked */}
+                        {showFilters && (columnShowFilters[colKey] ?? true) && !column.filterType && colKey !== 'component' && colKey !== 'select' && column.filterable !== false && (
                           <input
                             type="text"
                             placeholder="Filter..."
@@ -5021,7 +5153,7 @@ export default function TrapidTableView({
                       }}
                       style={{
                         width: columnWidths[colKey],
-                        minWidth: columnWidths[colKey],
+                        minWidth: columnMinWidths[colKey] ?? 20,
                         maxWidth: columnWidths[colKey],
                         fontSize: '14px',
                         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
@@ -5095,7 +5227,7 @@ export default function TrapidTableView({
                     key={colKey}
                     style={{
                       width: columnWidths[colKey],
-                      minWidth: columnWidths[colKey],
+                      minWidth: columnMinWidths[colKey] ?? 20,
                     }}
                     className={`${colKey === 'select' ? 'px-1 py-1.5' : 'px-6 py-1.5'} ${
                       colKey === 'select' ? 'text-center' : column.showSum ? 'text-right' : 'text-left'
@@ -6165,7 +6297,7 @@ export default function TrapidTableView({
                     {['section', 'email', 'phone', 'mobile', 'title', 'category_type', 'document_link'].includes(column.key) && (
                       <input
                         type={column.key === 'email' ? 'email' : column.key === 'document_link' ? 'url' : 'text'}
-                        value={modalEditData[column.key] || ''}
+                        value={modalEditData[column.key] ?? ''}
                         onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
@@ -6176,7 +6308,7 @@ export default function TrapidTableView({
                       <input
                         type="number"
                         step={column.key === 'price' ? '0.01' : column.key === 'whole_number' ? '1' : 'any'}
-                        value={modalEditData[column.key] || ''}
+                        value={modalEditData[column.key] ?? ''}
                         onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: parseFloat(e.target.value) || 0 })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
@@ -6187,7 +6319,7 @@ export default function TrapidTableView({
                       <div className="flex items-center">
                         <input
                           type="checkbox"
-                          checked={modalEditData[column.key] || false}
+                          checked={modalEditData[column.key] ?? false}
                           onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.checked })}
                           className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
@@ -6198,7 +6330,7 @@ export default function TrapidTableView({
                     {/* Status dropdown */}
                     {column.key === 'status' && (
                       <select
-                        value={modalEditData[column.key] || 'active'}
+                        value={modalEditData[column.key] ?? 'active'}
                         onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
@@ -6214,7 +6346,7 @@ export default function TrapidTableView({
                     {/* Severity dropdown */}
                     {column.key === 'severity' && (
                       <select
-                        value={modalEditData[column.key] || ''}
+                        value={modalEditData[column.key] ?? ''}
                         onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
@@ -6230,7 +6362,7 @@ export default function TrapidTableView({
                     {column.key === 'component' && (
                       <input
                         type="text"
-                        value={modalEditData[column.key] || ''}
+                        value={modalEditData[column.key] ?? ''}
                         onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.value })}
                         placeholder="e.g., Auth, Chat, Jobs"
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -6240,7 +6372,7 @@ export default function TrapidTableView({
                     {/* Multi-line content */}
                     {column.key === 'content' && (
                       <textarea
-                        value={modalEditData[column.key] || ''}
+                        value={modalEditData[column.key] ?? ''}
                         onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.value })}
                         rows={6}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
