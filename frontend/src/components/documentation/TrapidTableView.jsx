@@ -113,7 +113,8 @@ export default function TrapidTableView({
   tableName = 'Table',  // NEW: Human-readable table name for schema editor
   onRowDoubleClick = null,  // NEW: Custom handler for row double-click (overrides default edit modal)
   onView = null,  // NEW: Custom handler for View action button (e.g., navigate to detail page)
-  onColumnUpdate = null  // NEW: Callback when a column schema is updated (to refresh table data)
+  onColumnUpdate = null,  // NEW: Callback when a column schema is updated (to refresh table data)
+  viewOnly = false  // NEW: When true, only show View button in action column (no edit/delete)
 }) {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -308,6 +309,10 @@ export default function TrapidTableView({
 
   // Schema modal state - shows full schema info for all columns
   const [showSchemaModal, setShowSchemaModal] = useState(false)
+
+  // Delete column modal state
+  const [showDeleteColumnModal, setShowDeleteColumnModal] = useState(false)
+  const [deletingColumnId, setDeletingColumnId] = useState(null)
 
   // Inline column filters (Chapter 20.1)
   const [columnFilters, setColumnFilters] = useState({})
@@ -2042,7 +2047,7 @@ export default function TrapidTableView({
 
       case 'actions': // Column key 'actions' - check column_type for full buttons vs view-only
       case 'action_buttons':
-        // Full action buttons - View, Edit, Delete (for Gold Standard table)
+        // Action buttons - View only when viewOnly=true, otherwise View/Edit/Delete
         return (
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <button
@@ -2062,29 +2067,33 @@ export default function TrapidTableView({
             >
               <EyeIcon className="h-4 w-4" />
             </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setModalEditData({...entry})
-                setShowEditableModal(true)
-              }}
-              className="p-1.5 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 rounded transition-colors"
-              title="Edit"
-            >
-              <PencilIcon className="h-4 w-4" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                if (onDelete && confirm('Are you sure you want to delete this record?')) {
-                  onDelete(entry)
-                }
-              }}
-              className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded transition-colors"
-              title="Delete"
-            >
-              <TrashIcon className="h-4 w-4" />
-            </button>
+            {!viewOnly && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setModalEditData({...entry})
+                    setShowEditableModal(true)
+                  }}
+                  className="p-1.5 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 rounded transition-colors"
+                  title="Edit"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (onDelete && confirm('Are you sure you want to delete this record?')) {
+                      onDelete(entry)
+                    }
+                  }}
+                  className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded transition-colors"
+                  title="Delete"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </>
+            )}
           </div>
         )
 
@@ -3466,7 +3475,7 @@ export default function TrapidTableView({
                   <MenuItem>
                     {({ focus }) => (
                       <button
-                        onClick={() => navigate(`/tables/${tableIdNumeric}/columns?name=${encodeURIComponent(tableName)}&mode=delete`)}
+                        onClick={() => setShowDeleteColumnModal(true)}
                         className={`${
                           focus ? 'bg-gray-100 dark:bg-gray-700' : ''
                         } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
@@ -3816,6 +3825,121 @@ export default function TrapidTableView({
               </div>
             </>
           )}
+
+          {/* Delete Column Modal */}
+          {showDeleteColumnModal && (
+            <>
+              {/* Backdrop */}
+              <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowDeleteColumnModal(false)} />
+              {/* Modal */}
+              <div
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-2xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-hidden z-[60] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-red-500 to-red-600 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        🗑️ Delete Column
+                        {tableName && <span className="text-red-100">- {tableName}</span>}
+                      </h2>
+                      <p className="text-sm text-red-100 mt-1">
+                        Select a column to delete. This action cannot be undone.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowDeleteColumnModal(false)}
+                      className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+                    >
+                      <XMarkIcon className="w-6 h-6" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content - scrollable list of columns */}
+                <div className="flex-1 overflow-y-auto p-4">
+                  <div className="space-y-2">
+                    {COLUMNS.filter(col => col.key !== 'select' && !['id', 'created_at', 'updated_at', 'user_id'].includes(col.key)).map((column) => (
+                      <div
+                        key={column.key}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-600 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{getColumnTypeEmoji(column.column_type || column.key)}</span>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{column.label}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{column.key}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Are you sure you want to delete the column "${column.label}"?\n\nThis will permanently remove this column and all its data from the table.`)) {
+                              return
+                            }
+                            setDeletingColumnId(column.id || column.key)
+                            try {
+                              const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/tables/${tableIdNumeric}/columns/${column.id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                }
+                              })
+                              if (response.ok) {
+                                alert(`Column "${column.label}" deleted successfully. Please refresh the page to see changes.`)
+                                setShowDeleteColumnModal(false)
+                                window.location.reload()
+                              } else {
+                                const error = await response.json()
+                                alert(`Failed to delete column: ${error.error || 'Unknown error'}`)
+                              }
+                            } catch (err) {
+                              alert(`Failed to delete column: ${err.message}`)
+                            } finally {
+                              setDeletingColumnId(null)
+                            }
+                          }}
+                          disabled={deletingColumnId === (column.id || column.key)}
+                          className="px-3 py-1.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 disabled:bg-red-300 rounded-lg transition-colors flex items-center gap-1.5"
+                        >
+                          {deletingColumnId === (column.id || column.key) ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                              </svg>
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <TrashIcon className="h-4 w-4" />
+                              Delete
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-red-500 dark:text-red-400">
+                      ⚠️ Deleting a column is permanent and cannot be undone
+                    </p>
+                    <button
+                      onClick={() => setShowDeleteColumnModal(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Search Results Count (Chapter 20.20) */}
@@ -3850,11 +3974,10 @@ export default function TrapidTableView({
                   // Combine: visible first, then hidden
                   const sortedOrder = [...visibleCols, ...hiddenCols]
                   setVisibilityColumnOrder(sortedOrder)
-                  // Clear sort/groupBy if no active view (fresh open)
-                  if (!activeViewId) {
-                    setSortColumns([])
-                    setGroupByColumn(null)
-                  }
+                  // Always clear sort/groupBy when opening cascade popup fresh
+                  // User can then configure and save to a view
+                  setSortColumns([])
+                  setGroupByColumn(null)
                 }
                 setShowCascadeDropdown(!showCascadeDropdown)
               }}
@@ -4347,6 +4470,7 @@ export default function TrapidTableView({
                           setFilterGroups={setFilterGroups}
                           setInterGroupLogic={setInterGroupLogic}
                           setSortColumns={setSortColumns}
+                          setGroupByColumn={setGroupByColumn}
                           hideHeader={true}
                           searchParams={searchParams}
                           setSearchParams={setSearchParams}

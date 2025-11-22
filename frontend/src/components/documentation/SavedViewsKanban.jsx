@@ -26,6 +26,7 @@ export default function SavedViewsKanban({
   setFilterGroups,
   setInterGroupLogic,
   setSortColumns,
+  setGroupByColumn,
   hideHeader = false,
   searchParams,
   setSearchParams
@@ -132,8 +133,12 @@ export default function SavedViewsKanban({
       if (setColumnOrder) setColumnOrder(view.columnOrder)
     }
     // Restore sort columns
-    if (view.sortColumns && setSortColumns) {
-      setSortColumns(view.sortColumns)
+    if (setSortColumns) {
+      setSortColumns(view.sortColumns || [])
+    }
+    // Restore group by column
+    if (setGroupByColumn) {
+      setGroupByColumn(view.groupByColumn || null)
     }
     setActiveViewId(view.id)
     // Update URL with view name (URL-friendly slug)
@@ -331,6 +336,14 @@ export default function SavedViewsKanban({
                         if (view.columnOrder) {
                           if (setVisibilityColumnOrder) setVisibilityColumnOrder(view.columnOrder)
                           if (setColumnOrder) setColumnOrder(view.columnOrder)
+                        }
+                        // Restore sort columns
+                        if (setSortColumns) {
+                          setSortColumns(view.sortColumns || [])
+                        }
+                        // Restore group by column
+                        if (setGroupByColumn) {
+                          setGroupByColumn(view.groupByColumn || null)
                         }
                         setActiveViewId(view.id)
                         setEditingViewId(view.id)
