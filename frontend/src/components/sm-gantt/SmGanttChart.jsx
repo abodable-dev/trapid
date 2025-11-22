@@ -154,27 +154,7 @@ const TaskBar = ({ task, startOffset, width, dayWidth, onClick, onDrag, onDragEn
     setDragStartX(e.clientX)
   }
 
-  const handleMouseMove = (e) => {
-    if (!isDragging) return
-    const deltaX = e.clientX - dragStartX
-    const daysDelta = Math.round(deltaX / dayWidth)
-    const newOffset = Math.max(0, startOffset + daysDelta)
-    setCurrentOffset(newOffset)
-    onDrag?.(task.id, newOffset)
-  }
-
-  const handleMouseUp = () => {
-    if (!isDragging) return
-    setIsDragging(false)
-
-    // Calculate new start date
-    const newStartDate = new Date(dateRange.start)
-    newStartDate.setDate(newStartDate.getDate() + currentOffset)
-
-    onDragEnd?.(task.id, newStartDate.toISOString().split('T')[0], currentOffset)
-  }
-
-  // Touch event handlers for mobile
+  // Touch event handler for mobile
   const handleTouchStart = (e) => {
     if (task.locked) return
     e.stopPropagation()
@@ -183,43 +163,63 @@ const TaskBar = ({ task, startOffset, width, dayWidth, onClick, onDrag, onDragEn
     setDragStartX(touch.clientX)
   }
 
-  const handleTouchMove = (e) => {
-    if (!isDragging) return
-    e.preventDefault()
-    const touch = e.touches[0]
-    const deltaX = touch.clientX - dragStartX
-    const daysDelta = Math.round(deltaX / dayWidth)
-    const newOffset = Math.max(0, startOffset + daysDelta)
-    setCurrentOffset(newOffset)
-    onDrag?.(task.id, newOffset)
-  }
+  // Global mouse listeners for drag - use refs to avoid stale closures
+  const dragStateRef = useRef({ isDragging: false, dragStartX: 0, startOffset: 0 })
 
-  const handleTouchEnd = () => {
-    if (!isDragging) return
-    setIsDragging(false)
-
-    // Calculate new start date
-    const newStartDate = new Date(dateRange.start)
-    newStartDate.setDate(newStartDate.getDate() + currentOffset)
-
-    onDragEnd?.(task.id, newStartDate.toISOString().split('T')[0], currentOffset)
-  }
-
-  // Global mouse listeners for drag
   useEffect(() => {
+    dragStateRef.current = { isDragging, dragStartX, startOffset }
+  }, [isDragging, dragStartX, startOffset])
+
+  useEffect(() => {
+    const handleGlobalMouseMove = (e) => {
+      if (!dragStateRef.current.isDragging) return
+      const deltaX = e.clientX - dragStateRef.current.dragStartX
+      const daysDelta = Math.round(deltaX / dayWidth)
+      const newOffset = Math.max(0, dragStateRef.current.startOffset + daysDelta)
+      setCurrentOffset(newOffset)
+      onDrag?.(task.id, newOffset)
+    }
+
+    const handleGlobalMouseUp = () => {
+      if (!dragStateRef.current.isDragging) return
+      setIsDragging(false)
+      const newStartDate = new Date(dateRange.start)
+      newStartDate.setDate(newStartDate.getDate() + currentOffset)
+      onDragEnd?.(task.id, newStartDate.toISOString().split('T')[0], currentOffset)
+    }
+
+    const handleGlobalTouchMove = (e) => {
+      if (!dragStateRef.current.isDragging) return
+      e.preventDefault()
+      const touch = e.touches[0]
+      const deltaX = touch.clientX - dragStateRef.current.dragStartX
+      const daysDelta = Math.round(deltaX / dayWidth)
+      const newOffset = Math.max(0, dragStateRef.current.startOffset + daysDelta)
+      setCurrentOffset(newOffset)
+      onDrag?.(task.id, newOffset)
+    }
+
+    const handleGlobalTouchEnd = () => {
+      if (!dragStateRef.current.isDragging) return
+      setIsDragging(false)
+      const newStartDate = new Date(dateRange.start)
+      newStartDate.setDate(newStartDate.getDate() + currentOffset)
+      onDragEnd?.(task.id, newStartDate.toISOString().split('T')[0], currentOffset)
+    }
+
     if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', handleMouseUp)
-      window.addEventListener('touchmove', handleTouchMove, { passive: false })
-      window.addEventListener('touchend', handleTouchEnd)
+      window.addEventListener('mousemove', handleGlobalMouseMove)
+      window.addEventListener('mouseup', handleGlobalMouseUp)
+      window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false })
+      window.addEventListener('touchend', handleGlobalTouchEnd)
       return () => {
-        window.removeEventListener('mousemove', handleMouseMove)
-        window.removeEventListener('mouseup', handleMouseUp)
-        window.removeEventListener('touchmove', handleTouchMove)
-        window.removeEventListener('touchend', handleTouchEnd)
+        window.removeEventListener('mousemove', handleGlobalMouseMove)
+        window.removeEventListener('mouseup', handleGlobalMouseUp)
+        window.removeEventListener('touchmove', handleGlobalTouchMove)
+        window.removeEventListener('touchend', handleGlobalTouchEnd)
       }
     }
-  }, [isDragging, dragStartX, startOffset])
+  }, [isDragging, dayWidth, dateRange.start, task.id, currentOffset, onDrag, onDragEnd])
 
   return (
     <div

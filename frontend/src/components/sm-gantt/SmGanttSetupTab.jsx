@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import {
   UserGroupIcon,
@@ -625,7 +625,6 @@ function HoldReasonsSubTab() {
 
 // Templates Sub-Tab - SM Schedule Templates
 function TemplatesSubTab() {
-  const navigate = useNavigate()
   const [templates, setTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [templateRows, setTemplateRows] = useState([])
@@ -637,8 +636,6 @@ function TemplatesSubTab() {
   const [editingRow, setEditingRow] = useState(null)
   const [newTemplateName, setNewTemplateName] = useState('')
   const [newTemplateDesc, setNewTemplateDesc] = useState('')
-  const [jobs, setJobs] = useState([])
-  const [selectedJobId, setSelectedJobId] = useState('')
   const [viewMode, setViewMode] = useState('table') // 'table' or 'gantt'
   const [showDependencyEditor, setShowDependencyEditor] = useState(false)
   const [editingDependencyRow, setEditingDependencyRow] = useState(null)
@@ -655,7 +652,6 @@ function TemplatesSubTab() {
 
   useEffect(() => {
     loadTemplates()
-    loadJobs()
   }, [])
 
   useEffect(() => {
@@ -680,21 +676,6 @@ function TemplatesSubTab() {
       setError('Failed to load templates')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const loadJobs = async () => {
-    try {
-      const response = await api.get('/api/v1/constructions?status=active&limit=20')
-      setJobs(response.constructions || [])
-    } catch (err) {
-      console.error('Failed to load jobs:', err)
-    }
-  }
-
-  const handleOpenGantt = () => {
-    if (selectedJobId) {
-      navigate(`/jobs/${selectedJobId}/sm-gantt`)
     }
   }
 
@@ -1104,9 +1085,15 @@ function TemplatesSubTab() {
                   const taskDates = {}
 
                   // Helper to get task start date considering dependencies
-                  const calculateStartDate = (row, depth = 0) => {
-                    if (depth > 50) return today // Prevent infinite recursion
+                  const calculateStartDate = (row, depth = 0, visitedChain = new Set()) => {
+                    // Prevent infinite recursion from circular dependencies
+                    if (depth > 50 || visitedChain.has(row.task_number)) {
+                      console.warn(`Circular dependency detected for task ${row.task_number}: ${row.name}`)
+                      return today
+                    }
                     if (taskDates[row.task_number]) return taskDates[row.task_number]
+
+                    visitedChain.add(row.task_number)
 
                     // If has explicit offset, use it
                     if (row.start_day_offset != null) {
@@ -1123,7 +1110,7 @@ function TemplatesSubTab() {
                         const predId = pred.id || pred
                         const predRow = templateRows.find(r => r.task_number === predId)
                         if (predRow) {
-                          const predStart = calculateStartDate(predRow, depth + 1)
+                          const predStart = calculateStartDate(predRow, depth + 1, new Set(visitedChain))
                           const predEnd = new Date(predStart)
                           predEnd.setDate(predStart.getDate() + (predRow.duration_days || 1))
 
@@ -1311,6 +1298,24 @@ function TemplatesSubTab() {
 
 // Quick Links Sub-Tab
 function QuickLinksSubTab() {
+  const [jobs, setJobs] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadRecentJobs = async () => {
+      try {
+        setLoading(true)
+        const response = await api.get('/api/v1/constructions?status=active&limit=6')
+        setJobs(response.constructions || [])
+      } catch (err) {
+        console.error('Failed to load jobs:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadRecentJobs()
+  }, [])
+
   return (
     <div className="space-y-6">
       <div>
@@ -1321,21 +1326,40 @@ function QuickLinksSubTab() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Example Job Card - this would be dynamically loaded */}
-        <Link
-          to="/jobs/20/sm-gantt"
-          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors group"
-        >
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900/50">
-              <ChartBarIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h4 className="font-medium text-gray-900 dark:text-white">Lot 160 Alperton Road</h4>
-              <p className="text-sm text-gray-500 dark:text-gray-400">View SM Gantt Chart</p>
+        {/* Dynamic Job Cards */}
+        {loading ? (
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg h-9 w-9"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+              </div>
             </div>
           </div>
-        </Link>
+        ) : jobs.length > 0 ? (
+          jobs.map(job => (
+            <Link
+              key={job.id}
+              to={`/jobs/${job.id}/sm-gantt`}
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors group"
+            >
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900/50">
+                  <ChartBarIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-white">{job.name || job.address || `Job #${job.id}`}</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">View SM Gantt Chart</p>
+                </div>
+              </div>
+            </Link>
+          ))
+        ) : (
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">No active jobs found</p>
+          </div>
+        )}
 
         {/* Info Card */}
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 p-4">
