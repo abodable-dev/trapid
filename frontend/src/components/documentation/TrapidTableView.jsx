@@ -4801,6 +4801,152 @@ export default function TrapidTableView({
                           )}
                         </div>
                       </div>
+
+                      {/* Sort By Panel */}
+                      <div className="mt-4">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                          Sort By
+                        </label>
+                        <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700/30">
+                          {/* Add sort column button */}
+                          <div className="flex items-center gap-2 mb-3">
+                            <button
+                              onClick={() => {
+                                // Find first column that isn't already in sortColumns
+                                const availableCols = COLUMNS.filter(col =>
+                                  col.key !== 'select' &&
+                                  col.key !== 'actions' &&
+                                  !sortColumns.find(s => s.column === col.key)
+                                )
+                                if (availableCols.length > 0) {
+                                  setSortColumns([...sortColumns, { column: availableCols[0].key, dir: 'asc' }])
+                                }
+                              }}
+                              className="px-3 py-1.5 border border-blue-300 dark:border-blue-500 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                            >
+                              +Sort Column
+                            </button>
+                            {sortColumns.length > 0 && (
+                              <button
+                                onClick={() => setSortColumns([])}
+                                className="ml-auto px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                              >
+                                Clear All
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Sort columns list */}
+                          {sortColumns.length === 0 ? (
+                            <div className="text-xs text-gray-400 dark:text-gray-500 text-center py-3 italic">
+                              No sort columns. Click +Sort Column to add one, or Shift+Click column headers.
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {sortColumns.map((sort, index) => (
+                                <div
+                                  key={`${sort.column}-${index}`}
+                                  className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg"
+                                >
+                                  {/* Sort priority number */}
+                                  <span className="w-6 h-6 flex items-center justify-center bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-full">
+                                    {index + 1}
+                                  </span>
+
+                                  {/* Column dropdown */}
+                                  <select
+                                    value={sort.column}
+                                    onChange={(e) => {
+                                      const newColumn = e.target.value
+                                      setSortColumns(sortColumns.map((s, i) =>
+                                        i === index ? { ...s, column: newColumn } : s
+                                      ))
+                                    }}
+                                    className="flex-1 min-w-[120px] px-2 py-1.5 border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300"
+                                  >
+                                    {COLUMNS.filter(col => col.key !== 'select' && col.key !== 'actions').map(col => (
+                                      <option
+                                        key={col.key}
+                                        value={col.key}
+                                        disabled={sortColumns.some((s, i) => i !== index && s.column === col.key)}
+                                      >
+                                        {col.label}
+                                      </option>
+                                    ))}
+                                  </select>
+
+                                  {/* Direction toggle */}
+                                  <button
+                                    onClick={() => {
+                                      setSortColumns(sortColumns.map((s, i) =>
+                                        i === index ? { ...s, dir: s.dir === 'asc' ? 'desc' : 'asc' } : s
+                                      ))
+                                    }}
+                                    className={`px-3 py-1.5 border rounded-lg text-sm font-medium transition-colors ${
+                                      sort.dir === 'asc'
+                                        ? 'border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                        : 'border-orange-300 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                                    }`}
+                                  >
+                                    {sort.dir === 'asc' ? '↑ A-Z' : '↓ Z-A'}
+                                  </button>
+
+                                  {/* Move up/down buttons */}
+                                  <div className="flex flex-col gap-0.5">
+                                    <button
+                                      onClick={() => {
+                                        if (index === 0) return
+                                        const newSort = [...sortColumns]
+                                        const temp = newSort[index]
+                                        newSort[index] = newSort[index - 1]
+                                        newSort[index - 1] = temp
+                                        setSortColumns(newSort)
+                                      }}
+                                      disabled={index === 0}
+                                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none"
+                                      title="Move up (higher priority)"
+                                    >
+                                      ▲
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        if (index === sortColumns.length - 1) return
+                                        const newSort = [...sortColumns]
+                                        const temp = newSort[index]
+                                        newSort[index] = newSort[index + 1]
+                                        newSort[index + 1] = temp
+                                        setSortColumns(newSort)
+                                      }}
+                                      disabled={index === sortColumns.length - 1}
+                                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] leading-none"
+                                      title="Move down (lower priority)"
+                                    >
+                                      ▼
+                                    </button>
+                                  </div>
+
+                                  {/* Delete button */}
+                                  <button
+                                    onClick={() => setSortColumns(sortColumns.filter((_, i) => i !== index))}
+                                    className="p-1 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 border border-gray-300 dark:border-gray-500 rounded hover:border-red-300 dark:hover:border-red-500 transition-colors"
+                                  >
+                                    <span className="text-xs font-bold">✕</span>
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Help text */}
+                          {sortColumns.length > 0 && (
+                            <div className="mt-2 text-center">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                                Sorted by {sortColumns.length} column{sortColumns.length !== 1 ? 's' : ''} in order shown
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     {/* COLUMN 3: Column Visibility - Combined with Default */}
