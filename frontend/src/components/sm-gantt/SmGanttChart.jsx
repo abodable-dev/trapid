@@ -164,14 +164,49 @@ const TaskBar = ({ task, startOffset, width, dayWidth, onClick, onDrag, onDragEn
     onDragEnd?.(task.id, newStartDate.toISOString().split('T')[0], currentOffset)
   }
 
+  // Touch event handlers for mobile
+  const handleTouchStart = (e) => {
+    if (task.locked) return
+    e.stopPropagation()
+    const touch = e.touches[0]
+    setIsDragging(true)
+    setDragStartX(touch.clientX)
+  }
+
+  const handleTouchMove = (e) => {
+    if (!isDragging) return
+    e.preventDefault()
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - dragStartX
+    const daysDelta = Math.round(deltaX / dayWidth)
+    const newOffset = Math.max(0, startOffset + daysDelta)
+    setCurrentOffset(newOffset)
+    onDrag?.(task.id, newOffset)
+  }
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return
+    setIsDragging(false)
+
+    // Calculate new start date
+    const newStartDate = new Date(dateRange.start)
+    newStartDate.setDate(newStartDate.getDate() + currentOffset)
+
+    onDragEnd?.(task.id, newStartDate.toISOString().split('T')[0], currentOffset)
+  }
+
   // Global mouse listeners for drag
   useEffect(() => {
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove)
       window.addEventListener('mouseup', handleMouseUp)
+      window.addEventListener('touchmove', handleTouchMove, { passive: false })
+      window.addEventListener('touchend', handleTouchEnd)
       return () => {
         window.removeEventListener('mousemove', handleMouseMove)
         window.removeEventListener('mouseup', handleMouseUp)
+        window.removeEventListener('touchmove', handleTouchMove)
+        window.removeEventListener('touchend', handleTouchEnd)
       }
     }
   }, [isDragging, dragStartX, startOffset])
@@ -188,6 +223,7 @@ const TaskBar = ({ task, startOffset, width, dayWidth, onClick, onDrag, onDragEn
         top: '4px',
       }}
       onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
       onClick={(e) => {
         if (!isDragging) onClick?.(task)
       }}
@@ -363,9 +399,42 @@ const DependencyLine = ({ fromTask, toTask, tasks, dateRange, dayWidth, rowHeigh
 
 export default function SmGanttChart({ tasks = [], dependencies = [], onTaskClick, onTaskUpdate }) {
   const containerRef = useRef(null)
+  const gridScrollRef = useRef(null)
   const [scrollLeft, setScrollLeft] = useState(0)
   const [dayWidth, setDayWidth] = useState(40)
+  const [isMobile, setIsMobile] = useState(false)
+  const [gridScrollTop, setGridScrollTop] = useState(0)
+  const [gridHeight, setGridHeight] = useState(400)
   const rowHeight = 34
+  const overscan = 5 // Extra rows to render above/below visible area
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Track grid container height for virtualization
+  useEffect(() => {
+    const updateHeight = () => {
+      if (gridScrollRef.current) {
+        setGridHeight(gridScrollRef.current.clientHeight)
+      }
+    }
+    updateHeight()
+    window.addEventListener('resize', updateHeight)
+    return () => window.removeEventListener('resize', updateHeight)
+  }, [])
+
+  // Calculate visible rows for virtualization
+  const visibleRowRange = useMemo(() => {
+    const startRow = Math.max(0, Math.floor(gridScrollTop / rowHeight) - overscan)
+    const visibleCount = Math.ceil(gridHeight / rowHeight) + overscan * 2
+    const endRow = Math.min(tasks.length, startRow + visibleCount)
+    return { startRow, endRow }
+  }, [gridScrollTop, gridHeight, tasks.length, rowHeight])
 
   const dateRange = useMemo(() => getDateRange(tasks), [tasks])
   const dateColumns = useMemo(() => generateDateColumns(dateRange.start, dateRange.end), [dateRange])
@@ -429,38 +498,40 @@ export default function SmGanttChart({ tasks = [], dependencies = [], onTaskClic
           <span className="text-sm text-gray-600 dark:text-gray-400">
             {tasks.length} tasks
           </span>
-          {/* Stage Legend */}
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-gray-400">Stages:</span>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-slate-500" title="Pre-construction" />
-              <span className="text-gray-500">Pre</span>
+          {/* Stage Legend - hidden on mobile */}
+          {!isMobile && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-gray-400">Stages:</span>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-slate-500" title="Pre-construction" />
+                <span className="text-gray-500">Pre</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-amber-600" title="Slab" />
+                <span className="text-gray-500">Slab</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-orange-500" title="Frame" />
+                <span className="text-gray-500">Frame</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-blue-500" title="Lockup" />
+                <span className="text-gray-500">Lockup</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-indigo-500" title="Fixing" />
+                <span className="text-gray-500">Fixing</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-purple-500" title="Finishing" />
+                <span className="text-gray-500">Finish</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-green-500" title="Handover" />
+                <span className="text-gray-500">Handover</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-amber-600" title="Slab" />
-              <span className="text-gray-500">Slab</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-orange-500" title="Frame" />
-              <span className="text-gray-500">Frame</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-blue-500" title="Lockup" />
-              <span className="text-gray-500">Lockup</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-indigo-500" title="Fixing" />
-              <span className="text-gray-500">Fixing</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-purple-500" title="Finishing" />
-              <span className="text-gray-500">Finish</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-green-500" title="Handover" />
-              <span className="text-gray-500">Handover</span>
-            </div>
-          </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -483,53 +554,80 @@ export default function SmGanttChart({ tasks = [], dependencies = [], onTaskClic
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Task grid (fixed left panel) */}
-        <div className="flex-shrink-0 border-r border-gray-200 dark:border-gray-700 overflow-hidden" style={{ width: '420px' }}>
+        {/* Task grid (fixed left panel) - responsive width */}
+        <div
+          className="flex-shrink-0 border-r border-gray-200 dark:border-gray-700 overflow-hidden"
+          style={{ width: isMobile ? '200px' : '420px' }}
+        >
           {/* Grid Header */}
           <div className="h-[52px] border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center">
             <div className="w-10 px-2 text-xs font-medium text-gray-500 uppercase">#</div>
-            <div className="flex-1 min-w-[180px] px-2 text-xs font-medium text-gray-500 uppercase">Task Name</div>
-            <div className="w-14 px-2 text-xs font-medium text-gray-500 uppercase text-center">Days</div>
-            <div className="w-20 px-2 text-xs font-medium text-gray-500 uppercase">Trade</div>
-            <div className="w-20 px-2 text-xs font-medium text-gray-500 uppercase">Stage</div>
+            <div className="flex-1 min-w-[100px] md:min-w-[180px] px-2 text-xs font-medium text-gray-500 uppercase">Task Name</div>
+            {!isMobile && (
+              <>
+                <div className="w-14 px-2 text-xs font-medium text-gray-500 uppercase text-center">Days</div>
+                <div className="w-20 px-2 text-xs font-medium text-gray-500 uppercase">Trade</div>
+                <div className="w-20 px-2 text-xs font-medium text-gray-500 uppercase">Stage</div>
+              </>
+            )}
           </div>
-          {/* Grid Rows */}
-          <div className="overflow-y-auto" style={{ height: `calc(100% - 52px)` }}>
-            {tasks.map((task, index) => (
-              <div
-                key={task.id}
-                className={`flex items-center border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                  task.is_hold_task ? 'bg-red-50 dark:bg-red-900/20' : ''
-                }`}
-                style={{ height: `${rowHeight}px` }}
-                onClick={() => onTaskClick?.(task)}
-              >
-                <div className="w-10 px-2 text-xs text-gray-400 font-medium">{task.task_number}</div>
-                <div className="flex-1 min-w-[180px] px-2 flex items-center gap-2 overflow-hidden">
-                  {/* Color indicator */}
+          {/* Grid Rows - Virtualized */}
+          <div
+            ref={gridScrollRef}
+            className="overflow-y-auto"
+            style={{ height: `calc(100% - 52px)` }}
+            onScroll={(e) => setGridScrollTop(e.target.scrollTop)}
+          >
+            <div style={{ height: `${tasks.length * rowHeight}px`, position: 'relative' }}>
+              {tasks.slice(visibleRowRange.startRow, visibleRowRange.endRow).map((task, index) => {
+                const actualIndex = visibleRowRange.startRow + index
+                return (
                   <div
-                    className="w-2 h-4 rounded-sm flex-shrink-0"
+                    key={task.id}
+                    className={`flex items-center border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                      task.is_hold_task ? 'bg-red-50 dark:bg-red-900/20' : ''
+                    }`}
                     style={{
-                      backgroundColor: task.color || (task.stage ? {
-                        'pre-construction': '#64748b',
-                        'slab': '#d97706',
-                        'frame': '#f97316',
-                        'lockup': '#3b82f6',
-                        'fixing': '#6366f1',
-                        'finishing': '#a855f7',
-                        'handover': '#22c55e',
-                      }[task.stage] : '#9ca3af')
+                      height: `${rowHeight}px`,
+                      position: 'absolute',
+                      top: `${actualIndex * rowHeight}px`,
+                      left: 0,
+                      right: 0
                     }}
-                  />
-                  <span className={`text-sm truncate ${task.is_hold_task ? 'text-red-600 font-medium' : 'text-gray-900 dark:text-gray-100'}`}>
-                    {task.name}
-                  </span>
-                </div>
-                <div className="w-14 px-2 text-xs text-gray-500 text-center">{task.duration_days || '-'}</div>
-                <div className="w-20 px-2 text-xs text-gray-500 truncate capitalize">{task.trade || '-'}</div>
-                <div className="w-20 px-2 text-xs text-gray-500 truncate capitalize">{task.stage?.replace('-', ' ') || '-'}</div>
-              </div>
-            ))}
+                    onClick={() => onTaskClick?.(task)}
+                  >
+                    <div className="w-10 px-2 text-xs text-gray-400 font-medium">{task.task_number}</div>
+                    <div className="flex-1 min-w-[100px] md:min-w-[180px] px-2 flex items-center gap-2 overflow-hidden">
+                      {/* Color indicator */}
+                      <div
+                        className="w-2 h-4 rounded-sm flex-shrink-0"
+                        style={{
+                          backgroundColor: task.color || (task.stage ? {
+                            'pre-construction': '#64748b',
+                            'slab': '#d97706',
+                            'frame': '#f97316',
+                            'lockup': '#3b82f6',
+                            'fixing': '#6366f1',
+                            'finishing': '#a855f7',
+                            'handover': '#22c55e',
+                          }[task.stage] : '#9ca3af')
+                        }}
+                      />
+                      <span className={`text-sm truncate ${task.is_hold_task ? 'text-red-600 font-medium' : 'text-gray-900 dark:text-gray-100'}`}>
+                        {task.name}
+                      </span>
+                    </div>
+                    {!isMobile && (
+                      <>
+                        <div className="w-14 px-2 text-xs text-gray-500 text-center">{task.duration_days || '-'}</div>
+                        <div className="w-20 px-2 text-xs text-gray-500 truncate capitalize">{task.trade || '-'}</div>
+                        <div className="w-20 px-2 text-xs text-gray-500 truncate capitalize">{task.stage?.replace('-', ' ') || '-'}</div>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
 

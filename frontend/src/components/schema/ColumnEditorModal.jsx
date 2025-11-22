@@ -76,7 +76,7 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
 
   if (!isOpen || !column) return null;
 
-  const isChoiceColumn = ['choice', 'dropdown', 'select'].includes(column.column_type?.toLowerCase());
+  const isChoiceColumn = ['choice', 'dropdown', 'select', 'single_select', 'multi_select'].includes(column.column_type?.toLowerCase());
   const isComputedColumn = column.column_type === 'computed' || column.formula;
 
   const tabs = [
@@ -185,23 +185,21 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
   };
 
   const hasChanges = () => {
-    return editedColumn.name !== column.name ||
-           editedColumn.column_name !== column.column_name ||
-           editedColumn.data_type !== (column.data_type || column.column_type);
+    return editedColumn.name !== column.name;
   };
 
   // Check if this is a system-generated column
   const isSystemGenerated = ['id', 'created_at', 'updated_at'].includes(column.column_name);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-auto"
          onClick={(e) => {
            if (e.target === e.currentTarget) {
              handleClose();
            }
          }}>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh]
-                    flex flex-col overflow-hidden"
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh]
+                    flex flex-col overflow-hidden mx-auto"
            onClick={(e) => e.stopPropagation()}>
         {/* Header - Red for system-generated, Purple for user columns */}
         <div className={`px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r
@@ -239,13 +237,13 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
 
         {/* Tabs */}
         <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50
-                      px-6 overflow-x-auto">
+                      px-6 overflow-x-auto shrink-0">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors
-                       border-b-2 ${
+              className={`px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors
+                       border-b-2 -mb-px ${
                 activeTab === tab.id
                   ? 'border-purple-500 text-purple-600 dark:text-purple-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -331,27 +329,22 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
                   </p>
                 </div>
 
-                {/* Database Column Name */}
+                {/* Database Column Name - Read Only */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Column Name (Database)
                   </label>
-                  <input
-                    type="text"
-                    value={editedColumn.column_name}
-                    onChange={(e) => setEditedColumn({ ...editedColumn, column_name: e.target.value })}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 rounded-lg border-2 border-green-300
-                             dark:border-green-600 text-base font-mono text-gray-900 dark:text-gray-100
-                             focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="column_name"
-                  />
+                  <div className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-600 rounded-lg border-2 border-gray-300
+                               dark:border-gray-500 text-base font-mono text-gray-700 dark:text-gray-300">
+                    {editedColumn.column_name}
+                  </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    The actual database column name (snake_case recommended)
+                    Database column name cannot be changed after creation
                   </p>
                 </div>
               </div>
 
-              {/* SECTION 2: Column Type */}
+              {/* SECTION 2: Column Type - Read Only */}
               <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-6 border-2 border-purple-200 dark:border-purple-700">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="text-3xl">🎯</div>
@@ -363,37 +356,16 @@ const ColumnEditorModal = ({ isOpen, column, table, tableId, onClose, onUpdate }
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Select Type
+                    Current Type
                   </label>
-                  <select
-                    value={editedColumn.data_type}
-                    onChange={(e) => {
-                      const newType = e.target.value
-                      setEditedColumn({
-                        ...editedColumn,
-                        data_type: newType
-                      })
-                    }}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-700 rounded-lg border-2 border-purple-300
-                             dark:border-purple-600 text-base text-gray-900 dark:text-gray-100 font-medium
-                             focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    {/* Dynamically build options from COLUMN_TYPES (single source of truth) */}
-                    {['Text', 'Numbers', 'Date & Time', 'Special', 'Selection', 'Relationships', 'Computed'].map(category => {
-                      const typesInCategory = COLUMN_TYPES.filter(t => t.category === category)
-                      if (typesInCategory.length === 0) return null
-
-                      return (
-                        <optgroup key={category} label={category}>
-                          {typesInCategory.map(type => (
-                            <option key={type.value} value={type.value}>
-                              {getColumnTypeEmoji(type.value)} {type.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )
-                    })}
-                  </select>
+                  <div className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-600 rounded-lg border-2 border-gray-300
+                               dark:border-gray-500 text-base font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <span>{getColumnTypeEmoji(editedColumn.data_type)}</span>
+                    <span>{getColumnMetadata(editedColumn.data_type).label}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Use the "Change Type" tab to convert column type (requires data migration)
+                  </p>
                 </div>
               </div>
 

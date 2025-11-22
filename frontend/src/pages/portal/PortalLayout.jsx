@@ -9,7 +9,8 @@ import {
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline'
 
 export default function PortalLayout() {
@@ -33,6 +34,7 @@ export default function PortalLayout() {
     { name: 'Dashboard', href: '/portal/dashboard', icon: HomeIcon },
     { name: 'Quotes', href: '/portal/quotes', icon: DocumentTextIcon },
     { name: 'Jobs', href: '/portal/jobs', icon: BriefcaseIcon },
+    { name: 'Schedule', href: '/portal/schedule', icon: CalendarDaysIcon },
     { name: 'Invoices', href: '/portal/invoices', icon: DocumentDuplicateIcon },
     { name: 'Kudos', href: '/portal/kudos', icon: TrophyIcon },
     { name: 'Settings', href: '/portal/settings', icon: Cog6ToothIcon },

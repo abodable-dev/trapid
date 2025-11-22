@@ -5,6 +5,7 @@ import RichTextEditor from '../common/RichTextEditor'
 import ColumnEditorModal from '../schema/ColumnEditorModal'
 import SavedViewsKanban from './SavedViewsKanban'
 import LocationMapCard from '../job-detail/LocationMapCard'
+import { getColumnTypeEmoji, getColumnTypeSqlType, getColumnTypeLabel, COLUMN_TYPES } from '../../constants/columnTypes'
 import {
   MagnifyingGlassIcon,
   XMarkIcon,
@@ -216,6 +217,9 @@ export default function TrapidTableView({
 
   // Column visibility dropdown state
   const [showColumnsDropdown, setShowColumnsDropdown] = useState(false)
+
+  // Schema modal state - shows full schema info for all columns
+  const [showSchemaModal, setShowSchemaModal] = useState(false)
 
   // Inline column filters (Chapter 20.1)
   const [columnFilters, setColumnFilters] = useState({})
@@ -3049,6 +3053,72 @@ export default function TrapidTableView({
                   )}
                 </div>
               )}
+
+              {/* Table Info - always show */}
+              <div className="py-1">
+                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Table Info
+                </div>
+                <div className="px-4 py-2 space-y-2">
+                  {/* Table ID - only show if available */}
+                  {tableIdNumeric && (
+                    <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2">
+                      <div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Table ID:</span>
+                        <span className="ml-2 font-mono text-sm text-gray-900 dark:text-gray-100">{tableIdNumeric}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(String(tableIdNumeric))
+                          alert('Table ID copied to clipboard!')
+                        }}
+                        className="ml-2 px-2 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  )}
+                  {/* Current View */}
+                  <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Current View:</span>
+                        <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">
+                          {activeViewId
+                            ? (() => {
+                                const activeView = savedFilters.find(v => v.id === activeViewId)
+                                return activeView
+                                  ? <span className="flex items-center gap-1">
+                                      {activeView.isDefault && <span className="text-yellow-500">⭐</span>}
+                                      {activeView.name}
+                                    </span>
+                                  : 'Custom'
+                              })()
+                            : <span className="text-gray-500 dark:text-gray-400 italic">No view selected</span>
+                          }
+                        </span>
+                      </div>
+                      {activeViewId && (
+                        <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">
+                          {cascadeFilters.length} filter{cascadeFilters.length !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+                    {/* Visible columns count */}
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {Object.entries(visibleColumns).filter(([key, visible]) => key !== 'select' && visible).length} of {COLUMNS.filter(c => c.key !== 'select').length} columns visible
+                    </div>
+                  </div>
+                </div>
+                <MenuItem>
+                  <button
+                    onClick={() => setShowSchemaModal(true)}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    🗄️ View Schema
+                  </button>
+                </MenuItem>
+              </div>
             </MenuItems>
           </Menu>
 
@@ -3059,7 +3129,7 @@ export default function TrapidTableView({
               <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowColumnsDropdown(false)} />
               {/* Dropdown positioned in center */}
               <div
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto z-[60]"
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto z-[60]"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="p-4">
@@ -3074,22 +3144,161 @@ export default function TrapidTableView({
                       ✕
                     </button>
                   </div>
-                  <div className="space-y-2">
-                    {COLUMNS.filter(col => col.key !== 'select').map((column) => (
-                      <button
-                        key={column.key}
-                        onClick={() => handleToggleColumn(column.key)}
-                        className="group flex w-full items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns[column.key]}
-                          onChange={() => {}}
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
-                        />
-                        <span className="ml-3">{column.label}</span>
-                      </button>
-                    ))}
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                        <th className="text-left py-2 font-medium w-8"></th>
+                        <th className="text-left py-2 font-medium w-8"></th>
+                        <th className="text-left py-2 font-medium">Column Name</th>
+                        <th className="text-left py-2 font-medium w-32">SQL Type</th>
+                        <th className="text-left py-2 font-medium w-28">Display Type</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {COLUMNS.filter(col => col.key !== 'select').map((column) => {
+                        const colType = column.column_type || column.key
+                        return (
+                          <tr
+                            key={column.key}
+                            onClick={() => handleToggleColumn(column.key)}
+                            className="group hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                          >
+                            <td className="py-2 px-2">
+                              <input
+                                type="checkbox"
+                                checked={visibleColumns[column.key]}
+                                onChange={() => {}}
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                              />
+                            </td>
+                            <td className="py-2 text-base">{getColumnTypeEmoji(colType)}</td>
+                            <td className="py-2 text-sm text-gray-700 dark:text-gray-200">{column.label}</td>
+                            <td className="py-2 text-xs font-mono text-gray-400 dark:text-gray-500">{getColumnTypeSqlType(colType)}</td>
+                            <td className="py-2 text-xs text-gray-400 dark:text-gray-500">{getColumnTypeLabel(colType)}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Schema Modal - Full schema info for all columns */}
+          {showSchemaModal && (
+            <>
+              {/* Backdrop */}
+              <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowSchemaModal(false)} />
+              {/* Modal */}
+              <div
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-6xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[90vh] overflow-hidden z-[60] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-500 to-purple-600 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        🗄️ Table Schema
+                        {tableName && <span className="text-indigo-100">- {tableName}</span>}
+                      </h2>
+                      <p className="text-sm text-indigo-100 mt-1">
+                        {COLUMNS.filter(col => col.key !== 'select').length} columns • Schema definitions from COLUMN_TYPES (Single Source of Truth)
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowSchemaModal(false)}
+                      className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+                    >
+                      <XMarkIcon className="w-6 h-6" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content - scrollable */}
+                <div className="flex-1 overflow-y-auto p-4">
+                  <div className="space-y-4">
+                    {COLUMNS.filter(col => col.key !== 'select').map((column) => {
+                      const colType = column.column_type || column.key
+                      const columnTypeDef = COLUMN_TYPES.find(t => t.value === colType) || {}
+
+                      return (
+                        <div
+                          key={column.key}
+                          className="bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden"
+                        >
+                          {/* Column Header */}
+                          <div className="px-4 py-3 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">{getColumnTypeEmoji(colType)}</span>
+                                <div>
+                                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">{column.label}</h3>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{column.key}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-1 text-xs font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded">
+                                  {getColumnTypeSqlType(colType)}
+                                </span>
+                                <span className="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded">
+                                  {getColumnTypeLabel(colType)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Column Details */}
+                          <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* Validation Rules */}
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+                                Validation Rules
+                              </label>
+                              <div className="text-sm text-gray-700 dark:text-gray-300 bg-orange-50 dark:bg-orange-900/20 px-3 py-2 rounded border border-orange-200 dark:border-orange-800">
+                                {columnTypeDef.validationRules || 'No validation rules defined'}
+                              </div>
+                            </div>
+
+                            {/* Example */}
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+                                Example
+                              </label>
+                              <div className="text-sm font-mono text-gray-700 dark:text-gray-300 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded border border-green-200 dark:border-green-800">
+                                {columnTypeDef.example || 'No example available'}
+                              </div>
+                            </div>
+
+                            {/* Used For */}
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+                                Used For
+                              </label>
+                              <div className="text-sm text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded border border-blue-200 dark:border-blue-800">
+                                {columnTypeDef.usedFor || column.tooltip || 'No description available'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Schema sourced from COLUMN_TYPES constant (see columnTypes.js)
+                    </p>
+                    <button
+                      onClick={() => setShowSchemaModal(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      Close
+                    </button>
                   </div>
                 </div>
               </div>
@@ -4381,8 +4590,9 @@ export default function TrapidTableView({
                                 e.preventDefault()
                                 e.stopPropagation()
                                 // Create a column object to pass to the editor
+                                // Use column.id (database ID) if available, otherwise use colKey
                                 setSelectedColumnForEdit({
-                                  id: colKey,
+                                  id: column.id || colKey,
                                   name: column.label,
                                   column_name: colKey,
                                   column_type: column.column_type || 'single_line_text', // Use column type from config

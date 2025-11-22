@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon, PauseIcon, PlayIcon, PlusIcon, DocumentDuplicateIcon, UserGroupIcon, LinkIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
@@ -109,12 +109,128 @@ export default function SmGanttPage() {
   const [showDependencyEditor, setShowDependencyEditor] = useState(false)
   const [dependencies, setDependencies] = useState([])
 
+  // Undo/Redo history
+  const [history, setHistory] = useState([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
+  const maxHistorySize = 50
+
   useEffect(() => {
     if (id) {
       loadData()
       loadHoldReasons()
     }
   }, [id])
+
+  // Push to history for undo/redo
+  const pushToHistory = useCallback((action) => {
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1)
+      newHistory.push(action)
+      if (newHistory.length > maxHistorySize) {
+        newHistory.shift()
+      }
+      return newHistory
+    })
+    setHistoryIndex(prev => Math.min(prev + 1, maxHistorySize - 1))
+  }, [historyIndex])
+
+  // Undo action
+  const handleUndo = useCallback(async () => {
+    if (historyIndex < 0) return
+
+    const action = history[historyIndex]
+    if (action?.type === 'task_update' && action.previousData) {
+      try {
+        await api.patch(`/api/v1/sm_tasks/${action.taskId}`, { sm_task: action.previousData })
+        setToast({ type: 'success', message: 'Undone' })
+        loadData()
+        setHistoryIndex(prev => prev - 1)
+      } catch (err) {
+        setToast({ type: 'error', message: 'Failed to undo' })
+      }
+    }
+  }, [history, historyIndex])
+
+  // Redo action
+  const handleRedo = useCallback(async () => {
+    if (historyIndex >= history.length - 1) return
+
+    const action = history[historyIndex + 1]
+    if (action?.type === 'task_update' && action.newData) {
+      try {
+        await api.patch(`/api/v1/sm_tasks/${action.taskId}`, { sm_task: action.newData })
+        setToast({ type: 'success', message: 'Redone' })
+        loadData()
+        setHistoryIndex(prev => prev + 1)
+      } catch (err) {
+        setToast({ type: 'error', message: 'Failed to redo' })
+      }
+    }
+  }, [history, historyIndex])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Skip if typing in input/textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+
+      // Escape - close modals
+      if (e.key === 'Escape') {
+        if (showTaskModal) setShowTaskModal(false)
+        else if (showNewTaskModal) setShowNewTaskModal(false)
+        else if (showCopyTemplateModal) setShowCopyTemplateModal(false)
+        else if (showCascadeModal) setShowCascadeModal(false)
+        else if (showDependencyEditor) setShowDependencyEditor(false)
+        else if (showResourcePanel) setShowResourcePanel(false)
+        return
+      }
+
+      // Ctrl/Cmd + Z - Undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        handleUndo()
+        return
+      }
+
+      // Ctrl/Cmd + Shift + Z - Redo
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') {
+        e.preventDefault()
+        handleRedo()
+        return
+      }
+
+      // Ctrl/Cmd + Y - Redo (alternative)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        e.preventDefault()
+        handleRedo()
+        return
+      }
+
+      // N - New task (when no modal open)
+      if (e.key === 'n' && !showTaskModal && !showNewTaskModal && !showCopyTemplateModal) {
+        e.preventDefault()
+        setShowNewTaskModal(true)
+        return
+      }
+
+      // G - Toggle Gantt/Table view
+      if (e.key === 'g' && !showTaskModal && !showNewTaskModal) {
+        e.preventDefault()
+        setViewMode(prev => prev === 'gantt' ? 'table' : 'gantt')
+        return
+      }
+
+      // T - Copy from template
+      if (e.key === 't' && !showTaskModal && !showNewTaskModal && !showCopyTemplateModal) {
+        e.preventDefault()
+        setShowCopyTemplateModal(true)
+        return
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showTaskModal, showNewTaskModal, showCopyTemplateModal, showCascadeModal, showDependencyEditor, showResourcePanel, handleUndo, handleRedo])
 
   const loadData = async () => {
     try {
@@ -153,6 +269,17 @@ export default function SmGanttPage() {
   }
 
   const handleTaskUpdate = async (taskId, updates) => {
+    // Store previous state for undo
+    const previousTask = tasks.find(t => t.id === taskId)
+    const previousData = previousTask ? {
+      start_date: previousTask.start_date,
+      end_date: previousTask.end_date,
+      duration_days: previousTask.duration_days,
+      name: previousTask.name,
+      trade: previousTask.trade,
+      status: previousTask.status
+    } : null
+
     try {
       // If start_date is being changed, use the move endpoint for cascade handling
       if (updates.start_date) {
@@ -169,10 +296,31 @@ export default function SmGanttPage() {
           return // Don't refresh yet, wait for modal confirmation
         }
 
+        // Push to history for undo
+        if (previousData) {
+          pushToHistory({
+            type: 'task_update',
+            taskId,
+            previousData,
+            newData: updates
+          })
+        }
+
         setToast({ type: 'success', message: response.message || 'Task moved' })
       } else {
         // Regular update (not a date change)
         await api.patch(`/api/v1/sm_tasks/${taskId}`, { sm_task: updates })
+
+        // Push to history for undo
+        if (previousData) {
+          pushToHistory({
+            type: 'task_update',
+            taskId,
+            previousData,
+            newData: updates
+          })
+        }
+
         setToast({ type: 'success', message: 'Task updated' })
       }
       await loadData() // Refresh
@@ -410,6 +558,11 @@ export default function SmGanttPage() {
         onClose={handleCloseModal}
         onSave={handleTaskUpdate}
         onDelete={handleTaskDelete}
+        onEditDependencies={(task) => {
+          setShowTaskModal(false)
+          setSelectedTask(task)
+          setShowDependencyEditor(true)
+        }}
       />
 
       {/* New Task Modal */}

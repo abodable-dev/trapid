@@ -318,7 +318,6 @@ export default function FinancialPage() {
       {/* Transactions Table */}
       <TrapidTableView
         tableId="financial-transactions"
-        tableIdNumeric={999}
         tableName="Financial Transactions"
         entries={transactions}
         columns={TRANSACTION_COLUMNS}

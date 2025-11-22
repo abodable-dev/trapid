@@ -7,7 +7,8 @@ import {
   PauseIcon,
   LockClosedIcon,
   LockOpenIcon,
-  TrashIcon
+  TrashIcon,
+  LinkIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
@@ -17,7 +18,8 @@ export default function SmTaskModal({
   isOpen,
   onClose,
   onSave,
-  onDelete
+  onDelete,
+  onEditDependencies
 }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -378,6 +380,16 @@ export default function SmTaskModal({
                       >
                         <TrashIcon className="h-4 w-4" />
                         Delete
+                      </button>
+                    )}
+                    {onEditDependencies && (
+                      <button
+                        onClick={() => onEditDependencies(task)}
+                        disabled={loading}
+                        className="flex items-center gap-1.5 px-3 py-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg disabled:opacity-50"
+                      >
+                        <LinkIcon className="h-4 w-4" />
+                        Dependencies
                       </button>
                     )}
                   </div>

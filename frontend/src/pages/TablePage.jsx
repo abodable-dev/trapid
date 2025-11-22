@@ -31,7 +31,7 @@ import {
   EyeIcon,
 } from '@heroicons/react/24/outline'
 
-export default function TablePage() {
+export default function TablePage({ embedded = false }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const [table, setTable] = useState(null)
@@ -516,8 +516,9 @@ export default function TablePage() {
   }
 
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 h-screen flex flex-col bg-white dark:bg-gray-900">
-      {/* Header - Google Sheets style */}
+    <div className={`${embedded ? '' : '-mx-4 sm:-mx-6 lg:-mx-8'} h-screen flex flex-col bg-white dark:bg-gray-900`}>
+      {/* Header - Google Sheets style (hidden in embedded mode) */}
+      {!embedded && (
       <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-x-4">
@@ -529,7 +530,7 @@ export default function TablePage() {
             </button>
             <div>
               <h1 className="text-lg font-normal text-gray-900 dark:text-white">
-                {table.name}
+                <span className="text-gray-400 dark:text-gray-500">({table.id})</span> {table.name}
               </h1>
               {table.description && (
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -588,9 +589,10 @@ export default function TablePage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Columns Information Panel */}
-      {showColumnInfo && (
+      {showColumnInfo && !embedded && (
         <div className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 px-4 py-4">
           <div className="max-w-7xl">
             <div className="flex items-center justify-between mb-4">

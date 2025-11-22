@@ -10,8 +10,11 @@ import {
   PencilIcon,
   CheckIcon,
   XMarkIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  DocumentDuplicateIcon,
+  StarIcon
 } from '@heroicons/react/24/outline'
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { api } from '../api'
 import Toast from '../components/Toast'
 
@@ -365,6 +368,166 @@ function RolloverSettingsTab() {
   )
 }
 
+// Templates Tab
+function TemplatesTab() {
+  const [templates, setTemplates] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState(null)
+
+  useEffect(() => {
+    loadTemplates()
+  }, [])
+
+  const loadTemplates = async () => {
+    try {
+      const response = await api.get('/api/v1/sm_templates')
+      setTemplates(response.sm_templates || [])
+    } catch (error) {
+      console.error('Failed to load templates:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSetDefault = async (templateId) => {
+    try {
+      await api.post(`/api/v1/sm_templates/${templateId}/set_default`)
+      setToast({ type: 'success', message: 'Default template updated' })
+      loadTemplates()
+    } catch (error) {
+      setToast({ type: 'error', message: 'Failed to set default template' })
+    }
+  }
+
+  const handleCreate = async () => {
+    const name = prompt('Enter template name:')
+    if (!name) return
+
+    try {
+      await api.post('/api/v1/sm_templates', {
+        sm_template: { name, description: '' }
+      })
+      setToast({ type: 'success', message: 'Template created' })
+      loadTemplates()
+    } catch (error) {
+      setToast({ type: 'error', message: 'Failed to create template' })
+    }
+  }
+
+  const handleDelete = async (templateId) => {
+    if (!confirm('Archive this template?')) return
+
+    try {
+      await api.delete(`/api/v1/sm_templates/${templateId}`)
+      setToast({ type: 'success', message: 'Template archived' })
+      loadTemplates()
+    } catch (error) {
+      setToast({ type: 'error', message: 'Failed to archive template' })
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Manage schedule templates. The default template is used when creating new jobs.
+        </p>
+        <button
+          onClick={handleCreate}
+          className="px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-1.5"
+        >
+          <PlusIcon className="h-4 w-4" />
+          New Template
+        </button>
+      </div>
+
+      <div className="grid gap-4">
+        {templates.length === 0 ? (
+          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <DocumentDuplicateIcon className="h-12 w-12 mx-auto text-gray-400" />
+            <p className="mt-2 text-sm text-gray-500">No templates yet</p>
+            <button
+              onClick={handleCreate}
+              className="mt-4 px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            >
+              Create your first template
+            </button>
+          </div>
+        ) : (
+          templates.map((template) => (
+            <div
+              key={template.id}
+              className={`bg-white dark:bg-gray-800 rounded-lg border p-4 flex items-center justify-between ${
+                template.is_default
+                  ? 'border-indigo-500 ring-1 ring-indigo-500'
+                  : 'border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => handleSetDefault(template.id)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    template.is_default
+                      ? 'text-yellow-500'
+                      : 'text-gray-300 hover:text-yellow-500'
+                  }`}
+                  title={template.is_default ? 'Default template' : 'Set as default'}
+                >
+                  {template.is_default ? (
+                    <StarIconSolid className="h-6 w-6" />
+                  ) : (
+                    <StarIcon className="h-6 w-6" />
+                  )}
+                </button>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                      {template.name}
+                    </h4>
+                    {template.is_default && (
+                      <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-full">
+                        Default
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {template.row_count || 0} tasks
+                    {template.description && ` • ${template.description}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={`/designer/tables/${template.id}?type=sm_template`}
+                  className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Edit Tasks
+                </a>
+                <button
+                  onClick={() => handleDelete(template.id)}
+                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+    </div>
+  )
+}
+
 // Working Days Tab
 function WorkingDaysTab() {
   const [workingDays, setWorkingDays] = useState({
@@ -440,6 +603,7 @@ function WorkingDaysTab() {
 export default function SmSetupPage() {
   const tabs = [
     { name: 'Hold Reasons', icon: PauseIcon },
+    { name: 'Templates', icon: DocumentDuplicateIcon },
     { name: 'Rollover', icon: ClockIcon },
     { name: 'Working Days', icon: CalendarDaysIcon }
   ]
@@ -484,6 +648,7 @@ export default function SmSetupPage() {
 
           <Tab.Panels>
             <Tab.Panel><HoldReasonsTab /></Tab.Panel>
+            <Tab.Panel><TemplatesTab /></Tab.Panel>
             <Tab.Panel><RolloverSettingsTab /></Tab.Panel>
             <Tab.Panel><WorkingDaysTab /></Tab.Panel>
           </Tab.Panels>

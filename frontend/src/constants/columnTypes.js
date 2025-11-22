@@ -326,6 +326,16 @@ export const getColumnTypeLabel = (value) => {
 }
 
 /**
+ * Get the SQL type for a column type value
+ * @param {string} value - The column type value (e.g., 'single_line_text')
+ * @returns {string} The SQL type (e.g., 'VARCHAR(255)')
+ */
+export const getColumnTypeSqlType = (value) => {
+  const type = COLUMN_TYPES.find(t => t.value === value)
+  return type?.sqlType || 'VARCHAR(255)'
+}
+
+/**
  * Get the icon component for a column type value
  * @param {string} value - The column type value
  * @returns {Component} The icon component
