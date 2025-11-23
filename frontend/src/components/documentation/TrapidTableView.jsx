@@ -790,9 +790,8 @@ export default function TrapidTableView({
   const scrollContainerRef = useRef(null)
 
   // NOTE: Table state is now loaded from localStorage during initialization (via getInitialTableState)
-  // This useEffect is only needed if tableId or category changes AFTER initial render
+  // This useEffect handles tableId or category changes AFTER initial render
   // The initial load happens in useState initialization to avoid race conditions
-  const prevTableIdRef = React.useRef(tableId)
   const prevCategoryRef = React.useRef(category)
   useEffect(() => {
     // Skip on initial mount - state is already loaded from localStorage via initialTableState

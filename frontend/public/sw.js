@@ -54,6 +54,12 @@ self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
 
+  // In development, don't intercept API calls - let Vite proxy handle them
+  // Service worker fetch() bypasses Vite's dev server proxy
+  if (url.port === '5173' && url.pathname.startsWith('/api/')) {
+    return // Let request pass through to Vite proxy
+  }
+
   // Skip non-GET requests (POST, PUT, DELETE go to network)
   if (request.method !== 'GET') {
     // Queue failed POST requests for later sync
