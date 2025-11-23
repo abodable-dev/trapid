@@ -54,10 +54,13 @@ self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
 
-  // In development, don't intercept API calls - let Vite proxy handle them
-  // Service worker fetch() bypasses Vite's dev server proxy
-  if (url.port === '5173' && url.pathname.startsWith('/api/')) {
-    return // Let request pass through to Vite proxy
+  // In development, don't intercept API calls to the backend
+  // Service workers intercept ALL fetch requests, even to different origins
+  // We must let requests to the local backend pass through without caching/offline handling
+  // This applies to both direct backend calls (port 3000) and Vite proxy calls (port 5173)
+  if (url.hostname === 'localhost' && url.pathname.startsWith('/api/')) {
+    // Don't call event.respondWith() - let the request pass through naturally
+    return
   }
 
   // Skip non-GET requests (POST, PUT, DELETE go to network)
